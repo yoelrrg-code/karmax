@@ -4,8 +4,10 @@ import {
   varchar,
   text,
   int,
+  bigint,
   boolean,
   timestamp,
+  decimal,
 } from "drizzle-orm/mysql-core";
 import { relations } from "drizzle-orm";
 
@@ -27,12 +29,29 @@ export const products = mysqlTable("products", {
   slug: varchar("slug", { length: 255 }).notNull().unique(),
   sku: varchar("sku", { length: 100 }),
   brand: varchar("brand", { length: 150 }).default("KARMAX"),
-  unit: varchar("unit", { length: 100 }).default("Pieza"), // Galón, Bidón, Caja, Pieza
-  shortDescription: varchar("short_description", { length: 500 }),
+  unit: varchar("unit", { length: 100 }).default("Pieza"),
+  shortDescription: text("short_description"),
   description: text("description"),
   imageUrl: varchar("image_url", { length: 1024 }),
+  regularPrice: decimal("regular_price", { precision: 10, scale: 2 }),
+  salePrice: decimal("sale_price", { precision: 10, scale: 2 }),
+  stockStatus: varchar("stock_status", { length: 50 }).default("instock").notNull(),
+  postStatus: varchar("post_status", { length: 50 }).default("publish").notNull(),
+  postDate: timestamp("post_date"),
   isFeatured: boolean("is_featured").default(false).notNull(),
   isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const productImages = mysqlTable("product_images", {
+  id: serial("id").primaryKey(),
+  productId: bigint("product_id", { mode: "number", unsigned: true }).notNull(),
+  url: varchar("url", { length: 1024 }).notNull(),
+  alt: varchar("alt", { length: 255 }),
+  title: varchar("title", { length: 255 }),
+  caption: text("caption"),
+  isPrimary: boolean("is_primary").default(false).notNull(),
+  orderIndex: int("order_index").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -71,10 +90,18 @@ export const categoriesRelations = relations(categories, ({ many }) => ({
   products: many(products),
 }));
 
-export const productsRelations = relations(products, ({ one }) => ({
+export const productsRelations = relations(products, ({ one, many }) => ({
   category: one(categories, {
     fields: [products.categoryId],
     references: [categories.id],
+  }),
+  images: many(productImages),
+}));
+
+export const productImagesRelations = relations(productImages, ({ one }) => ({
+  product: one(products, {
+    fields: [productImages.productId],
+    references: [products.id],
   }),
 }));
 
@@ -95,6 +122,7 @@ export const quoteItemsRelations = relations(quoteItems, ({ one }) => ({
 
 export type Category = typeof categories.$inferSelect;
 export type Product = typeof products.$inferSelect;
+export type ProductImage = typeof productImages.$inferSelect;
 export type Industry = typeof industries.$inferSelect;
 export type QuoteRequest = typeof quoteRequests.$inferSelect;
 export type QuoteItem = typeof quoteItems.$inferSelect;
