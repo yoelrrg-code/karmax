@@ -12,8 +12,8 @@ export const CategoriesGrid: React.FC<CategoriesGridProps> = ({ categories }) =>
     <section id="productos" className="py-16 sm:py-20 bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Heading */}
-        <div className="text-center max-w-3xl mx-auto mb-12">
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">
+        <div className="text-center mx-auto mb-12">
+          <h2 className="tracking-tight">
             Productos para cada espacio y necesidad
           </h2>
         </div>
@@ -28,7 +28,7 @@ export const CategoriesGrid: React.FC<CategoriesGridProps> = ({ categories }) =>
             >
               {/* Card Header Title Pill */}
               <div className="p-3.5 text-center bg-white border-b border-slate-100 z-10">
-                <h3 className="text-sm sm:text-base font-bold text-slate-800 group-hover:text-[#00509d] transition-colors line-clamp-1">
+                <h3 className="text-sm sm:text-base font-bold text-slate-800 group-hover:text-[var(--blue-karmax)] transition-colors line-clamp-1">
                   {cat.name}
                 </h3>
               </div>
@@ -36,7 +36,7 @@ export const CategoriesGrid: React.FC<CategoriesGridProps> = ({ categories }) =>
               {/* Image Container */}
               <div className="relative w-full aspect-4/3 bg-slate-100 overflow-hidden">
                 <Image
-                  src={cat.imageUrl}
+                  src={cat.imageUrl || "/images/categories/limpieza-general.jpg"}
                   alt={cat.name}
                   fill
                   className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
@@ -58,7 +58,7 @@ export const CategoriesGrid: React.FC<CategoriesGridProps> = ({ categories }) =>
               <Link
                 key={tag}
                 href={`#tag-${encodeURIComponent(tag)}`}
-                className="px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold text-[#00509d] bg-white border border-blue-200 hover:bg-blue-50/80 hover:border-blue-400 transition-all duration-200 shadow-2xs active:scale-95"
+                className="px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold text-[var(--blue-karmax)] bg-white border border-blue-200 hover:bg-blue-50/80 hover:border-blue-400 transition-all duration-200 shadow-2xs active:scale-95"
               >
                 {tag}
               </Link>

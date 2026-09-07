@@ -5,9 +5,9 @@ import {
   CategoryItem,
   IndustryItem,
 } from "@/lib/data/mockData";
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, and } from "drizzle-orm";
 
-export async function getCategories(): Promise<CategoryItem[]> {
+export async function getCategories(onlyFeatured: boolean = true): Promise<CategoryItem[]> {
   try {
     const result = await db
       .select({
@@ -15,9 +15,14 @@ export async function getCategories(): Promise<CategoryItem[]> {
         name: categories.name,
         slug: categories.slug,
         imageUrl: categories.imageUrl,
+        featured: categories.featured,
       })
       .from(categories)
-      .where(eq(categories.isActive, true))
+      .where(
+        onlyFeatured
+          ? and(eq(categories.isActive, true), eq(categories.featured, true))
+          : eq(categories.isActive, true)
+      )
       .orderBy(asc(categories.orderIndex));
 
     if (result && result.length > 0) {
@@ -25,12 +30,12 @@ export async function getCategories(): Promise<CategoryItem[]> {
         id: r.id,
         name: r.name,
         slug: r.slug,
-        imageUrl: r.imageUrl || "https://images.unsplash.com/photo-1581578731548-c64695cc6952?auto=format&fit=crop&w=600&q=80",
+        imageUrl: r.imageUrl || "/images/categories/limpieza-general.jpg",
+        featured: r.featured,
       }));
     }
     return CATEGORIES_DATA;
   } catch (error) {
-    // Si la base de datos no está disponible o las tablas no están creadas todavía, retorna datos de referencia
     console.warn("Retornando datos de referencia para categorías (MySQL no conectado aún):", (error as Error).message);
     return CATEGORIES_DATA;
   }

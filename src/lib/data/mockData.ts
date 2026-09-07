@@ -3,6 +3,7 @@ export interface CategoryItem {
   name: string;
   slug: string;
   imageUrl: string;
+  featured?: boolean;
 }
 
 export interface IndustryItem {

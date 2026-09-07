@@ -12,6 +12,7 @@
   --light-bg-karmax: #F0F6F8;
   --white-karmax: #FFFFFF;
   --text-karmax: #333333;
+  --light-text-karmax: #566371;
 }
 
 @theme inline {
@@ -37,4 +38,46 @@ header nav a{
   font-size: 16px;
   line-height: 19px;
   font-weight: 500;
+}
+
+h1{
+  font-weight: 600;
+  font-size: 40px;
+  line-height: 50px;
+  letter-spacing: -2%;
+}
+
+h2{
+  font-weight: 600;
+  font-size: 40px;
+  line-height: 50px;
+  letter-spacing: -2%;
+  color: var(--dark-blue-karmax);
+}
+
+p{
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: 0%;
+}
+
+#hero p{
+  font-size: 20px;
+  line-height: 28px;
+}
+
+.btn-primary{
+  font-weight: 600;
+  font-size: 18px;
+  line-height: 18px;
+  letter-spacing: 0%;
+}
+
+#trust-badges span{
+  font-size: 16px;
+  line-height: 19px;
+  font-weight: 500;
+  color: var(--light-text-karmax);
+  letter-spacing: 0%;
 }
