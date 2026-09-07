@@ -48,7 +48,7 @@ export const Header: React.FC = () => {
               href={`https://wa.me/${whatsappNumber.replace(/[^0-9]/g, "")}?text=Hola,%20quisiera%20solicitar%20una%20cotización%20para%20mi%20empresa`}
               target="_blank"
               rel="noopener noreferrer"
-              className="group inline-flex items-center gap-2 bg-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] text-white px-4 py-2.5 rounded-full text-[16px] font-medium shadow-xs hover:shadow-md transition-all duration-300 active:scale-95 cursor-pointer"
+              className="group inline-flex items-center gap-2 bg-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] text-white px-5 py-2 rounded-full text-[16px] font-medium shadow-xs hover:shadow-md transition-all duration-300 active:scale-95 cursor-pointer"
             >
               <Icon
                 name="whatsapp"
