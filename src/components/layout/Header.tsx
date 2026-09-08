@@ -39,7 +39,7 @@ export const Header: React.FC = () => {
           </div>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center space-x-8 text-sm font-medium text-[var(--blue-karmax)]">
+          <nav className="hidden md:flex items-center space-x-8 text-sm font-medium text-[var(--blue-karmax)] ml-auto mr-10">
             <Link
               href="#productos"
               className="hover:text-[var(--green-karmax)] transition-colors"

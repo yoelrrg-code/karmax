@@ -106,7 +106,7 @@ p{
 }
 
 #categories .card-group:hover{
-  transform: scale(1.05);
+  transform: scale(1.02);
   box-shadow: 0px 0px 32px 0px #0000003D;
 }
 

@@ -27,11 +27,11 @@ export const CategoriesGrid = ({
             <Link
               key={cat.id}
               href={`/category/${cat.slug}`}
-              className="card-group group relative rounded-[16px] overflow-hidden shadow-xs hover:shadow-xl border border-slate-200/80 transition-all duration-300 flex flex-col"
+              className="card-group group relative rounded-[16px] overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col"
             >
               {/* Card Header Title Pill */}
               <div className="p-4 text-left absolute z-2 card-header">
-                <h3 className="text-shadow font-semibold text-[var(--blue-karmax)] group-hover:text-[var(--green-karmax)] transition-colors">
+                <h3 className="text-shadow font-semibold text-[var(--blue-karmax)] group-hover:text-[var(--green-hover-karmax)] transition-colors">
                   {cat.name}
                 </h3>
               </div>
