@@ -1,4 +1,3 @@
-import React from "react";
 import { Header } from "@/components/layout/Header";
 import { HeroSection } from "@/components/home/HeroSection";
 import { TrustBadges } from "@/components/home/TrustBadges";
@@ -13,8 +12,9 @@ import { getCategories, getIndustries } from "@/lib/services/karmaxService";
 export const revalidate = 60; // Regenerar incremental cada 60s si hay cambios en MySQL
 
 export default async function HomePage() {
-  const [categories, industries] = await Promise.all([
-    getCategories(),
+  const [featuredCategories, otherCategories, industries] = await Promise.all([
+    getCategories(true),
+    getCategories(false),
     getIndustries(),
   ]);
 
@@ -30,8 +30,11 @@ export default async function HomePage() {
         {/* 2. Barra horizontal de propuesta de valor / confianza */}
         <TrustBadges />
 
-        {/* 3. Catálogo por categorías (8 cards fotográficas + filtros rápidos) */}
-        <CategoriesGrid categories={categories} />
+        {/* 3. Catálogo por categorías (8 cards fotográficas + sección 'Además') */}
+        <CategoriesGrid
+          categories={featuredCategories}
+          otherCategories={otherCategories}
+        />
 
         {/* 4. Marcas destacadas aliadas */}
         <BrandsShowcase />
