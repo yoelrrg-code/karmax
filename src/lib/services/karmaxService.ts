@@ -57,13 +57,20 @@ export async function getIndustries(): Promise<IndustryItem[]> {
       .orderBy(asc(industries.orderIndex));
 
     if (result && result.length > 0) {
-      return result.map((r) => ({
-        id: r.id,
-        name: r.name,
-        slug: r.slug,
-        description: r.description,
-        iconName: r.iconName,
-      }));
+      return result.map((r) => {
+        const fallback = INDUSTRIES_DATA.find(
+          (item) => item.slug === r.slug || item.id === r.id
+        );
+        return {
+          id: r.id,
+          name: r.name,
+          slug: r.slug,
+          description: r.description,
+          iconName: r.iconName,
+          iconUrl: fallback?.iconUrl || `/icons/ico-${r.slug}.svg`,
+          catLink: fallback?.catLink || `/category/${r.slug}`,
+        };
+      });
     }
     return INDUSTRIES_DATA;
   } catch (error) {
