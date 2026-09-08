@@ -62,7 +62,7 @@ export const CategoriesGrid = ({
                 <Link
                   key={cat.id}
                   href={`/category/${cat.slug}`}
-                  className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg text-[17px] sm:text-base font-semibold text-[var(--blue-karmax)] bg-[var(--light-bg-karmax)] hover:text-[var(--green-karmax)] transition-all duration-200 shadow-2xs"
+                  className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg text-[17px] sm:text-base font-semibold text-[var(--blue-karmax)] bg-[var(--light-bg-karmax)] hover:text-[var(--green-hover-karmax)] transition-all duration-200 shadow-2xs"
                 >
                   {cat.name}
                 </Link>

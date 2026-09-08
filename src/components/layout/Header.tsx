@@ -80,7 +80,7 @@ export const Header: React.FC = () => {
             {/* User Profile */}
             <button
               aria-label="Cuenta de usuario"
-              className="group flex items-center justify-center p-2 h-10 w-10 text-[var(--green-karmax)] hover:text-[var(--white-karmax)] bg-[var(--light-bg-karmax)] hover:bg-[var(--green-karmax)] rounded-full transition-all duration-300 active:scale-95 shadow-xs hover:shadow-md cursor-pointer"
+              className="group flex items-center justify-center p-2 h-10 w-10 text-[var(--green-karmax)] hover:text-[var(--white-karmax)] bg-[var(--light-bg-karmax)] hover:bg-[var(--green-hover-karmax)] rounded-full transition-all duration-300 active:scale-95 shadow-xs hover:shadow-md cursor-pointer"
             >
               <Icon
                 name="user"
@@ -93,7 +93,7 @@ export const Header: React.FC = () => {
             <Link
               href="#cotizacion"
               aria-label="Bolsa de cotización"
-              className="group flex items-center justify-center p-2 h-10 w-10 text-[var(--green-karmax)] hover:text-[var(--white-karmax)] bg-[var(--light-bg-karmax)] hover:bg-[var(--green-karmax)] rounded-full transition-all duration-300 active:scale-95 shadow-xs hover:shadow-md relative cursor-pointer"
+              className="group flex items-center justify-center p-2 h-10 w-10 text-[var(--green-karmax)] hover:text-[var(--white-karmax)] bg-[var(--light-bg-karmax)] hover:bg-[var(--green-hover-karmax)] rounded-full transition-all duration-300 active:scale-95 shadow-xs hover:shadow-md relative cursor-pointer"
             >
               <Icon
                 name="cotiza"

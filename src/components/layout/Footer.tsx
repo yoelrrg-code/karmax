@@ -100,7 +100,7 @@ export const Footer: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Facebook"
-                className="hover:opacity-85 hover:scale-105 transition-all"
+                className="opacity-85 hover:opacity-100 hover:scale-105 transition-all"
               >
                 <Icon name="facebook" size={32} />
               </a>
@@ -109,7 +109,7 @@ export const Footer: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="TikTok"
-                className="hover:opacity-85 hover:scale-105 transition-all"
+                className="opacity-85 hover:opacity-100 hover:scale-105 transition-all"
               >
                 <Icon name="tiktok" size={32} />
               </a>
@@ -118,7 +118,7 @@ export const Footer: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="LinkedIn"
-                className="hover:opacity-85 hover:scale-105 transition-all"
+                className="opacity-85 hover:opacity-100 hover:scale-105 transition-all"
               >
                 <Icon name="linkedin" size={32} />
               </a>
@@ -127,7 +127,7 @@ export const Footer: React.FC = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram"
-                className="hover:opacity-85 hover:scale-105 transition-all"
+                className="opacity-85 hover:opacity-100 hover:scale-105 transition-all"
               >
                 <Icon name="instagram" size={32} />
               </a>

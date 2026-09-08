@@ -41,6 +41,10 @@ header nav a{
   font-weight: 500;
 }
 
+header.h-20{
+  box-shadow: 0 1px 15px 2px rgba(8, 124, 193, 0.3);
+}
+
 h1{
   font-weight: 600;
   font-size: 40px;
