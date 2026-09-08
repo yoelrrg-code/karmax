@@ -51,6 +51,7 @@ export async function getIndustries(): Promise<IndustryItem[]> {
         slug: industries.slug,
         description: industries.description,
         iconName: industries.iconName,
+        iconUrl: industries.iconUrl,
       })
       .from(industries)
       .where(eq(industries.isActive, true))
@@ -58,17 +59,14 @@ export async function getIndustries(): Promise<IndustryItem[]> {
 
     if (result && result.length > 0) {
       return result.map((r) => {
-        const fallback = INDUSTRIES_DATA.find(
-          (item) => item.slug === r.slug || item.id === r.id
-        );
         return {
           id: r.id,
           name: r.name,
           slug: r.slug,
           description: r.description,
           iconName: r.iconName,
-          iconUrl: fallback?.iconUrl || `/icons/ico-${r.slug}.svg`,
-          catLink: fallback?.catLink || `/category/${r.slug}`,
+          iconUrl: r.iconUrl || `/icons/ico-${r.slug}.svg`,
+          catLink: `/category/${r.slug}`,
         };
       });
     }

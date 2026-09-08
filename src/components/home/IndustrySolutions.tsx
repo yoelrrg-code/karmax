@@ -2,12 +2,14 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import type { IndustryItem } from "@/types";
+import { getIndustries } from "@/lib/services/karmaxService";
 
 interface IndustrySolutionsProps {
-  industries: IndustryItem[];
+  industries?: IndustryItem[];
 }
 
-export const IndustrySolutions: React.FC<IndustrySolutionsProps> = ({ industries }) => {
+export const IndustrySolutions = async ({ industries: propIndustries }: IndustrySolutionsProps = {}) => {
+  const industries = propIndustries ?? await getIndustries();
   return (
     <section id="industries" className="py-16 sm:py-24 bg-[var(--light-bg-karmax)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

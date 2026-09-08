@@ -62,8 +62,21 @@ export const industries = mysqlTable("industries", {
   slug: varchar("slug", { length: 255 }).notNull().unique(),
   description: text("description").notNull(),
   iconName: varchar("icon_name", { length: 100 }).notNull(),
+  iconUrl: varchar("icon_url", { length: 1024 }),
   orderIndex: int("order_index").default(0).notNull(),
   isActive: boolean("is_active").default(true).notNull(),
+});
+
+export const productCategories = mysqlTable("product_categories", {
+  id: serial("id").primaryKey(),
+  productId: bigint("product_id", { mode: "number", unsigned: true }).notNull(),
+  categoryId: int("category_id").notNull(),
+});
+
+export const productIndustries = mysqlTable("product_industries", {
+  id: serial("id").primaryKey(),
+  productId: bigint("product_id", { mode: "number", unsigned: true }).notNull(),
+  industryId: bigint("industry_id", { mode: "number", unsigned: true }).notNull(),
 });
 
 export const quoteRequests = mysqlTable("quote_requests", {
@@ -89,6 +102,33 @@ export const quoteItems = mysqlTable("quote_items", {
 // Relaciones
 export const categoriesRelations = relations(categories, ({ many }) => ({
   products: many(products),
+  productCategories: many(productCategories),
+}));
+
+export const industriesRelations = relations(industries, ({ many }) => ({
+  productIndustries: many(productIndustries),
+}));
+
+export const productCategoriesRelations = relations(productCategories, ({ one }) => ({
+  product: one(products, {
+    fields: [productCategories.productId],
+    references: [products.id],
+  }),
+  category: one(categories, {
+    fields: [productCategories.categoryId],
+    references: [categories.id],
+  }),
+}));
+
+export const productIndustriesRelations = relations(productIndustries, ({ one }) => ({
+  product: one(products, {
+    fields: [productIndustries.productId],
+    references: [products.id],
+  }),
+  industry: one(industries, {
+    fields: [productIndustries.industryId],
+    references: [industries.id],
+  }),
 }));
 
 export const productsRelations = relations(products, ({ one, many }) => ({
@@ -96,6 +136,8 @@ export const productsRelations = relations(products, ({ one, many }) => ({
     fields: [products.categoryId],
     references: [categories.id],
   }),
+  productCategories: many(productCategories),
+  productIndustries: many(productIndustries),
   images: many(productImages),
 }));
 
@@ -125,5 +167,7 @@ export type Category = typeof categories.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type ProductImage = typeof productImages.$inferSelect;
 export type Industry = typeof industries.$inferSelect;
+export type ProductCategory = typeof productCategories.$inferSelect;
+export type ProductIndustry = typeof productIndustries.$inferSelect;
 export type QuoteRequest = typeof quoteRequests.$inferSelect;
 export type QuoteItem = typeof quoteItems.$inferSelect;
