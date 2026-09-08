@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/common/Logo";
 import { Icon } from "@/components/icons";
@@ -8,12 +8,31 @@ import { Menu, X } from "lucide-react";
 
 export const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "+5215512345678";
+  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "+528186590941";
+
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 20) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-slate-200/80 shadow-xs">
+    <header className={`sticky top-0 z-50 bg-white transition-all duration-300 ${isScrolled ? 'h-20' : 'h-30'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-30">
+        <div className={`flex items-center justify-between transition-all duration-300 ${isScrolled ? 'h-20' : 'h-30'}`}>
           {/* Logo */}
           <div className="flex-shrink-0">
             <Logo/>

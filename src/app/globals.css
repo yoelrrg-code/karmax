@@ -142,3 +142,7 @@ p{
   line-height: 30px;
   font-weight: 400;
 }
+
+#contacto .copy{
+  font-size: 14px;
+}

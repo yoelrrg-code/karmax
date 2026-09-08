@@ -51,7 +51,7 @@ export const IndustrySolutions: React.FC<IndustrySolutionsProps> = ({ industries
                 <div className="pt-2">
                   <Link
                     href={`${ind.catLink}`}
-                    className="btn-secondary inline-flex items-center justify-center py-3 px-5 rounded-full border border-[var(--green-karmax)] text-[var(--green-karmax)] hover:bg-[var(--green-karmax)] hover:text-white transition-all duration-200"
+                    className="btn-secondary inline-flex items-center justify-center py-3 px-5 rounded-full border border-[var(--green-karmax)] text-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] hover:text-white transition-all duration-200"
                   >
                     Ver productos
                   </Link>

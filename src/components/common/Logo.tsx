@@ -3,15 +3,17 @@ import Link from "next/link";
 import Image from "next/image";
 
 interface LogoProps {
-  variant?: "blue" | "white" | string;
+  size?: { w: number; h: number };
   className?: string;
 }
 
-export const Logo: React.FC<LogoProps> = ({ className = "" }) => {
-
+export const Logo: React.FC<LogoProps> = ({
+  className = "",
+  size = { w: 190, h: 48 },
+}) => {
   return (
     <Link href="/" className={`inline-flex items-center gap-2 group ${className}`}>
-      <Image src="/images/logo-karmax.svg" alt="Logo Karma" width={190} height={48} />
+      <Image src="/images/logo-karmax.svg" alt="Logo Karma" width={size.w} height={size.h} />
     </Link>
   );
 };

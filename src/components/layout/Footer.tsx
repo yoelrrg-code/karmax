@@ -1,124 +1,155 @@
 import React from "react";
 import Link from "next/link";
 import { Logo } from "@/components/common/Logo";
-import { MapPin, Phone, Mail, MessageCircle } from "lucide-react";
+import { Icon } from "@/components/icons";
 
 export const Footer: React.FC = () => {
   return (
-    <footer id="contacto" className="bg-white border-t border-slate-200 text-slate-600 text-sm">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
-          {/* Brand & Mission */}
-          <div className="space-y-4">
-            <Logo variant="blue" />
-            <p className="text-xs sm:text-sm text-slate-500 leading-relaxed max-w-xs">
-              Venta de productos de limpieza de calidad a precio justo para empresas e industrias.
+    <footer id="contacto" className="bg-[var(--light-bg-karmax)] text-[var(--light-text-karmax)]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8">
+        {/* Main Footer Content */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-10 lg:gap-8 items-start pb-12">
+          {/* 1. Brand & Value Proposition */}
+          <div className="md:col-span-5 lg:col-span-4 space-y-5">
+            <Logo size={{ w: 118, h: 20 }} />
+            <p className="text-[15px] sm:text-[16px] text-[var(--light-text-karmax)] leading-relaxed max-w-xs">
+              Materia prima de la mejor calidad
+              <br className="hidden sm:inline" /> a precios incomparables.
             </p>
           </div>
 
-          {/* Navigation Links */}
-          <div>
-            <h4 className="font-bold text-slate-900 text-sm mb-4 tracking-tight">Navegación</h4>
-            <ul className="space-y-2.5 text-xs sm:text-sm">
-              <li>
-                <Link href="/" className="hover:text-[#00509d] transition-colors">
-                  Inicio
-                </Link>
-              </li>
-              <li>
-                <Link href="#productos" className="hover:text-[#00509d] transition-colors">
-                  Productos
-                </Link>
-              </li>
-              <li>
-                <Link href="#quienes-somos" className="hover:text-[#00509d] transition-colors">
-                  Quiénes somos
-                </Link>
-              </li>
-              <li>
-                <Link href="#contacto" className="hover:text-[#00509d] transition-colors">
-                  Contacto
-                </Link>
-              </li>
-            </ul>
+          {/* 2. Navigation Links */}
+          <div className="md:col-span-3 lg:col-span-3 md:justify-self-center">
+            <nav className="flex flex-col space-y-5">
+              <Link
+                href="/"
+                className="text-[16px] font-medium text-[var(--blue-karmax)] hover:text-[var(--green-karmax)] transition-colors w-fit"
+              >
+                Home
+              </Link>
+              <Link
+                href="#categories"
+                className="text-[16px] font-medium text-[var(--blue-karmax)] hover:text-[var(--green-karmax)] transition-colors w-fit"
+              >
+                Productos
+              </Link>
+              <Link
+                href="#quienes-somos"
+                className="text-[16px] font-medium text-[var(--blue-karmax)] hover:text-[var(--green-karmax)] transition-colors w-fit"
+              >
+                Quiénes Somos
+              </Link>
+              <Link
+                href="#contacto"
+                className="text-[16px] font-medium text-[var(--blue-karmax)] hover:text-[var(--green-karmax)] transition-colors w-fit"
+              >
+                Contacto
+              </Link>
+            </nav>
           </div>
 
-          {/* Contact Details */}
-          <div className="space-y-3">
-            <h4 className="font-bold text-slate-900 text-sm mb-4 tracking-tight">Contacto</h4>
-            <div className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-600">
-              <MapPin className="w-4 h-4 text-[#22c55e] flex-shrink-0 mt-0.5" />
-              <span>Calle Zaragoza 118, 77500 Col. Centro, Cancún, Quintana Roo, México</span>
+          {/* 3. Contact Details & Social Networks */}
+          <div className="md:col-span-4 lg:col-span-5 flex flex-col space-y-4 lg:pl-10">
+            {/* Address */}
+            <div className="flex items-start gap-3 text-[var(--text-karmax)] text-[15px] leading-snug">
+              <Icon
+                name="map-pin"
+                size={22}
+                className="text-[var(--green-karmax)] flex-shrink-0 mt-0.5"
+              />
+              <div>
+                <p>Calle Zaragoza PTE. #313, Col. Centro</p>
+                <p>Cadereyta Jimenez Nuevo León, CP 67480</p>
+              </div>
             </div>
-            <div className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-600">
-              <Phone className="w-4 h-4 text-[#22c55e] flex-shrink-0" />
-              <a href="tel:+529988436581" className="hover:text-[#00509d] transition-colors">
-                +52 998 843 6581
+
+            {/* Phone */}
+            <div className="flex items-center gap-3 text-[var(--text-karmax)] text-[15px]">
+              <Icon
+                name="phone"
+                size={22}
+                className="text-[var(--green-karmax)] flex-shrink-0"
+              />
+              <a
+                href="tel:+528186590941"
+                className="hover:text-[var(--green-karmax)] transition-colors"
+              >
+                +52 81 8659 0941
               </a>
             </div>
-            <div className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-600">
-              <Mail className="w-4 h-4 text-[#22c55e] flex-shrink-0" />
-              <a href="mailto:contacto@karmax.mx" className="hover:text-[#00509d] transition-colors">
+
+            {/* Email */}
+            <div className="flex items-center gap-3 text-[var(--text-karmax)] text-[15px]">
+              <Icon
+                name="mail"
+                size={22}
+                className="text-[var(--green-karmax)] flex-shrink-0"
+              />
+              <a
+                href="mailto:contacto@karmax.mx"
+                className="hover:text-[var(--green-karmax)] transition-colors"
+              >
                 contacto@karmax.mx
               </a>
             </div>
-          </div>
 
-          {/* Social Links & Community */}
-          <div>
-            <h4 className="font-bold text-slate-900 text-sm mb-4 tracking-tight">Síguenos</h4>
-            <p className="text-xs text-slate-500 mb-4">
-              Mantente al día con ofertas por mayoreo y nuevos lanzamientos institucionales.
-            </p>
-            <div className="flex items-center gap-3">
+            {/* Social Icons */}
+            <div className="flex items-center gap-3 pt-2">
               <a
                 href="https://facebook.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Facebook"
-                className="w-9 h-9 rounded-full bg-[#22c55e]/10 text-[#16a34a] hover:bg-[#22c55e] hover:text-white flex items-center justify-center transition-colors text-xs font-bold"
+                className="hover:opacity-85 hover:scale-105 transition-all"
               >
-                f
+                <Icon name="facebook" size={32} />
               </a>
               <a
-                href="https://wa.me/5215512345678"
+                href="https://tiktok.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label="WhatsApp"
-                className="w-9 h-9 rounded-full bg-[#22c55e]/10 text-[#16a34a] hover:bg-[#22c55e] hover:text-white flex items-center justify-center transition-colors"
+                aria-label="TikTok"
+                className="hover:opacity-85 hover:scale-105 transition-all"
               >
-                <MessageCircle className="w-4 h-4" />
+                <Icon name="tiktok" size={32} />
               </a>
               <a
                 href="https://linkedin.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="LinkedIn"
-                className="w-9 h-9 rounded-full bg-[#22c55e]/10 text-[#16a34a] hover:bg-[#22c55e] hover:text-white flex items-center justify-center transition-colors text-xs font-bold"
+                className="hover:opacity-85 hover:scale-105 transition-all"
               >
-                in
+                <Icon name="linkedin" size={32} />
               </a>
               <a
                 href="https://instagram.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram"
-                className="w-9 h-9 rounded-full bg-[#22c55e]/10 text-[#16a34a] hover:bg-[#22c55e] hover:text-white flex items-center justify-center transition-colors text-xs font-bold"
+                className="hover:opacity-85 hover:scale-105 transition-all"
               >
-                ig
+                <Icon name="instagram" size={32} />
               </a>
             </div>
           </div>
         </div>
 
         {/* Bottom Legal bar */}
-        <div className="mt-12 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-4">
-          <p>© {new Date().getFullYear()} Karmax. Todos los derechos reservados.</p>
-          <div className="flex space-x-6">
-            <Link href="#privacidad" className="hover:text-slate-600 transition-colors">
+        <div className="border-t border-[#3a424c33] border-opacity-20 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="copy text-[var(--light-text-karmax)]">© {new Date().getFullYear()} KARMAX. Todos los derechos reservados.</p>
+          <div className="flex items-center gap-2">
+            <Link
+              href="#privacidad"
+              className="text-[14px] sm:text-[14px] text-[var(--light-text-karmax)] hover:text-[var(--blue-karmax)] transition-colors"
+            >
               Política de privacidad
             </Link>
-            <Link href="#terminos" className="hover:text-slate-600 transition-colors">
+            <span className="text-slate-400">|</span>
+            <Link
+              href="#terminos"
+              className="hover:text-[var(--blue-karmax)] transition-colors"
+            >
               Términos y condiciones
             </Link>
           </div>
@@ -127,3 +158,4 @@ export const Footer: React.FC = () => {
     </footer>
   );
 };
+
