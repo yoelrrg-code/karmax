@@ -9,9 +9,9 @@
   --dark-blue-karmax: #10243A;
   --green-karmax: #16C24A;
   --green-hover-karmax: #12AE47;
-  --light-bg-karmax: #F0F6F8;
+  --light-bg-karmax: #F0F6F9;
   --white-karmax: #FFFFFF;
-  --text-karmax: #333333;
+  --text-karmax: #3A424C;
   --light-text-karmax: #566371;
   --bg-gradient-light-blue: linear-gradient(180deg, #F0F6F8 100%, #FFFFFF 0%);
 }
@@ -33,6 +33,10 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-poppins), sans-serif;
+}
+
+b, strong{
+  font-weight: 600;
 }
 
 header nav a{

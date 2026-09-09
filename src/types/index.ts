@@ -34,3 +34,38 @@ export interface QuoteStepItem {
   description: string;
   iconName: string;
 }
+
+export interface CatalogProductItem {
+  id: number;
+  name: string;
+  slug: string;
+  sku?: string | null;
+  brand?: string | null;
+  imageUrl?: string | null;
+  regularPrice?: string | null;
+  salePrice?: string | null;
+  unit?: string | null;
+  isFeatured?: boolean;
+  categoryIds?: number[];
+  industryIds?: number[];
+}
+
+export type CatalogSortOption = "name" | "price_asc" | "price_desc";
+
+export interface CatalogQueryOptions {
+  categorySlug?: string;
+  industrySlug?: string;
+  search?: string;
+  sortBy?: CatalogSortOption;
+  page?: number;
+  limit?: number;
+}
+
+export interface CatalogResponse {
+  products: CatalogProductItem[];
+  total: number;
+  page: number;
+  totalPages: number;
+  limit: number;
+}
+

@@ -41,7 +41,7 @@ export const Header: React.FC = () => {
           {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center space-x-8 text-sm font-medium text-[var(--blue-karmax)] ml-auto mr-10">
             <Link
-              href="#productos"
+              href="/productos"
               className="hover:text-[var(--green-karmax)] transition-colors"
             >
               Productos
@@ -141,7 +141,7 @@ export const Header: React.FC = () => {
       {isMobileMenuOpen && (
         <div className="sm:hidden border-t border-slate-100 bg-white px-4 pt-3 pb-6 space-y-3 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
           <Link
-            href="#productos"
+            href="/productos"
             onClick={() => setIsMobileMenuOpen(false)}
             className="block py-2 text-base font-medium text-slate-800 hover:text-[var(--green-karmax)] transition-colors"
           >

@@ -3,8 +3,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { QUOTE_STEPS } from "@/lib/data/mockData";
 
+interface QuoteStepsProps {
+  showCta?: boolean;
+}
 
-export const QuoteSteps: React.FC = () => {
+export const QuoteSteps: React.FC<QuoteStepsProps> = ({ showCta = true }) => {
   return (
     <section id="cotizacion">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -53,14 +56,16 @@ export const QuoteSteps: React.FC = () => {
         </div>
 
         {/* CTA Button */}
-        <div className="flex justify-center">
-          <Link
-            href="#productos"
-            className="btn-primary inline-flex items-center justify-center bg-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] text-white px-8 py-4 rounded-full text-base shadow-xs hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
-          >
-            Empieza a cotizar ahora
-          </Link>
-        </div>
+        {showCta && (
+          <div className="flex justify-center">
+            <Link
+              href="/productos"
+              className="btn-primary inline-flex items-center justify-center bg-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] text-white px-8 py-4 rounded-full text-base shadow-xs hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+            >
+              Empieza a cotizar ahora
+            </Link>
+          </div>
+        )}
       </div>
     </section>
   );
