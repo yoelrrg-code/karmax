@@ -330,13 +330,13 @@ export const QuoteDrawer: React.FC = () => {
 
           {/* 4. Action Buttons & Disclaimer Footer */}
           {items.length > 0 && (
-            <div className="max-w-2xl mx-auto p-6 space-y-4">
+            <div className="max-w-3xl mx-auto p-6 space-y-4">
               <div className="flex flex-col sm:flex-row items-center gap-3">
                 <button
                   type="button"
                   disabled={isSubmitting}
                   onClick={() => handleAction("save")}
-                  className="sm:flex-1 border-2 border-[var(--green-karmax)] text-[var(--green-karmax)] hover:bg-[var(--light-green-karmax)] font-bold py-3 px-5 rounded-full text-xs sm:text-sm transition-all duration-200 active:scale-98 cursor-pointer disabled:opacity-50"
+                  className="sm:flex-1 btn-primary inline-flex items-center justify-center border border-[var(--green-karmax)] bg-transparent hover:bg-[var(--green-hover-karmax)] hover:border-[var(--green-hover-karmax)] text-[var(--green-karmax)] hover:text-white px-8 py-4 rounded-full text-base shadow-xs hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
                 >
                   {isSubmitting ? "Guardando..." : "Guardar cotización"}
                 </button>
@@ -344,7 +344,7 @@ export const QuoteDrawer: React.FC = () => {
                   type="button"
                   disabled={isSubmitting}
                   onClick={() => handleAction("send")}
-                  className="sm:flex-1 bg-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] text-white font-bold py-3 px-5 rounded-full text-xs sm:text-sm transition-all duration-200 shadow-md hover:shadow-lg active:scale-98 cursor-pointer disabled:opacity-50"
+                  className="sm:flex-1 btn-primary gap-2 inline-flex items-center justify-center border border-[var(--green-karmax)] bg-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] hover:border-[var(--green-hover-karmax)] text-white px-8 py-4 rounded-full text-base shadow-xs hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
                 >
                   {isSubmitting ? "Enviando..." : "Enviar cotización a Karmax"}
                 </button>
