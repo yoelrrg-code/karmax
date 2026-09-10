@@ -18,7 +18,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const buttonText = hasSalePrice ? "Ver opciones" : "+ Agregar";
 
   return (
-    <div className="group relative bg-white rounded-2xl border border-slate-100/90 shadow-2xs hover:shadow-lg transition-all duration-300 p-4 sm:p-5 flex flex-col justify-between items-center text-center">
+    <div className="group relative bg-white rounded-2xl border border-slate-100/90 shadow-2xs hover:shadow-lg transition-all duration-300 p-4 sm:p-5 h-full flex flex-col justify-between items-center text-center">
       {/* Badge Oferta si tiene sale_price */}
       {hasSalePrice && (
         <span className="absolute top-3 left-3 z-10 text-[12px] font-bold text-white bg-[#FF6816] px-2.5 py-1 rounded-full uppercase tracking-wider shadow-xs flex items-center gap-2">
@@ -33,7 +33,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       )}
 
       {/* Imagen del producto */}
-      <div className="relative w-full h-44 sm:h-48 mb-3 flex items-center justify-center overflow-hidden">
+      <Link
+        href={`/productos/${product.slug}`}
+        className="relative w-full h-44 sm:h-48 mb-3 flex items-center justify-center overflow-hidden cursor-pointer"
+      >
         <Image
           src={product.imageUrl || "/images/products/placeholder.png"}
           alt={product.name}
@@ -41,13 +44,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           className="object-contain transition-transform duration-300 ease-out group-hover:scale-105"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
         />
-      </div>
+      </Link>
 
       {/* Info: Nombre y Precio */}
       <div className="w-full flex-1 flex flex-col justify-between items-center">
-        <h3 className="text-[16px] sm:text-[18px] font-semibold text-[var(--blue-karmax)] group-hover:text-[var(--green-hover-karmax)] transition-colors line-clamp-2 min-h-[44px] mb-2 leading-snug">
-          {product.name}
-        </h3>
+        <Link href={`/productos/${product.slug}`} className="cursor-pointer">
+          <h3 className="text-[16px] sm:text-[18px] font-semibold text-[var(--blue-karmax)] group-hover:text-[var(--green-hover-karmax)] transition-colors line-clamp-2 min-h-[44px] mb-2 leading-snug">
+            {product.name}
+          </h3>
+        </Link>
 
         <div className="mb-4">
           <span className="text-[16px] sm:text-[20px] font-semibold text-[var(--green-karmax)]">
@@ -57,7 +62,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
 
         {/* Botón de acción */}
         <Link
-          href={`#cotizar-${product.slug}`}
+          href={`/productos/${product.slug}`}
           className="inline-flex items-center justify-center bg-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] text-white text-[14px] sm:text-[16px] font-semibold py-2 px-6 rounded-full transition-all duration-200 shadow-2xs hover:shadow-sm active:scale-95 cursor-pointer w-full max-w-[160px]"
         >
           {buttonText}

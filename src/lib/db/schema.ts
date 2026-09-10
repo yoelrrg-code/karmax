@@ -39,6 +39,7 @@ export const products = mysqlTable("products", {
   stockStatus: varchar("stock_status", { length: 50 }).default("instock").notNull(),
   postStatus: varchar("post_status", { length: 50 }).default("publish").notNull(),
   postDate: timestamp("post_date"),
+  deliveryInfo: text("delivery_info"),
   isFeatured: boolean("is_featured").default(false).notNull(),
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -77,6 +78,26 @@ export const productIndustries = mysqlTable("product_industries", {
   id: serial("id").primaryKey(),
   productId: bigint("product_id", { mode: "number", unsigned: true }).notNull(),
   industryId: bigint("industry_id", { mode: "number", unsigned: true }).notNull(),
+});
+
+export const productAttributes = mysqlTable("product_attributes", {
+  id: serial("id").primaryKey(),
+  productId: bigint("product_id", { mode: "number", unsigned: true }).notNull(),
+  name: varchar("name", { length: 150 }).notNull(),
+  value: varchar("value", { length: 255 }).notNull(),
+  orderIndex: int("order_index").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const productDocuments = mysqlTable("product_documents", {
+  id: serial("id").primaryKey(),
+  productId: bigint("product_id", { mode: "number", unsigned: true }).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  fileUrl: varchar("file_url", { length: 1024 }).notNull(),
+  fileType: varchar("file_type", { length: 50 }).default("pdf").notNull(),
+  fileSize: varchar("file_size", { length: 50 }),
+  orderIndex: int("order_index").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export const quoteRequests = mysqlTable("quote_requests", {
@@ -139,6 +160,22 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   productCategories: many(productCategories),
   productIndustries: many(productIndustries),
   images: many(productImages),
+  attributes: many(productAttributes),
+  documents: many(productDocuments),
+}));
+
+export const productAttributesRelations = relations(productAttributes, ({ one }) => ({
+  product: one(products, {
+    fields: [productAttributes.productId],
+    references: [products.id],
+  }),
+}));
+
+export const productDocumentsRelations = relations(productDocuments, ({ one }) => ({
+  product: one(products, {
+    fields: [productDocuments.productId],
+    references: [products.id],
+  }),
 }));
 
 export const productImagesRelations = relations(productImages, ({ one }) => ({
@@ -169,5 +206,7 @@ export type ProductImage = typeof productImages.$inferSelect;
 export type Industry = typeof industries.$inferSelect;
 export type ProductCategory = typeof productCategories.$inferSelect;
 export type ProductIndustry = typeof productIndustries.$inferSelect;
+export type ProductAttribute = typeof productAttributes.$inferSelect;
+export type ProductDocument = typeof productDocuments.$inferSelect;
 export type QuoteRequest = typeof quoteRequests.$inferSelect;
 export type QuoteItem = typeof quoteItems.$inferSelect;

@@ -146,40 +146,60 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
     if (totalPages <= 1) return null;
 
     const pages: (number | string)[] = [];
-    if (totalPages <= 7) {
+    if (totalPages <= 9) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
-      pages.push(1);
-      if (page > 3) pages.push("...");
-
-      const start = Math.max(2, page - 1);
-      const end = Math.min(totalPages - 1, page + 1);
-
-      for (let i = start; i <= end; i++) {
-        pages.push(i);
+      if (page <= 4) {
+        for (let i = 1; i <= 5; i++) pages.push(i);
+        pages.push("...");
+        pages.push(totalPages - 2, totalPages - 1, totalPages);
+      } else if (page >= totalPages - 3) {
+        pages.push(1, 2, 3);
+        pages.push("...");
+        for (let i = totalPages - 4; i <= totalPages; i++) pages.push(i);
+      } else {
+        pages.push(1, 2);
+        pages.push("...");
+        pages.push(page - 1, page, page + 1);
+        pages.push("...");
+        pages.push(totalPages - 1, totalPages);
       }
-
-      if (page < totalPages - 2) pages.push("...");
-      pages.push(totalPages);
     }
 
     return (
-      <nav aria-label="Paginación de productos" className="flex items-center justify-center gap-1.5 mt-12 mb-8 select-none">
+      <nav
+        aria-label="Paginación de productos"
+        className="flex items-center justify-center flex-wrap gap-2 mt-12 mb-8 select-none"
+      >
         {/* Anterior */}
         <button
           type="button"
           onClick={() => handlePageChange(page - 1)}
           disabled={page === 1}
           aria-label="Página anterior"
-          className="w-9 h-9 rounded-full flex items-center justify-center border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[var(--green-karmax)] shadow-2xs hover:shadow-xs disabled:opacity-40 disabled:pointer-events-none transition-all cursor-pointer mr-3 sm:mr-6"
         >
-          ‹
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
         </button>
 
         {pages.map((p, idx) => {
           if (p === "...") {
             return (
-              <span key={`dots-${idx}`} className="w-8 text-center text-slate-400">
+              <span
+                key={`dots-${idx}`}
+                className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-sm font-semibold text-[var(--dark-blue-karmax)] select-none shadow-2xs"
+              >
                 ...
               </span>
             );
@@ -192,10 +212,10 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
               type="button"
               onClick={() => handlePageChange(pageNumber)}
               aria-current={isActive ? "page" : undefined}
-              className={`w-9 h-9 rounded-full text-sm font-semibold transition-all cursor-pointer ${
+              className={`w-10 h-10 rounded-lg text-[16px] font-semibold transition-all cursor-pointer flex items-center justify-center ${
                 isActive
-                  ? "bg-[var(--green-karmax)] text-white shadow-xs"
-                  : "text-slate-700 hover:bg-slate-100"
+                  ? "bg-[var(--green-karmax)] text-white shadow-2xs font-bold"
+                  : "bg-white text-[var(--dark-blue-karmax)] hover:bg-slate-50 hover:text-[var(--green-karmax)] shadow-2xs"
               }`}
             >
               {pageNumber}
@@ -209,9 +229,20 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
           onClick={() => handlePageChange(page + 1)}
           disabled={page === totalPages}
           aria-label="Página siguiente"
-          className="w-9 h-9 rounded-full flex items-center justify-center border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+          className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-[var(--green-karmax)] shadow-2xs hover:shadow-xs disabled:opacity-40 disabled:pointer-events-none transition-all cursor-pointer ml-3 sm:ml-6"
         >
-          ›
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M9 18l6-6-6-6" />
+          </svg>
         </button>
       </nav>
     );
@@ -230,7 +261,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
       <div ref={gridTopRef} />
 
       {/* 2. Contenedor principal con filtros y grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-10 pb-20">
         {/* Layout de dos columnas: Sidebar + Grid */}
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-10 items-start">
           {/* Columna Izquierda: Filtros */}

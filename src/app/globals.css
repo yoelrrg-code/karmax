@@ -8,6 +8,7 @@
   --lighter-blue-karmax: #B3EAF7;
   --dark-blue-karmax: #10243A;
   --green-karmax: #16C24A;
+  --light-green-karmax: #ECFAF1;
   --green-hover-karmax: #12AE47;
   --light-bg-karmax: #F0F6F9;
   --white-karmax: #FFFFFF;
@@ -75,7 +76,7 @@ h3.text-shadow{
   text-shadow: 0px 0px 24px 0px var(--white-karmax);
 }
 
-p{
+p, li{
   font-weight: 400;
   font-size: 16px;
   line-height: 24px;
@@ -153,4 +154,44 @@ p{
 
 #contacto .copy{
   font-size: 14px;
+}
+
+#product-details h2{
+  color: var(--text-karmax);
+  font-weight: 600;
+  font-size: 32px;
+  line-height: 40px;
+  letter-spacing: -2%;
+  margin-bottom: 10px;
+}
+
+#product-details h3{
+  margin-bottom: 10px;
+}
+
+#product-details #product-description p, #product-details #product-description li{
+  margin-bottom: 20px;
+}
+
+#product-details #delivery-info ul{
+  margin-top: 10px;
+}
+
+#product-details #delivery-info li{
+  list-style: none;
+  position: relative;
+  padding-left: 25px;
+  margin-bottom: 5px;
+}
+
+#product-details #delivery-info li::before{
+  content: "";
+  position: absolute;
+  left: 0px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  background: url('/icons/check-mark.svg') center center no-repeat;
+  background-size: contain;
 }

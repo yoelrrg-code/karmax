@@ -69,3 +69,35 @@ export interface CatalogResponse {
   limit: number;
 }
 
+export interface ProductAttributeItem {
+  id: number;
+  productId: number;
+  name: string;
+  value: string;
+  orderIndex?: number;
+}
+
+export interface ProductDocumentItem {
+  id: number;
+  productId: number;
+  title: string;
+  fileUrl: string;
+  fileType: string;
+  fileSize?: string | null;
+  orderIndex?: number;
+}
+
+export interface ProductDetailItem extends CatalogProductItem {
+  categoryId?: number;
+  categoryName?: string;
+  categorySlug?: string;
+  description?: string | null;
+  shortDescription?: string | null;
+  deliveryInfo?: string | null;
+  stockStatus?: string;
+  galleryImages?: string[];
+  attributes: Record<string, string[]>;
+  rawAttributes?: ProductAttributeItem[];
+  documents: ProductDocumentItem[];
+}
+

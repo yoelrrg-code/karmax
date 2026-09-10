@@ -5,6 +5,9 @@ import {
   products,
   productCategories,
   productIndustries,
+  productAttributes,
+  productDocuments,
+  productImages,
 } from "@/lib/db";
 import { CATEGORIES_DATA, INDUSTRIES_DATA } from "@/lib/data/mockData";
 import type {
@@ -13,6 +16,9 @@ import type {
   CatalogProductItem,
   CatalogQueryOptions,
   CatalogResponse,
+  ProductAttributeItem,
+  ProductDocumentItem,
+  ProductDetailItem,
 } from "@/types";
 import { asc, desc, eq, and, or, like, inArray, sql } from "drizzle-orm";
 
@@ -246,5 +252,195 @@ export async function getProductsCatalog(
       totalPages: 0,
       limit,
     };
+  }
+}
+
+/**
+ * Obtiene los atributos asignados a un producto.
+ */
+export async function getProductAttributes(productId: number): Promise<ProductAttributeItem[]> {
+  try {
+    const rows = await db
+      .select({
+        id: productAttributes.id,
+        productId: productAttributes.productId,
+        name: productAttributes.name,
+        value: productAttributes.value,
+        orderIndex: productAttributes.orderIndex,
+      })
+      .from(productAttributes)
+      .where(eq(productAttributes.productId, productId))
+      .orderBy(asc(productAttributes.orderIndex), asc(productAttributes.id));
+
+    return rows;
+  } catch (error) {
+    console.error(`Error al obtener atributos del producto ${productId}:`, error);
+    return [];
+  }
+}
+
+/**
+ * Obtiene los documentos PDF (fichas técnicas, MSDS, etc.) asignados a un producto.
+ */
+export async function getProductDocuments(productId: number): Promise<ProductDocumentItem[]> {
+  try {
+    const rows = await db
+      .select({
+        id: productDocuments.id,
+        productId: productDocuments.productId,
+        title: productDocuments.title,
+        fileUrl: productDocuments.fileUrl,
+        fileType: productDocuments.fileType,
+        fileSize: productDocuments.fileSize,
+        orderIndex: productDocuments.orderIndex,
+      })
+      .from(productDocuments)
+      .where(eq(productDocuments.productId, productId))
+      .orderBy(asc(productDocuments.orderIndex), asc(productDocuments.id));
+
+    return rows;
+  } catch (error) {
+    console.error(`Error al obtener documentos del producto ${productId}:`, error);
+    return [];
+  }
+}
+
+/**
+ * Obtiene el detalle completo de un producto por su slug, incluyendo
+ * información de entrega, atributos y documentos PDF asociados.
+ */
+export async function getProductBySlug(slug: string): Promise<ProductDetailItem | null> {
+  try {
+    const [row] = await db
+      .select({
+        id: products.id,
+        categoryId: products.categoryId,
+        categoryName: categories.name,
+        categorySlug: categories.slug,
+        name: products.name,
+        slug: products.slug,
+        sku: products.sku,
+        brand: products.brand,
+        unit: products.unit,
+        shortDescription: products.shortDescription,
+        description: products.description,
+        deliveryInfo: products.deliveryInfo,
+        imageUrl: products.imageUrl,
+        regularPrice: products.regularPrice,
+        salePrice: products.salePrice,
+        stockStatus: products.stockStatus,
+        isFeatured: products.isFeatured,
+      })
+      .from(products)
+      .leftJoin(categories, eq(products.categoryId, categories.id))
+      .where(and(eq(products.slug, slug), eq(products.isActive, true)))
+      .limit(1);
+
+    if (!row) return null;
+
+    const [rawAttrs, docs, galleryRows] = await Promise.all([
+      getProductAttributes(row.id),
+      getProductDocuments(row.id),
+      db
+        .select({
+          url: productImages.url,
+        })
+        .from(productImages)
+        .where(eq(productImages.productId, row.id))
+        .orderBy(desc(productImages.isPrimary), asc(productImages.orderIndex)),
+    ]);
+
+    // Agrupar atributos por nombre (ej. { "Presentación": ["1L", "5L"], "Color": ["Azul"] })
+    const attributes: Record<string, string[]> = {};
+    for (const attr of rawAttrs) {
+      if (!attributes[attr.name]) {
+        attributes[attr.name] = [];
+      }
+      attributes[attr.name].push(attr.value);
+    }
+
+    const galleryImages: string[] = galleryRows
+      .map((g) => g.url)
+      .filter((url): url is string => Boolean(url));
+
+    return {
+      id: row.id,
+      categoryId: row.categoryId,
+      categoryName: row.categoryName || "Limpieza general",
+      categorySlug: row.categorySlug || "limpieza-general",
+      name: row.name,
+      slug: row.slug,
+      sku: row.sku || `KMX-${row.id.toString().padStart(4, "0")}`,
+      brand: row.brand || "KARMAX",
+      imageUrl: row.imageUrl || "/images/products/placeholder.png",
+      regularPrice: row.regularPrice ? String(row.regularPrice) : null,
+      salePrice: row.salePrice && Number(row.salePrice) > 0 ? String(row.salePrice) : null,
+      unit: row.unit,
+      isFeatured: row.isFeatured,
+      shortDescription: row.shortDescription,
+      description: row.description,
+      deliveryInfo: row.deliveryInfo,
+      stockStatus: row.stockStatus,
+      galleryImages: galleryImages.length > 0 ? galleryImages : [row.imageUrl || "/images/products/placeholder.png"],
+      attributes,
+      rawAttributes: rawAttrs,
+      documents: docs,
+    };
+  } catch (error) {
+    console.error(`Error al obtener detalle del producto ${slug}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Obtiene productos relacionados (misma categoría o complementarios) para el slider.
+ */
+export async function getRelatedProducts(
+  productId: number,
+  categoryId?: number,
+  limit: number = 8
+): Promise<CatalogProductItem[]> {
+  try {
+    const conditions = [
+      eq(products.isActive, true),
+      sql`${products.id} != ${productId}`,
+    ];
+
+    if (categoryId) {
+      conditions.push(eq(products.categoryId, categoryId));
+    }
+
+    const rows = await db
+      .select({
+        id: products.id,
+        name: products.name,
+        slug: products.slug,
+        sku: products.sku,
+        brand: products.brand,
+        imageUrl: products.imageUrl,
+        regularPrice: products.regularPrice,
+        salePrice: products.salePrice,
+        unit: products.unit,
+        isFeatured: products.isFeatured,
+      })
+      .from(products)
+      .where(and(...conditions))
+      .limit(limit);
+
+    return rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      slug: r.slug,
+      sku: r.sku,
+      brand: r.brand,
+      imageUrl: r.imageUrl || "/images/products/placeholder.png",
+      regularPrice: r.regularPrice ? String(r.regularPrice) : null,
+      salePrice: r.salePrice && Number(r.salePrice) > 0 ? String(r.salePrice) : null,
+      unit: r.unit,
+      isFeatured: r.isFeatured,
+    }));
+  } catch (error) {
+    console.error("Error al obtener productos relacionados:", error);
+    return [];
   }
 }
