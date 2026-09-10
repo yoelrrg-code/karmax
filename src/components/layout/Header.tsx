@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/common/Logo";
 import { Icon } from "@/components/icons";
@@ -8,12 +8,16 @@ import { Menu, X } from "lucide-react";
 import { useQuote } from "@/context/QuoteContext";
 import { useAuth } from "@/context/AuthContext";
 
+const emptySubscribe = () => () => {};
+
 export const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "+528186590941";
 
   const [isScrolled, setIsScrolled] = useState(false);
   const { totalItemsCount, openDrawer, notification, dismissNotification } = useQuote();
+  const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
+  const displayCount = isMounted ? totalItemsCount : 0;
   const { user, openAuthModal, logout } = useAuth();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
@@ -110,11 +114,18 @@ export const Header: React.FC = () => {
 
               {/* User dropdown if logged in */}
               {user && isUserMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in zoom-in-95">
+                <div className="absolute right-0 mt-2 w-52 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in zoom-in-95">
                   <div className="px-4 py-2 border-b border-slate-100">
                     <p className="text-xs font-bold text-slate-800 truncate">{user.name}</p>
                     <p className="text-[11px] text-slate-400 truncate">{user.email}</p>
                   </div>
+                  <Link
+                    href="/mis-cotizaciones"
+                    onClick={() => setIsUserMenuOpen(false)}
+                    className="flex items-center gap-2 px-4 py-2.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors font-medium border-b border-slate-100"
+                  >
+                    <span>📋 Mis cotizaciones</span>
+                  </Link>
                   <button
                     type="button"
                     onClick={() => {
@@ -136,7 +147,7 @@ export const Header: React.FC = () => {
                 onClick={openDrawer}
                 aria-label="Abrir cotizador"
                 className={`group flex items-center justify-center p-2 h-10 w-10 rounded-full transition-all duration-300 active:scale-95 shadow-xs hover:shadow-md relative cursor-pointer ${
-                  totalItemsCount > 0
+                  displayCount > 0
                     ? "bg-[var(--light-bg-karmax)] text-[#FF6816]"
                     : "text-[var(--green-karmax)] hover:text-[var(--white-karmax)] bg-[var(--light-bg-karmax)] hover:bg-[var(--green-hover-karmax)]"
                 }`}
@@ -145,12 +156,12 @@ export const Header: React.FC = () => {
                   name="cotiza"
                   size={18}
                   className={`transition-transform duration-300 ease-out group-hover:scale-110 group-hover:-translate-y-0.5 ${
-                    totalItemsCount > 0 ? "text-[#FF6816]" : ""
+                    displayCount > 0 ? "text-[#FF6816]" : ""
                   }`}
                 />
-                {totalItemsCount > 0 ? (
+                {displayCount > 0 ? (
                   <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-[#FF6816] text-white text-[11px] font-bold px-2 py-0.5 min-w-[24px] h-[18px] rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110 shadow-xs leading-none">
-                    {totalItemsCount}
+                    {displayCount}
                   </span>
                 ) : (
                   <span className="absolute top-1 right-1 bg-[#22c55e] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110 shadow-xs">
@@ -198,7 +209,7 @@ export const Header: React.FC = () => {
               type="button"
               onClick={openDrawer}
               className={`group relative p-2 rounded-full transition-transform active:scale-95 cursor-pointer ${
-                totalItemsCount > 0 ? "bg-[#EFF3F6] text-[#FF6816]" : "text-slate-700"
+                displayCount > 0 ? "bg-[#EFF3F6] text-[#FF6816]" : "text-slate-700"
               }`}
               aria-label="Abrir cotizador"
             >
@@ -206,12 +217,12 @@ export const Header: React.FC = () => {
                 name="cotiza"
                 size={22}
                 className={`transition-transform duration-300 ease-out group-hover:scale-110 ${
-                  totalItemsCount > 0 ? "text-[#FF6816]" : ""
+                  displayCount > 0 ? "text-[#FF6816]" : ""
                 }`}
               />
-              {totalItemsCount > 0 ? (
+              {displayCount > 0 ? (
                 <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 bg-[#FF6816] text-white text-[10px] font-bold px-1.5 py-0.5 min-w-[20px] h-[16px] rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110 leading-none">
-                  {totalItemsCount}
+                  {displayCount}
                 </span>
               ) : (
                 <span className="absolute top-1 right-1 bg-[#22c55e] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
@@ -258,6 +269,15 @@ export const Header: React.FC = () => {
           >
             Contacto
           </Link>
+          {user && (
+            <Link
+              href="/mis-cotizaciones"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="block py-2 text-base font-semibold text-[var(--blue-karmax)] hover:text-[var(--green-karmax)] transition-colors border-t border-slate-100 pt-3"
+            >
+              📋 Mis cotizaciones
+            </Link>
+          )}
           <div className="pt-2">
             <a
               href={`https://wa.me/${whatsappNumber.replace(/[^0-9]/g, "")}`}

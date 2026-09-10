@@ -1,12 +1,20 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useSyncExternalStore } from "react";
 import Image from "next/image";
 import { useQuote } from "@/context/QuoteContext";
 import { useAuth } from "@/context/AuthContext";
 import { Trash2, X } from "lucide-react";
 
+const emptySubscribe = () => () => {};
+
 export const QuoteDrawer: React.FC = () => {
+  const isMounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
+
   const {
     items,
     updateQuantity,
@@ -18,7 +26,9 @@ export const QuoteDrawer: React.FC = () => {
     comments,
     setComments,
     quoteNumber,
-    refreshQuoteNumber,
+    setQuoteNumber,
+    savedQuoteId,
+    setSavedQuoteId,
     isDrawerOpen,
     closeDrawer,
   } = useQuote();
@@ -86,6 +96,7 @@ export const QuoteDrawer: React.FC = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          savedQuoteId,
           quoteNumber,
           notes: comments,
           subtotal,
@@ -108,7 +119,7 @@ export const QuoteDrawer: React.FC = () => {
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.error || "Hubo un error al guardar la cotización.");
+        alert(data.error || "Hubo un error al procesar la cotización.");
         return;
       }
 
@@ -118,13 +129,16 @@ export const QuoteDrawer: React.FC = () => {
           : `✓ Cotización #${data.quoteNumber || quoteNumber} enviada a Karmax con éxito.`
       );
 
-      // Refresh to the next consecutive quote number from DB
-      await refreshQuoteNumber();
-
-      if (action === "send") {
-        setTimeout(() => {
-          clearQuote();
-        }, 2500);
+      if (action === "save") {
+        if (data.quoteId) {
+          setSavedQuoteId(data.quoteId);
+        }
+        if (data.quoteNumber) {
+          setQuoteNumber(data.quoteNumber);
+        }
+      } else {
+        // Enviar a Karmax: se limpia y desaparece del drawer
+        clearQuote();
       }
     } catch (e) {
       console.error("Error saving quote:", e);
@@ -133,6 +147,8 @@ export const QuoteDrawer: React.FC = () => {
       setIsSubmitting(false);
     }
   };
+
+  if (!isMounted) return null;
 
   return (
     <div
@@ -158,10 +174,16 @@ export const QuoteDrawer: React.FC = () => {
           {/* 1. Header */}
           <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
             <div>
-              <h3 className="font-semibold text-[var(--dark-blue-karmax)]">
+              <h3
+                suppressHydrationWarning
+                className="font-semibold text-[var(--dark-blue-karmax)]"
+              >
                 Cotización #{quoteNumber}
               </h3>
-              <p className="!text-[14px] text-[var(--text-karmax)] font-normal mt-0.5">
+              <p
+                suppressHydrationWarning
+                className="!text-[14px] text-[var(--text-karmax)] font-normal mt-0.5"
+              >
                 {capitalizedDate}
               </p>
             </div>

@@ -2,11 +2,31 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import type { QuoteCartItem, CatalogProductItem } from "@/types";
+import { useAuth } from "./AuthContext";
 
 export interface QuoteNotification {
   visible: boolean;
   type: "added" | "removed";
   productName?: string;
+}
+
+export interface SavedQuotePayload {
+  id: number;
+  quoteNumber?: string | null;
+  notes?: string | null;
+  subtotal?: string | number | null;
+  tax?: string | number | null;
+  total?: string | number | null;
+  items?: Array<{
+    productId?: number | null;
+    productName: string;
+    presentation?: string | null;
+    sku?: string | null;
+    imageUrl?: string | null;
+    quantity: number;
+    unitPrice: string | number;
+    totalPrice?: string | number;
+  }>;
 }
 
 interface QuoteContextType {
@@ -19,6 +39,9 @@ interface QuoteContextType {
   updateQuantity: (productId: number, presentation: string, quantity: number) => void;
   removeItem: (productId: number, presentation: string) => void;
   clearQuote: () => void;
+  loadSavedQuote: (savedQuote: SavedQuotePayload) => void;
+  savedQuoteId: number | null;
+  setSavedQuoteId: (id: number | null) => void;
   getItemQuantity: (productId: number, presentation?: string) => number;
   totalItemsCount: number;
   subtotal: number;
@@ -27,6 +50,7 @@ interface QuoteContextType {
   comments: string;
   setComments: (val: string) => void;
   quoteNumber: string;
+  setQuoteNumber: (val: string) => void;
   refreshQuoteNumber: () => Promise<string>;
   isDrawerOpen: boolean;
   openDrawer: () => void;
@@ -41,6 +65,10 @@ const LOCAL_STORAGE_KEY = "karmax_quote_items_v1";
 const LOCAL_STORAGE_QUOTE_NUM = "karmax_quote_number_v1";
 
 export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
+  const [savedQuoteId, setSavedQuoteId] = useState<number | null>(null);
+  const savedQuoteIdRef = useRef<number | null>(null);
+
   const [items, setItems] = useState<QuoteCartItem[]>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -58,9 +86,9 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (typeof window !== "undefined") {
       try {
         const savedNum = localStorage.getItem(LOCAL_STORAGE_QUOTE_NUM);
-        if (savedNum && savedNum !== "0003735") return savedNum;
-      } catch (e) {
-        console.warn("Could not load quote number from localStorage:", e);
+        if (savedNum) return savedNum;
+      } catch {
+        // ignore
       }
     }
     return "0000001";
@@ -205,10 +233,102 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     [showNotification]
   );
 
+  const refreshQuoteNumber = useCallback(async () => {
+    try {
+      const res = await fetch("/api/quotes/next-number");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.nextQuoteNumber) {
+          setQuoteNumber(data.nextQuoteNumber);
+          if (typeof window !== "undefined") {
+            localStorage.setItem(LOCAL_STORAGE_QUOTE_NUM, data.nextQuoteNumber);
+          }
+          return data.nextQuoteNumber as string;
+        }
+      }
+    } catch (err) {
+      console.warn("Could not fetch next quote number:", err);
+    }
+    return "0000001";
+  }, []);
+
+  const loadSavedQuote = useCallback((quote: SavedQuotePayload) => {
+    if (!quote) return;
+    setSavedQuoteId(quote.id);
+    savedQuoteIdRef.current = quote.id;
+    if (quote.quoteNumber) {
+      setQuoteNumber(quote.quoteNumber);
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(LOCAL_STORAGE_QUOTE_NUM, quote.quoteNumber);
+        } catch {
+          // ignore
+        }
+      }
+    }
+    if (quote.notes) {
+      setComments(quote.notes);
+    }
+    if (Array.isArray(quote.items)) {
+      const mappedItems: QuoteCartItem[] = quote.items.map((it) => ({
+        productId: it.productId || 0,
+        slug: "",
+        name: it.productName,
+        sku: it.sku || null,
+        imageUrl: it.imageUrl || null,
+        presentation: it.presentation || "Estándar",
+        unitPrice: Number(it.unitPrice) || 0,
+        quantity: Number(it.quantity) || 1,
+      }));
+      setItems(mappedItems);
+    }
+  }, []);
+
   const clearQuote = useCallback(() => {
     setItems([]);
     setComments("");
-  }, []);
+    setSavedQuoteId(null);
+    savedQuoteIdRef.current = null;
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+        localStorage.removeItem(LOCAL_STORAGE_QUOTE_NUM);
+      } catch {
+        // ignore
+      }
+    }
+    refreshQuoteNumber();
+  }, [refreshQuoteNumber]);
+
+  // Sincronizar cotización guardada al iniciar sesión o limpiar al cerrar sesión
+  const prevUserIdRef = useRef<number | null | undefined>(undefined);
+
+  useEffect(() => {
+    const currentUserId = user?.id || null;
+    if (prevUserIdRef.current === currentUserId) return;
+    const previousId = prevUserIdRef.current;
+    prevUserIdRef.current = currentUserId;
+
+    if (currentUserId) {
+      // Usuario inició sesión: buscar si tiene cotización guardada
+      let ignore = false;
+      fetch("/api/quotes/saved")
+        .then((res) => res.json())
+        .then((data) => {
+          if (!ignore && data.savedQuote) {
+            loadSavedQuote(data.savedQuote);
+          }
+        })
+        .catch((err) => console.warn("Error loading saved quote for user:", err));
+
+      return () => {
+        ignore = true;
+      };
+    } else if (currentUserId === null && previousId !== undefined) {
+      // Usuario cerró sesión: limpiar cotización
+      clearQuote();
+    }
+  }, [user, loadSavedQuote, clearQuote]);
 
   const getItemQuantity = useCallback(
     (productId: number, presentation?: string): number => {
@@ -241,33 +361,15 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return subtotal + tax;
   }, [subtotal, tax]);
 
-  const refreshQuoteNumber = useCallback(async () => {
-    try {
-      const res = await fetch("/api/quotes/next-number");
-      if (res.ok) {
-        const data = await res.json();
-        if (data.nextQuoteNumber) {
-          setQuoteNumber(data.nextQuoteNumber);
-          if (typeof window !== "undefined") {
-            localStorage.setItem(LOCAL_STORAGE_QUOTE_NUM, data.nextQuoteNumber);
-          }
-          return data.nextQuoteNumber as string;
-        }
-      }
-    } catch (err) {
-      console.warn("Could not fetch next quote number:", err);
-    }
-    return "0000001";
-  }, []);
-
   useEffect(() => {
     let ignore = false;
     async function fetchInitialNumber() {
+      if (savedQuoteIdRef.current) return;
       try {
         const res = await fetch("/api/quotes/next-number");
         if (res.ok) {
           const data = await res.json();
-          if (!ignore && data.nextQuoteNumber) {
+          if (!ignore && data.nextQuoteNumber && !savedQuoteIdRef.current) {
             setQuoteNumber(data.nextQuoteNumber);
             if (typeof window !== "undefined") {
               localStorage.setItem(LOCAL_STORAGE_QUOTE_NUM, data.nextQuoteNumber);
@@ -284,11 +386,12 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, []);
 
-  const openDrawer = () => {
-    refreshQuoteNumber();
+  const openDrawer = useCallback(() => {
     setIsDrawerOpen(true);
-  };
-  const closeDrawer = () => setIsDrawerOpen(false);
+  }, []);
+  const closeDrawer = useCallback(() => {
+    setIsDrawerOpen(false);
+  }, []);
 
   return (
     <QuoteContext.Provider
@@ -298,6 +401,9 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateQuantity,
         removeItem,
         clearQuote,
+        loadSavedQuote,
+        savedQuoteId,
+        setSavedQuoteId,
         getItemQuantity,
         totalItemsCount,
         subtotal,
@@ -306,6 +412,7 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         comments,
         setComments,
         quoteNumber,
+        setQuoteNumber,
         refreshQuoteNumber,
         isDrawerOpen,
         openDrawer,

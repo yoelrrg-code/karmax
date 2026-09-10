@@ -140,7 +140,7 @@ export const AuthModal: React.FC = () => {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ej. Juan Pérez"
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-[var(--green-karmax)] focus:ring-2 focus:ring-[var(--green-karmax)]/20 outline-none text-sm transition-all"
+                  className="text-[var(--text-karmax)] w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-[var(--green-karmax)] focus:ring-2 focus:ring-[var(--green-karmax)]/20 outline-none text-sm transition-all"
                 />
               </div>
 
@@ -153,7 +153,7 @@ export const AuthModal: React.FC = () => {
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
                   placeholder="Ej. Limpieza del Norte S.A."
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-[var(--green-karmax)] focus:ring-2 focus:ring-[var(--green-karmax)]/20 outline-none text-sm transition-all"
+                  className="text-[var(--text-karmax)] w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-[var(--green-karmax)] focus:ring-2 focus:ring-[var(--green-karmax)]/20 outline-none text-sm transition-all"
                 />
               </div>
 
@@ -167,7 +167,7 @@ export const AuthModal: React.FC = () => {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="Ej. 81 1234 5678"
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-[var(--green-karmax)] focus:ring-2 focus:ring-[var(--green-karmax)]/20 outline-none text-sm transition-all"
+                  className="text-[var(--text-karmax)] w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-[var(--green-karmax)] focus:ring-2 focus:ring-[var(--green-karmax)]/20 outline-none text-sm transition-all"
                 />
               </div>
             </>
@@ -183,7 +183,7 @@ export const AuthModal: React.FC = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="tu@empresa.com"
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-[var(--green-karmax)] focus:ring-2 focus:ring-[var(--green-karmax)]/20 outline-none text-sm transition-all"
+              className="text-[var(--text-karmax)] w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-[var(--green-karmax)] focus:ring-2 focus:ring-[var(--green-karmax)]/20 outline-none text-sm transition-all"
             />
           </div>
 
@@ -197,7 +197,7 @@ export const AuthModal: React.FC = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-[var(--green-karmax)] focus:ring-2 focus:ring-[var(--green-karmax)]/20 outline-none text-sm transition-all"
+              className="text-[var(--text-karmax)] w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-[var(--green-karmax)] focus:ring-2 focus:ring-[var(--green-karmax)]/20 outline-none text-sm transition-all"
             />
           </div>
 
