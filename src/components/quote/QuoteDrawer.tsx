@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { useQuote } from "@/context/QuoteContext";
 import { useAuth } from "@/context/AuthContext";
-import { Trash2, X, RefreshCw } from "lucide-react";
+import { Trash2, X } from "lucide-react";
 
 export const QuoteDrawer: React.FC = () => {
   const {
@@ -18,6 +18,7 @@ export const QuoteDrawer: React.FC = () => {
     comments,
     setComments,
     quoteNumber,
+    refreshQuoteNumber,
     isDrawerOpen,
     closeDrawer,
   } = useQuote();
@@ -116,6 +117,9 @@ export const QuoteDrawer: React.FC = () => {
           ? `✓ Cotización #${data.quoteNumber || quoteNumber} guardada en tu cuenta de cliente.`
           : `✓ Cotización #${data.quoteNumber || quoteNumber} enviada a Karmax con éxito.`
       );
+
+      // Refresh to the next consecutive quote number from DB
+      await refreshQuoteNumber();
 
       if (action === "send") {
         setTimeout(() => {

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db, quoteRequests, quoteItems, users } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth/session";
 import { eq } from "drizzle-orm";
+import { getNextQuoteNumber } from "@/lib/quotes/consecutive";
 
 interface QuoteItemPayload {
   productId?: number;
@@ -18,7 +19,6 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const {
-      quoteNumber,
       notes,
       subtotal,
       tax,
@@ -72,10 +72,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Generate formatted quote number if not provided (e.g. 0003735)
-    const finalQuoteNumber =
-      quoteNumber ||
-      String(Math.floor(1000000 + Math.random() * 9000000)).slice(0, 7);
+    // Determine consecutive quote number from database
+    const finalQuoteNumber = await getNextQuoteNumber();
 
     // Insert into quote_requests
     const [qrResult] = await db.insert(quoteRequests).values({

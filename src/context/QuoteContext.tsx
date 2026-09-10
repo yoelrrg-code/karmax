@@ -27,6 +27,7 @@ interface QuoteContextType {
   comments: string;
   setComments: (val: string) => void;
   quoteNumber: string;
+  refreshQuoteNumber: () => Promise<string>;
   isDrawerOpen: boolean;
   openDrawer: () => void;
   closeDrawer: () => void;
@@ -53,16 +54,16 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
   const [comments, setComments] = useState("");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
-  const [quoteNumber] = useState(() => {
+  const [quoteNumber, setQuoteNumber] = useState<string>(() => {
     if (typeof window !== "undefined") {
       try {
         const savedNum = localStorage.getItem(LOCAL_STORAGE_QUOTE_NUM);
-        if (savedNum) return savedNum;
+        if (savedNum && savedNum !== "0003735") return savedNum;
       } catch (e) {
         console.warn("Could not load quote number from localStorage:", e);
       }
     }
-    return "0003735";
+    return "0000001";
   });
   const [notification, setNotification] = useState<QuoteNotification>({
     visible: false,
@@ -240,7 +241,53 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return subtotal + tax;
   }, [subtotal, tax]);
 
-  const openDrawer = () => setIsDrawerOpen(true);
+  const refreshQuoteNumber = useCallback(async () => {
+    try {
+      const res = await fetch("/api/quotes/next-number");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.nextQuoteNumber) {
+          setQuoteNumber(data.nextQuoteNumber);
+          if (typeof window !== "undefined") {
+            localStorage.setItem(LOCAL_STORAGE_QUOTE_NUM, data.nextQuoteNumber);
+          }
+          return data.nextQuoteNumber as string;
+        }
+      }
+    } catch (err) {
+      console.warn("Could not fetch next quote number:", err);
+    }
+    return "0000001";
+  }, []);
+
+  useEffect(() => {
+    let ignore = false;
+    async function fetchInitialNumber() {
+      try {
+        const res = await fetch("/api/quotes/next-number");
+        if (res.ok) {
+          const data = await res.json();
+          if (!ignore && data.nextQuoteNumber) {
+            setQuoteNumber(data.nextQuoteNumber);
+            if (typeof window !== "undefined") {
+              localStorage.setItem(LOCAL_STORAGE_QUOTE_NUM, data.nextQuoteNumber);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn("Could not fetch initial quote number:", err);
+      }
+    }
+    fetchInitialNumber();
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  const openDrawer = () => {
+    refreshQuoteNumber();
+    setIsDrawerOpen(true);
+  };
   const closeDrawer = () => setIsDrawerOpen(false);
 
   return (
@@ -259,6 +306,7 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         comments,
         setComments,
         quoteNumber,
+        refreshQuoteNumber,
         isDrawerOpen,
         openDrawer,
         closeDrawer,
