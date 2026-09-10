@@ -7,6 +7,7 @@ import { Icon } from "@/components/icons";
 import { useRouter } from "next/navigation";
 import { CatalogHeroBar } from "@/components/catalog/CatalogHeroBar";
 import { ProductCard } from "@/components/catalog/ProductCard";
+import { useQuote } from "@/context/QuoteContext";
 import type { ProductDetailItem, CatalogProductItem } from "@/types";
 
 interface ProductDetailViewProps {
@@ -21,6 +22,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   const router = useRouter();
   const [searchInput, setSearchInput] = useState("");
   const sliderRef = useRef<HTMLDivElement>(null);
+  const { addItem } = useQuote();
 
   // Imágenes de la galería (mínimo la principal, más fallbacks dummy si es única)
   const defaultGallery =
@@ -115,6 +117,10 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
     ? `$${product.regularPrice}`
     : "Cotizar";
 
+  const formattedTitle = product.name
+    ? product.name.charAt(0).toUpperCase() + product.name.slice(1).toLowerCase()
+    : "";
+
   return (
     <div id="product-details" className="w-full bg-[var(--white-karmax)]">
       {/* 1. Barra azul superior con buscador */}
@@ -145,7 +151,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
           </Link>
           <span className="text-[var(--blue-karmax)] text-[22px]">›</span>
           <span className="text-[var(--text-karmax)] font-medium truncate max-w-xs sm:max-w-md">
-            {product.name}
+            {formattedTitle}
           </span>
         </nav>
 
@@ -206,7 +212,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
 
             {/* Título */}
             <h2 className="text-[var(--text-karmax)] mb-4 leading-tight">
-              {product.name}
+              {formattedTitle}
             </h2>
 
             {/* Precio */}
@@ -249,12 +255,11 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  const selectedSummary = Object.entries(selectedAttributes)
-                    .map(([k, v]) => `${k}: ${v}`)
-                    .join(", ");
-                  alert(
-                    `Producto agregado a cotización: ${product.name} (${selectedSummary || "Estándar"})`
-                  );
+                  const selectedPresentation =
+                    selectedAttributes["Presentaciones"] ||
+                    Object.values(selectedAttributes)[0] ||
+                    "Estándar";
+                  addItem(product, selectedPresentation, 1);
                 }}
                 className="btn-primary gap-2 inline-flex items-center justify-center border border-[var(--green-karmax)] bg-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] hover:border-[var(--green-hover-karmax)] text-white px-8 py-4 rounded-full text-base shadow-xs hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
               >

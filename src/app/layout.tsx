@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
+import { Providers } from "@/context/Providers";
+import { QuoteDrawer } from "@/components/quote/QuoteDrawer";
+import { AuthModal } from "@/components/auth/AuthModal";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -32,8 +35,13 @@ export default function RootLayout({
   return (
     <html lang="es" className={`${poppins.variable} font-sans h-full scroll-smooth antialiased`}>
       <body className="min-h-full flex flex-col bg-white text-slate-900">
-        {children}
+        <Providers>
+          {children}
+          <QuoteDrawer />
+          <AuthModal />
+        </Providers>
       </body>
     </html>
   );
 }
+

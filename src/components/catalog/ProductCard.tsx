@@ -1,21 +1,25 @@
+"use client";
+
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { CatalogProductItem } from "@/types";
+import { useQuote } from "@/context/QuoteContext";
 
 interface ProductCardProps {
   product: CatalogProductItem;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+  const { getItemQuantity, addItem } = useQuote();
+  const quantity = getItemQuantity(product.id);
+
   const hasSalePrice = Boolean(product.salePrice && Number(product.salePrice) > 0);
   const displayPrice = hasSalePrice
     ? `Desde $${product.salePrice}`
     : product.regularPrice
     ? `$${product.regularPrice}`
     : "Cotizar";
-
-  const buttonText = hasSalePrice ? "Ver opciones" : "+ Agregar";
 
   return (
     <div className="group relative bg-white rounded-2xl border border-slate-100/90 shadow-2xs hover:shadow-lg transition-all duration-300 p-4 sm:p-5 h-full flex flex-col justify-between items-center text-center">
@@ -60,13 +64,56 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </span>
         </div>
 
-        {/* Botón de acción */}
-        <Link
-          href={`/productos/${product.slug}`}
-          className="inline-flex items-center justify-center bg-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] text-white text-[14px] sm:text-[16px] font-semibold py-2 px-6 rounded-full transition-all duration-200 shadow-2xs hover:shadow-sm active:scale-95 cursor-pointer w-full max-w-[160px]"
-        >
-          {buttonText}
-        </Link>
+        {/* Botón de acción: "+ Agregar" o Contador "– [cant] +" (Imagen 1) */}
+        {quantity === 0 ? (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              addItem(product);
+            }}
+            className="inline-flex items-center justify-center bg-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] text-white text-[14px] sm:text-[16px] font-semibold py-2 px-6 rounded-full transition-all duration-200 shadow-2xs hover:shadow-sm active:scale-95 cursor-pointer w-full max-w-[160px]"
+          >
+            + Agregar
+          </button>
+        ) : (
+          <div
+            className="inline-flex items-center justify-between bg-[var(--green-karmax)] text-white font-bold py-1.5 px-3 rounded-full transition-all duration-200 shadow-2xs w-full max-w-[160px] select-none"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          >
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                addItem(product, undefined, -1);
+              }}
+              className="w-7 h-7 flex items-center justify-center text-white text-xl font-bold hover:bg-black/10 rounded-full transition-colors cursor-pointer active:scale-90"
+              aria-label="Disminuir cantidad"
+            >
+              –
+            </button>
+            <span className="text-[16px] sm:text-[18px] font-bold px-2 text-white">
+              {quantity}
+            </span>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                addItem(product, undefined, 1);
+              }}
+              className="w-7 h-7 flex items-center justify-center text-white text-xl font-bold hover:bg-black/10 rounded-full transition-colors cursor-pointer active:scale-90"
+              aria-label="Aumentar cantidad"
+            >
+              +
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

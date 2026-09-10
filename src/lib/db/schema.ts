@@ -100,13 +100,38 @@ export const productDocuments = mysqlTable("product_documents", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+export const roles = mysqlTable("roles", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 50 }).notNull().unique(),
+  description: varchar("description", { length: 255 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const users = mysqlTable("users", {
+  id: serial("id").primaryKey(),
+  roleId: bigint("role_id", { mode: "number", unsigned: true }).notNull().default(2),
+  name: varchar("name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull().unique(),
+  phone: varchar("phone", { length: 50 }),
+  companyName: varchar("company_name", { length: 255 }),
+  passwordHash: varchar("password_hash", { length: 255 }),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export const quoteRequests = mysqlTable("quote_requests", {
   id: serial("id").primaryKey(),
+  quoteNumber: varchar("quote_number", { length: 50 }),
+  userId: bigint("user_id", { mode: "number", unsigned: true }),
   customerName: varchar("customer_name", { length: 255 }).notNull(),
   companyName: varchar("company_name", { length: 255 }),
   email: varchar("email", { length: 255 }).notNull(),
   phone: varchar("phone", { length: 50 }).notNull(),
   notes: text("notes"),
+  subtotal: decimal("subtotal", { precision: 10, scale: 2 }),
+  tax: decimal("tax", { precision: 10, scale: 2 }),
+  total: decimal("total", { precision: 10, scale: 2 }),
   status: varchar("status", { length: 50 }).default("pending").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -116,11 +141,28 @@ export const quoteItems = mysqlTable("quote_items", {
   quoteRequestId: int("quote_request_id").notNull(),
   productId: int("product_id"),
   productName: varchar("product_name", { length: 255 }).notNull(),
+  presentation: varchar("presentation", { length: 100 }),
+  sku: varchar("sku", { length: 100 }),
+  imageUrl: varchar("image_url", { length: 1024 }),
   quantity: int("quantity").default(1).notNull(),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }),
+  totalPrice: decimal("total_price", { precision: 10, scale: 2 }),
   notes: text("notes"),
 });
 
 // Relaciones
+export const rolesRelations = relations(roles, ({ many }) => ({
+  users: many(users),
+}));
+
+export const usersRelations = relations(users, ({ one, many }) => ({
+  role: one(roles, {
+    fields: [users.roleId],
+    references: [roles.id],
+  }),
+  quotes: many(quoteRequests),
+}));
+
 export const categoriesRelations = relations(categories, ({ many }) => ({
   products: many(products),
   productCategories: many(productCategories),
@@ -185,7 +227,11 @@ export const productImagesRelations = relations(productImages, ({ one }) => ({
   }),
 }));
 
-export const quoteRequestsRelations = relations(quoteRequests, ({ many }) => ({
+export const quoteRequestsRelations = relations(quoteRequests, ({ one, many }) => ({
+  user: one(users, {
+    fields: [quoteRequests.userId],
+    references: [users.id],
+  }),
   items: many(quoteItems),
 }));
 
@@ -208,5 +254,8 @@ export type ProductCategory = typeof productCategories.$inferSelect;
 export type ProductIndustry = typeof productIndustries.$inferSelect;
 export type ProductAttribute = typeof productAttributes.$inferSelect;
 export type ProductDocument = typeof productDocuments.$inferSelect;
+export type Role = typeof roles.$inferSelect;
+export type User = typeof users.$inferSelect;
 export type QuoteRequest = typeof quoteRequests.$inferSelect;
 export type QuoteItem = typeof quoteItems.$inferSelect;
+

@@ -5,12 +5,17 @@ import Link from "next/link";
 import { Logo } from "@/components/common/Logo";
 import { Icon } from "@/components/icons";
 import { Menu, X } from "lucide-react";
+import { useQuote } from "@/context/QuoteContext";
+import { useAuth } from "@/context/AuthContext";
 
 export const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "+528186590941";
 
   const [isScrolled, setIsScrolled] = useState(false);
+  const { totalItemsCount, openDrawer, notification, dismissNotification } = useQuote();
+  const { user, openAuthModal, logout } = useAuth();
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,21 +26,21 @@ export const Header: React.FC = () => {
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener("scroll", handleScroll);
     };
   }, []);
 
   return (
-    <header className={`sticky top-0 z-50 bg-white transition-all duration-300 ${isScrolled ? 'h-20' : 'h-30'}`}>
+    <header className={`sticky top-0 z-40 bg-white transition-all duration-300 ${isScrolled ? "h-20" : "h-30"}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className={`flex items-center justify-between transition-all duration-300 ${isScrolled ? 'h-20' : 'h-30'}`}>
+        <div className={`flex items-center justify-between transition-all duration-300 ${isScrolled ? "h-20" : "h-30"}`}>
           {/* Logo */}
           <div className="flex-shrink-0">
-            <Logo/>
+            <Logo />
           </div>
 
           {/* Desktop Navigation Links */}
@@ -78,50 +83,142 @@ export const Header: React.FC = () => {
             </a>
 
             {/* User Profile */}
-            <button
-              aria-label="Cuenta de usuario"
-              className="group flex items-center justify-center p-2 h-10 w-10 text-[var(--green-karmax)] hover:text-[var(--white-karmax)] bg-[var(--light-bg-karmax)] hover:bg-[var(--green-hover-karmax)] rounded-full transition-all duration-300 active:scale-95 shadow-xs hover:shadow-md cursor-pointer"
-            >
-              <Icon
-                name="user"
-                size={18}
-                className="transition-transform duration-300 ease-out group-hover:scale-110"
-              />
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!user) {
+                    openAuthModal();
+                  } else {
+                    setIsUserMenuOpen((prev) => !prev);
+                  }
+                }}
+                aria-label={user ? `Usuario: ${user.name}` : "Iniciar sesión"}
+                title={user ? `Conectado como ${user.name}` : "Iniciar sesión"}
+                className={`group flex items-center justify-center p-2 h-10 w-10 rounded-full transition-all duration-300 active:scale-95 shadow-xs hover:shadow-md cursor-pointer ${
+                  user
+                    ? "bg-[var(--green-karmax)] text-white"
+                    : "text-[var(--green-karmax)] hover:text-[var(--white-karmax)] bg-[var(--light-bg-karmax)] hover:bg-[var(--green-hover-karmax)]"
+                }`}
+              >
+                <Icon
+                  name="user"
+                  size={18}
+                  className="transition-transform duration-300 ease-out group-hover:scale-110"
+                />
+              </button>
 
-            {/* Cart / Quote Bag */}
-            <Link
-              href="#cotizacion"
-              aria-label="Bolsa de cotización"
-              className="group flex items-center justify-center p-2 h-10 w-10 text-[var(--green-karmax)] hover:text-[var(--white-karmax)] bg-[var(--light-bg-karmax)] hover:bg-[var(--green-hover-karmax)] rounded-full transition-all duration-300 active:scale-95 shadow-xs hover:shadow-md relative cursor-pointer"
-            >
-              <Icon
-                name="cotiza"
-                size={18}
-                className="transition-transform duration-300 ease-out group-hover:scale-110 group-hover:-translate-y-0.5"
-              />
-              <span className="absolute top-1 right-1 bg-[#22c55e] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110 shadow-xs">
-                0
-              </span>
-            </Link>
+              {/* User dropdown if logged in */}
+              {user && isUserMenuOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in zoom-in-95">
+                  <div className="px-4 py-2 border-b border-slate-100">
+                    <p className="text-xs font-bold text-slate-800 truncate">{user.name}</p>
+                    <p className="text-[11px] text-slate-400 truncate">{user.email}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      logout();
+                      setIsUserMenuOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 transition-colors font-medium cursor-pointer"
+                  >
+                    Cerrar sesión
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Cart / Quote Bag & Popover */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={openDrawer}
+                aria-label="Abrir cotizador"
+                className={`group flex items-center justify-center p-2 h-10 w-10 rounded-full transition-all duration-300 active:scale-95 shadow-xs hover:shadow-md relative cursor-pointer ${
+                  totalItemsCount > 0
+                    ? "bg-[var(--light-bg-karmax)] text-[#FF6816]"
+                    : "text-[var(--green-karmax)] hover:text-[var(--white-karmax)] bg-[var(--light-bg-karmax)] hover:bg-[var(--green-hover-karmax)]"
+                }`}
+              >
+                <Icon
+                  name="cotiza"
+                  size={18}
+                  className={`transition-transform duration-300 ease-out group-hover:scale-110 group-hover:-translate-y-0.5 ${
+                    totalItemsCount > 0 ? "text-[#FF6816]" : ""
+                  }`}
+                />
+                {totalItemsCount > 0 ? (
+                  <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-[#FF6816] text-white text-[11px] font-bold px-2 py-0.5 min-w-[24px] h-[18px] rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110 shadow-xs leading-none">
+                    {totalItemsCount}
+                  </span>
+                ) : (
+                  <span className="absolute top-1 right-1 bg-[#22c55e] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110 shadow-xs">
+                    0
+                  </span>
+                )}
+              </button>
+
+              {/* Orange Popover Notification (Image 2) */}
+              {notification.visible && (
+                <div
+                  className="absolute right-0 top-full mt-4 z-50 whitespace-nowrap bg-[#FF6816] text-white text-xs sm:text-[13px] font-medium py-2.5 px-4 rounded-2xl shadow-xl flex items-center gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200"
+                  role="status"
+                >
+                  {/* Arrow pointing up */}
+                  <div
+                    className="absolute -top-1.5 right-3.5 w-3 h-3 bg-[#FF6816] rotate-45 rounded-xs"
+                    aria-hidden="true"
+                  />
+                  <span className="font-bold">✓</span>
+                  <span>
+                    {notification.type === "added"
+                      ? "Producto agregado"
+                      : "Producto eliminado"}
+                  </span>
+                  <span className="opacity-75">•</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      dismissNotification();
+                      openDrawer();
+                    }}
+                    className="underline underline-offset-2 hover:opacity-90 font-semibold cursor-pointer"
+                  >
+                    Ver cotización
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Mobile Menu Button */}
           <div className="flex sm:hidden items-center space-x-2">
-            <Link
-              href="#cotizacion"
-              className="group relative p-2 text-slate-700 transition-transform active:scale-95"
-              aria-label="Carrito"
+            <button
+              type="button"
+              onClick={openDrawer}
+              className={`group relative p-2 rounded-full transition-transform active:scale-95 cursor-pointer ${
+                totalItemsCount > 0 ? "bg-[#EFF3F6] text-[#FF6816]" : "text-slate-700"
+              }`}
+              aria-label="Abrir cotizador"
             >
               <Icon
                 name="cotiza"
-                size={24}
-                className="transition-transform duration-300 ease-out group-hover:scale-110"
+                size={22}
+                className={`transition-transform duration-300 ease-out group-hover:scale-110 ${
+                  totalItemsCount > 0 ? "text-[#FF6816]" : ""
+                }`}
               />
-              <span className="absolute top-1 right-1 bg-[#22c55e] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
-                0
-              </span>
-            </Link>
+              {totalItemsCount > 0 ? (
+                <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 bg-[#FF6816] text-white text-[10px] font-bold px-1.5 py-0.5 min-w-[20px] h-[16px] rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110 leading-none">
+                  {totalItemsCount}
+                </span>
+              ) : (
+                <span className="absolute top-1 right-1 bg-[#22c55e] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+                  0
+                </span>
+              )}
+            </button>
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="p-2 text-slate-700 hover:bg-slate-100 rounded-lg transition-colors duration-200 active:scale-95 cursor-pointer"

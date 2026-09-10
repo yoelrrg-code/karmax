@@ -101,3 +101,23 @@ export interface ProductDetailItem extends CatalogProductItem {
   documents: ProductDocumentItem[];
 }
 
+export interface AuthUser {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string | null;
+  companyName?: string | null;
+  roleId: number;
+  roleName: "admin" | "cliente" | string;
+}
+
+export interface QuoteCartItem {
+  productId: number;
+  slug: string;
+  name: string;
+  sku?: string | null;
+  imageUrl?: string | null;
+  presentation: string;
+  unitPrice: number;
+  quantity: number;
+}
