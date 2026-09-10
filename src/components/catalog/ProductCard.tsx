@@ -1,18 +1,21 @@
 "use client";
 
-import React from "react";
+import React, { useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { CatalogProductItem } from "@/types";
 import { useQuote } from "@/context/QuoteContext";
+
+const emptySubscribe = () => () => {};
 
 interface ProductCardProps {
   product: CatalogProductItem;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
+  const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const { getItemQuantity, addItem } = useQuote();
-  const quantity = getItemQuantity(product.id);
+  const quantity = isMounted ? getItemQuantity(product.id) : 0;
 
   const hasSalePrice = Boolean(product.salePrice && Number(product.salePrice) > 0);
   const displayPrice = hasSalePrice

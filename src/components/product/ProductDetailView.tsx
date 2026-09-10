@@ -1,14 +1,15 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Icon } from "@/components/icons";
 import { useRouter } from "next/navigation";
 import { CatalogHeroBar } from "@/components/catalog/CatalogHeroBar";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { useQuote } from "@/context/QuoteContext";
 import type { ProductDetailItem, CatalogProductItem } from "@/types";
+
+const emptySubscribe = () => () => {};
 
 interface ProductDetailViewProps {
   product: ProductDetailItem;
@@ -22,7 +23,8 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   const router = useRouter();
   const [searchInput, setSearchInput] = useState("");
   const sliderRef = useRef<HTMLDivElement>(null);
-  const { addItem } = useQuote();
+  const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
+  const { addItem, getItemQuantity, items } = useQuote();
 
   // Imágenes de la galería (mínimo la principal, más fallbacks dummy si es única)
   const defaultGallery =
@@ -44,23 +46,121 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   // Atributos (si no tiene en BD, datos dummy de referencia según mockup)
-  const availableAttributes =
-    Object.keys(product.attributes).length > 0
+  const availableAttributes = useMemo(() => {
+    return Object.keys(product.attributes).length > 0
       ? product.attributes
-      : {
-          Presentaciones: ["1 L", "10 L", "1 Gal", "20 L"],
-        };
+      : {};
+  }, [product.attributes]);
 
-  // Estado de atributos seleccionados: { "Presentaciones": "1 L" }
-  const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>(() => {
-    const initial: Record<string, string> = {};
-    for (const [key, values] of Object.entries(availableAttributes)) {
-      if (values && values.length > 0) {
-        initial[key] = values[0];
+  // Selección manual de atributos por parte del usuario
+  const [selectedAttributes, setSelectedAttributes] = useState<Record<string, string>>({});
+
+  // Buscar si este producto ya está en el cotizador
+  const itemInQuote = isMounted
+    ? items.find((it) => Number(it.productId) === Number(product.id))
+    : undefined;
+
+  // Nombre del atributo de presentación (o primer atributo disponible)
+  const presentationAttrName = useMemo(() => {
+    if (availableAttributes["Presentaciones"]) return "Presentaciones";
+    if (availableAttributes["Presentación"]) return "Presentación";
+    return Object.keys(availableAttributes)[0] || "Presentaciones";
+  }, [availableAttributes]);
+
+  // Determinar la presentación efectiva seleccionada (respeta la que está en cotizador si no se ha cambiado manualmente)
+  const selectedPresentation = useMemo(() => {
+    if (selectedAttributes[presentationAttrName]) {
+      return selectedAttributes[presentationAttrName];
+    }
+    if (
+      itemInQuote?.presentation &&
+      (availableAttributes[presentationAttrName]?.includes(itemInQuote.presentation) ||
+        Object.keys(availableAttributes).length === 0)
+    ) {
+      return itemInQuote.presentation;
+    }
+    return availableAttributes[presentationAttrName]?.[0] || "Estándar";
+  }, [selectedAttributes, itemInQuote, availableAttributes, presentationAttrName]);
+
+  const presentationQty = isMounted
+    ? getItemQuantity(product.id, selectedPresentation)
+    : 0;
+
+  const totalProductQty = isMounted
+    ? getItemQuantity(product.id)
+    : 0;
+
+  const quantity =
+    presentationQty > 0
+      ? presentationQty
+      : selectedAttributes[presentationAttrName]
+      ? 0
+      : totalProductQty;
+
+  const activePresentation = selectedPresentation;
+
+  // Buscar si el atributo seleccionado actual tiene un precio diferenciado (attr_price)
+  const activePriceNumber = useMemo(() => {
+    if (!product.rawAttributes || product.rawAttributes.length === 0) return null;
+
+    // Prioridad 1: Presentación seleccionada
+    const presentationAttr = product.rawAttributes.find(
+      (attr) =>
+        attr.name === presentationAttrName &&
+        attr.value === selectedPresentation &&
+        attr.attrPrice !== null &&
+        attr.attrPrice !== undefined &&
+        Number(attr.attrPrice) > 0
+    );
+    if (presentationAttr) {
+      return Number(presentationAttr.attrPrice);
+    }
+
+    // Prioridad 2: Cualquier otro atributo seleccionado que defina un attrPrice
+    for (const [attrName, val] of Object.entries(selectedAttributes)) {
+      const matched = product.rawAttributes.find(
+        (attr) =>
+          attr.name === attrName &&
+          attr.value === val &&
+          attr.attrPrice !== null &&
+          attr.attrPrice !== undefined &&
+          Number(attr.attrPrice) > 0
+      );
+      if (matched) {
+        return Number(matched.attrPrice);
       }
     }
-    return initial;
-  });
+
+    // Prioridad 3: Búsqueda por valor si el nombre del atributo difiere
+    const fallbackAttr = product.rawAttributes.find(
+      (attr) =>
+        attr.value === selectedPresentation &&
+        attr.attrPrice !== null &&
+        attr.attrPrice !== undefined &&
+        Number(attr.attrPrice) > 0
+    );
+    if (fallbackAttr) {
+      return Number(fallbackAttr.attrPrice);
+    }
+
+    return null;
+  }, [product.rawAttributes, presentationAttrName, selectedPresentation, selectedAttributes]);
+
+  const displayPrice = useMemo(() => {
+    if (activePriceNumber !== null) {
+      return `$${activePriceNumber.toLocaleString("es-MX", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`;
+    }
+    if (product.salePrice && Number(product.salePrice) > 0) {
+      return `Desde $${product.salePrice}`;
+    }
+    if (product.regularPrice) {
+      return `$${product.regularPrice}`;
+    }
+    return "Cotizar";
+  }, [activePriceNumber, product.salePrice, product.regularPrice]);
 
   // Documentos PDF (si no tiene en BD, datos dummy según mockup)
   const documents =
@@ -111,11 +211,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
     }
   };
 
-  const displayPrice = product.salePrice
-    ? `Desde $${product.salePrice}`
-    : product.regularPrice
-    ? `$${product.regularPrice}`
-    : "Cotizar";
+
 
   const formattedTitle = product.name
     ? product.name.charAt(0).toUpperCase() + product.name.slice(1).toLowerCase()
@@ -230,7 +326,10 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {values.map((val) => {
-                    const isSelected = selectedAttributes[attrName] === val;
+                    const isSelected =
+                      (attrName === presentationAttrName
+                        ? selectedPresentation === val
+                        : (selectedAttributes[attrName] || values[0]) === val);
                     return (
                       <button
                         key={val}
@@ -238,7 +337,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                         onClick={() => handleSelectAttribute(attrName, val)}
                         className={`px-4 py-3 rounded-lg text-xs sm:text-sm font-medium border transition-all cursor-pointer ${
                           isSelected
-                            ? "border-[var(--green-hover-karmax)] bg-[var(--green-hover-karmax)] text-[var(--white-karmax)] font-semibold shadow-2xs"
+                            ? "border-[var(--green-hover-karmax)] bg-[var(--green-hover-karmax)] text-[var(--white-karmax)] font-semibold"
                             : "border-[var(--blue-karmax)] bg-white text-[var(--blue-karmax)] hover:border-[var(--green-hover-karmax)] hover:text-[var(--green-hover-karmax)]"
                         }`}
                       >
@@ -250,34 +349,75 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
               </div>
             ))}
 
-            {/* Botón de Agregar a Cotización */}
+            {/* Botón de Agregar a Cotización o Selector de Cantidad (– [cant] +) */}
             <div className="my-3 mb-6">
-              <button
-                type="button"
-                onClick={() => {
-                  const selectedPresentation =
-                    selectedAttributes["Presentaciones"] ||
-                    Object.values(selectedAttributes)[0] ||
-                    "Estándar";
-                  addItem(product, selectedPresentation, 1);
-                }}
-                className="btn-primary gap-2 inline-flex items-center justify-center border border-[var(--green-karmax)] bg-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] hover:border-[var(--green-hover-karmax)] text-white px-8 py-4 rounded-full text-base shadow-xs hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
-              >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+              {quantity === 0 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    addItem(
+                      product,
+                      activePresentation,
+                      1,
+                      activePriceNumber !== null ? activePriceNumber : undefined
+                    );
+                  }}
+                  className="btn-primary gap-2 inline-flex items-center justify-center border border-[var(--green-karmax)] bg-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] hover:border-[var(--green-hover-karmax)] text-white px-8 py-3.5 rounded-full text-base shadow-xs hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
                 >
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                Agregar a cotización
-              </button>
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  Agregar a cotización
+                </button>
+              ) : (
+                <div
+                  className="inline-flex items-center justify-between bg-[var(--green-karmax)] text-white font-bold py-2.5 px-6 rounded-full transition-all duration-200 shadow-xs w-full max-w-[240px] select-none"
+                >
+                  <button
+                    type="button"
+                    onClick={() =>
+                      addItem(
+                        product,
+                        activePresentation,
+                        -1,
+                        activePriceNumber !== null ? activePriceNumber : undefined
+                      )
+                    }
+                    className="w-5 h-5 flex items-center justify-center text-white text-2xl font-semibold hover:bg-black/10 rounded-full transition-colors cursor-pointer active:scale-90"
+                    aria-label="Disminuir cantidad"
+                  >
+                    –
+                  </button>
+                  <span className="text-lg font-semibold px-4 text-white">
+                    {quantity}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      addItem(
+                        product,
+                        activePresentation,
+                        1,
+                        activePriceNumber !== null ? activePriceNumber : undefined
+                      )
+                    }
+                    className="w-5 h-5 flex items-center justify-center text-white text-2xl font-semibold hover:bg-black/10 rounded-full transition-colors cursor-pointer active:scale-90"
+                    aria-label="Aumentar cantidad"
+                  >
+                    +
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Descripción del producto */}
@@ -308,23 +448,18 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                   </p>
                   <ul className="space-y-2 text-xs sm:text-sm text-slate-700">
                     <li className="flex items-start gap-2">
-                      <Icon name="check-mark" className="w-4 h-4 mt-1" />
                       <span>Entrega estimada: 3-5 días hábiles.</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <Icon name="check-mark" className="w-4 h-4 mt-1" />
                       <span>Cobertura: Monterrey y área metropolitana.</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <Icon name="check-mark" className="w-4 h-4 mt-1" />
                       <span>Envíos fuera del área: sujetos a cotización.</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <Icon name="check-mark" className="w-4 h-4 mt-1" />
                       <span>Pedido mínimo: MXN $500 (Sujeto a cambios).</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <Icon name="check-mark" className="w-4 h-4 mt-1" />
                       <span>Producto sujeto a disponibilidad.</span>
                     </li>
                   </ul>

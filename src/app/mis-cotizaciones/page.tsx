@@ -10,6 +10,7 @@ import { FileText, ChevronRight, Clock, CheckCircle2, ArrowRight, Eye, X } from 
 
 interface QuoteItemData {
   id: number;
+  productId?: number | null;
   productName: string;
   presentation?: string | null;
   sku?: string | null;
@@ -100,7 +101,7 @@ export default function MisCotizacionesPage() {
       tax: quote.tax,
       total: quote.total,
       items: quote.items.map((it) => ({
-        productId: it.id,
+        productId: it.productId ?? it.id,
         productName: it.productName,
         presentation: it.presentation,
         sku: it.sku,

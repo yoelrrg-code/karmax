@@ -266,6 +266,7 @@ export async function getProductAttributes(productId: number): Promise<ProductAt
         productId: productAttributes.productId,
         name: productAttributes.name,
         value: productAttributes.value,
+        attrPrice: productAttributes.attrPrice,
         orderIndex: productAttributes.orderIndex,
       })
       .from(productAttributes)

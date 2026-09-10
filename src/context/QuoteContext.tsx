@@ -34,7 +34,8 @@ interface QuoteContextType {
   addItem: (
     product: Pick<CatalogProductItem, "id" | "name" | "slug" | "sku" | "imageUrl" | "regularPrice" | "salePrice">,
     presentation?: string,
-    quantityDelta?: number
+    quantityDelta?: number,
+    customUnitPrice?: number | string
   ) => void;
   updateQuantity: (productId: number, presentation: string, quantity: number) => void;
   removeItem: (productId: number, presentation: string) => void;
@@ -129,9 +130,10 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setNotification((prev) => ({ ...prev, visible: false }));
   }, []);
 
-  const parsePrice = (priceStr?: string | null): number => {
-    if (!priceStr) return 0;
-    const clean = priceStr.replace(/[^0-9.]/g, "");
+  const parsePrice = (priceVal?: string | number | null): number => {
+    if (priceVal === undefined || priceVal === null) return 0;
+    if (typeof priceVal === "number") return priceVal;
+    const clean = priceVal.replace(/[^0-9.]/g, "");
     return Number(clean) || 0;
   };
 
@@ -139,12 +141,17 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     (
       product: Pick<CatalogProductItem, "id" | "name" | "slug" | "sku" | "imageUrl" | "regularPrice" | "salePrice">,
       presentation = "Estándar",
-      quantityDelta = 1
+      quantityDelta = 1,
+      customUnitPrice?: number | string
     ) => {
-      const unitPrice =
+      const basePrice =
         product.salePrice && Number(product.salePrice) > 0
           ? parsePrice(product.salePrice)
           : parsePrice(product.regularPrice) || 49.0;
+      const unitPrice =
+        customUnitPrice !== undefined && customUnitPrice !== null
+          ? parsePrice(customUnitPrice)
+          : basePrice;
 
       setItems((prev) => {
         const index = prev.findIndex(
@@ -161,6 +168,7 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             updated[index] = {
               ...updated[index],
               quantity: newQty,
+              ...(customUnitPrice !== undefined && customUnitPrice !== null ? { unitPrice } : {}),
             };
             showNotification(quantityDelta > 0 ? "added" : "removed", product.name);
           }
@@ -332,14 +340,19 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const getItemQuantity = useCallback(
     (productId: number, presentation?: string): number => {
+      const targetId = Number(productId);
       if (presentation) {
         const item = items.find(
-          (it) => it.productId === productId && it.presentation === presentation
+          (it) =>
+            Number(it.productId) === targetId &&
+            (it.presentation?.trim().toLowerCase() === presentation.trim().toLowerCase() ||
+             (!it.presentation && presentation === "Estándar") ||
+             (it.presentation === "Estándar" && !presentation))
         );
         return item ? item.quantity : 0;
       }
       return items
-        .filter((it) => it.productId === productId)
+        .filter((it) => Number(it.productId) === targetId)
         .reduce((sum, it) => sum + it.quantity, 0);
     },
     [items]
