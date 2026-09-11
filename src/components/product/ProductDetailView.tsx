@@ -30,7 +30,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   const defaultGallery =
     product.galleryImages && product.galleryImages.length > 0
       ? product.galleryImages
-      : [product.imageUrl || "/images/products/placeholder.png"];
+      : [product.imageUrl || "/images/products/placeholder.jpg"];
 
   // Si solo tiene 1 imagen, agregamos miniaturas con el mismo producto para simular la galería del mockup
   const gallery =
@@ -258,10 +258,11 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
             {/* Imagen Principal */}
             <div className="w-full aspect-square relative bg-white rounded-2xl border border-[var(--green-karmax)] shadow-2xs p-8 flex items-center justify-center overflow-hidden">
               <Image
-                src={gallery[activeImageIndex] || "/images/products/placeholder.png"}
+                src={gallery[activeImageIndex] || "/images/products/placeholder.jpg"}
                 alt={product.name}
                 fill
                 priority
+                loading="eager"
                 className="object-contain p-4 transition-all duration-300"
                 sizes="(max-width: 1024px) 100vw, 40vw"
               />
@@ -477,10 +478,12 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                   rel="noopener noreferrer"
                   className="bg-white border border-[#D6DADD] hover:border-[var(--green-hover-karmax)] rounded-2xl pt-3 pb-4.5 pl-4 pr-5 flex items-center gap-3 transition-all duration-200 shadow-2xs group cursor-pointer"
                 >
-                  <Image src={'/icons/pdf.svg'}
+                  <Image
+                    src="/icons/pdf.svg"
                     alt="PDF"
                     width={30}
                     height={32}
+                    style={{ width: "auto", height: "auto" }}
                     className="mt-2"
                   />
                   <div className="flex flex-col gap-2 justify-between align-center">

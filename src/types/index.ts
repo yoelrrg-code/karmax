@@ -74,6 +74,7 @@ export interface ProductAttributeItem {
   productId: number;
   name: string;
   value: string;
+  sku?: string | null;
   attrPrice?: string | number | null;
   orderIndex?: number;
 }

@@ -45,7 +45,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
         className="relative w-full h-44 sm:h-48 mb-3 flex items-center justify-center overflow-hidden cursor-pointer"
       >
         <Image
-          src={product.imageUrl || "/images/products/placeholder.png"}
+          src={product.imageUrl || "/images/products/placeholder.jpg"}
           alt={product.name}
           fill
           className="object-contain transition-transform duration-300 ease-out group-hover:scale-105"

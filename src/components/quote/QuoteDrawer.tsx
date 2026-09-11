@@ -254,7 +254,7 @@ export const QuoteDrawer: React.FC = () => {
                             <div className="flex items-center gap-3">
                               <div className="relative w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 p-1 flex items-center justify-center">
                                 <Image
-                                  src={item.imageUrl || "/images/products/placeholder.png"}
+                                  src={item.imageUrl || "/images/products/placeholder.jpg"}
                                   alt={item.name}
                                   fill
                                   className="object-contain p-0.5"

@@ -85,6 +85,7 @@ export const productAttributes = mysqlTable("product_attributes", {
   productId: bigint("product_id", { mode: "number", unsigned: true }).notNull(),
   name: varchar("name", { length: 150 }).notNull(),
   value: varchar("value", { length: 255 }).notNull(),
+  sku: varchar("sku", { length: 100 }),
   attrPrice: decimal("attr_price", { precision: 10, scale: 2 }),
   orderIndex: int("order_index").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

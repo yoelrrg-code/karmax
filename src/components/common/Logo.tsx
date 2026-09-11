@@ -13,7 +13,14 @@ export const Logo: React.FC<LogoProps> = ({
 }) => {
   return (
     <Link href="/" className={`inline-flex items-center gap-2 group ${className}`}>
-      <Image src="/images/logo-karmax.svg" alt="Logo Karma" width={size.w} height={size.h} />
+      <Image
+        src="/images/logo-karmax.svg"
+        alt="Logo Karmax"
+        width={size.w}
+        height={size.h}
+        style={{ width: "auto", height: "auto" }}
+        priority
+      />
     </Link>
   );
 };
