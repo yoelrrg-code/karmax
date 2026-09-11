@@ -118,7 +118,7 @@ const HeroProductGrid: React.FC<HeroProductGridProps> = ({ className = "" }) => 
       </div>
 
       {/* Central KARMAX Badge */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-[250px] max-w-[280px] min-w-[120px] aspect-[532/379] pointer-events-none drop-shadow-md">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 md:w-[250px] w-[200px] max-w-[280px] min-w-[120px] aspect-[532/379] pointer-events-none drop-shadow-md">
         <Image
           src="/images/hero/l-karmax-product.svg"
           alt="KARMAX Productos de Limpieza Profesionales"

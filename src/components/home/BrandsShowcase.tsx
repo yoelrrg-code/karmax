@@ -10,11 +10,12 @@ export const BrandsShowcase: React.FC = () => {
           Las mejores marcas en un solo lugar
         </h2>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-5 items-center justify-items-center opacity-85">
+        {/* <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-5 items-center justify-items-center opacity-85"> */}
+        <div className="flex flex-wrap gap-x-8 gap-y-10 items-center justify-center opacity-85">
           {BRANDS_DATA.map((brand) => (
             <div
               key={brand.id}
-              className="flex items-center justify-center w-full max-w-[100px] h-full max-h-[92px] group"
+              className="flex items-center justify-center md:w-[14%] max-w-[100px] h-full max-h-[92px] group"
             >
               {brand.logoUrl ? (
                 <Image
