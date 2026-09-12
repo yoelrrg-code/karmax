@@ -18,10 +18,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const quantity = isMounted ? getItemQuantity(product.id) : 0;
 
   const hasSalePrice = Boolean(product.salePrice && Number(product.salePrice) > 0);
-  const displayPrice = hasSalePrice
-    ? `Desde $${product.salePrice}`
-    : product.regularPrice
-    ? `$${product.regularPrice}`
+  const priceVal = hasSalePrice ? product.salePrice : product.regularPrice;
+  const displayPrice = priceVal
+    ? product.hasMultipleVariations
+      ? <><span className="text-[14px] font-normal">Desde</span> ${priceVal}</>
+      : `$${priceVal}`
     : "Cotizar";
 
   return (

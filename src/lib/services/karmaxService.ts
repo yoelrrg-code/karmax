@@ -223,6 +223,26 @@ export async function getProductsCatalog(
       .limit(limit)
       .offset(offset);
 
+    const productIds = rows.map((r) => r.id);
+    const multiVarMap = new Map<number, boolean>();
+
+    if (productIds.length > 0) {
+      const attrCounts = await db
+        .select({
+          productId: productAttributes.productId,
+          count: sql<number>`count(*)`,
+        })
+        .from(productAttributes)
+        .where(inArray(productAttributes.productId, productIds))
+        .groupBy(productAttributes.productId);
+
+      for (const a of attrCounts) {
+        if (Number(a.count) > 1) {
+          multiVarMap.set(a.productId, true);
+        }
+      }
+    }
+
     const mappedProducts: CatalogProductItem[] = rows.map((r) => ({
       id: r.id,
       name: r.name,
@@ -234,6 +254,7 @@ export async function getProductsCatalog(
       salePrice: r.salePrice && Number(r.salePrice) > 0 ? String(r.salePrice) : null,
       unit: r.unit,
       isFeatured: r.isFeatured,
+      hasMultipleVariations: multiVarMap.get(r.id) || false,
     }));
 
     return {
@@ -379,6 +400,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
       salePrice: row.salePrice && Number(row.salePrice) > 0 ? String(row.salePrice) : null,
       unit: row.unit,
       isFeatured: row.isFeatured,
+      hasMultipleVariations: rawAttrs.length > 1,
       shortDescription: row.shortDescription,
       description: row.description,
       deliveryInfo: row.deliveryInfo,
@@ -429,6 +451,26 @@ export async function getRelatedProducts(
       .where(and(...conditions))
       .limit(limit);
 
+    const productIds = rows.map((r) => r.id);
+    const multiVarMap = new Map<number, boolean>();
+
+    if (productIds.length > 0) {
+      const attrCounts = await db
+        .select({
+          productId: productAttributes.productId,
+          count: sql<number>`count(*)`,
+        })
+        .from(productAttributes)
+        .where(inArray(productAttributes.productId, productIds))
+        .groupBy(productAttributes.productId);
+
+      for (const a of attrCounts) {
+        if (Number(a.count) > 1) {
+          multiVarMap.set(a.productId, true);
+        }
+      }
+    }
+
     return rows.map((r) => ({
       id: r.id,
       name: r.name,
@@ -440,6 +482,7 @@ export async function getRelatedProducts(
       salePrice: r.salePrice && Number(r.salePrice) > 0 ? String(r.salePrice) : null,
       unit: r.unit,
       isFeatured: r.isFeatured,
+      hasMultipleVariations: multiVarMap.get(r.id) || false,
     }));
   } catch (error) {
     console.error("Error al obtener productos relacionados:", error);

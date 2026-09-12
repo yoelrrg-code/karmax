@@ -133,7 +133,7 @@ export default function MisCotizacionesPage() {
         {/* Header Title */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-200/80 mb-8">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-[var(--dark-blue-karmax)]">
+            <h1 className="font-semibold text-[var(--dark-blue-karmax)]">
               Mis Cotizaciones
             </h1>
             <p className="text-sm text-slate-500 mt-1">
@@ -208,8 +208,7 @@ export default function MisCotizacionesPage() {
               const itemsCount = q.items?.reduce((acc, it) => acc + it.quantity, 0) || 0;
 
               return (
-                <div
-                  key={q.id}
+                <div key={q.id}
                   className="bg-white rounded-2xl border border-slate-200/70 p-5 sm:p-6 shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col md:flex-row md:items-center justify-between gap-4"
                 >
                   <div className="flex items-start sm:items-center gap-4">

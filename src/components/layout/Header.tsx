@@ -178,7 +178,7 @@ export const Header: React.FC = () => {
                 >
                   {/* Arrow pointing up */}
                   <div
-                    className="absolute -top-1.5 right-3.5 w-3 h-3 bg-[#FF6816] rotate-45 rounded-xs"
+                    className="absolute -top-1 right-3.5 w-3 h-3 bg-[#FF6816] rotate-45 rounded-xs"
                     aria-hidden="true"
                   />
                   <span className="font-bold">✓</span>

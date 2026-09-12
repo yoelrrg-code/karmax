@@ -37,9 +37,6 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
     defaultGallery.length === 1
       ? [
           defaultGallery[0],
-          defaultGallery[0],
-          defaultGallery[0],
-          defaultGallery[0],
         ]
       : defaultGallery;
 
@@ -82,8 +79,26 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
     return availableAttributes[presentationAttrName]?.[0] || "Estándar";
   }, [selectedAttributes, itemInQuote, availableAttributes, presentationAttrName]);
 
+  // Nombre del atributo de aroma si existe
+  const aromaAttrName = useMemo(() => {
+    return Object.keys(availableAttributes).find((k) => k.toLowerCase().includes("aroma"));
+  }, [availableAttributes]);
+
+  const selectedAroma = useMemo(() => {
+    if (!aromaAttrName) return null;
+    return selectedAttributes[aromaAttrName] || availableAttributes[aromaAttrName]?.[0] || null;
+  }, [aromaAttrName, selectedAttributes, availableAttributes]);
+
+  // Si hay aroma y presentación separados, combinarlos para la cotización
+  const activePresentation = useMemo(() => {
+    if (selectedAroma && presentationAttrName !== aromaAttrName) {
+      return `${selectedPresentation} (${selectedAroma})`;
+    }
+    return selectedPresentation;
+  }, [selectedPresentation, selectedAroma, presentationAttrName, aromaAttrName]);
+
   const presentationQty = isMounted
-    ? getItemQuantity(product.id, selectedPresentation)
+    ? getItemQuantity(product.id, activePresentation)
     : 0;
 
   const totalProductQty = isMounted
@@ -93,11 +108,9 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   const quantity =
     presentationQty > 0
       ? presentationQty
-      : selectedAttributes[presentationAttrName]
+      : selectedAttributes[presentationAttrName] || (aromaAttrName && selectedAttributes[aromaAttrName])
       ? 0
       : totalProductQty;
-
-  const activePresentation = selectedPresentation;
 
   // Buscar si el atributo seleccionado actual tiene un precio diferenciado (attr_price)
   const activePriceNumber = useMemo(() => {
@@ -146,6 +159,68 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
     return null;
   }, [product.rawAttributes, presentationAttrName, selectedPresentation, selectedAttributes]);
 
+  // Calcular el SKU correspondiente a la variación activa
+  const activeSku = useMemo(() => {
+    if (!product.rawAttributes || product.rawAttributes.length === 0) {
+      return product.sku || null;
+    }
+
+    const presAttr = product.rawAttributes.find(
+      (attr) =>
+        (attr.name === presentationAttrName || attr.name.toLowerCase().startsWith("presentac")) &&
+        attr.value === selectedPresentation &&
+        Boolean(attr.sku)
+    );
+
+    const aromaAttr = selectedAroma && aromaAttrName
+      ? product.rawAttributes.find(
+          (attr) =>
+            (attr.name === aromaAttrName || attr.name.toLowerCase().includes("aroma")) &&
+            attr.value === selectedAroma &&
+            Boolean(attr.sku)
+        )
+      : null;
+
+    // Si el producto tiene variación tanto de presentación como de aroma (ej. Limpiador multiusos, Jabón líquido)
+    if (presAttr?.sku && aromaAttr?.sku) {
+      const presParts = presAttr.sku.split("-");
+      const aromaParts = aromaAttr.sku.split("-");
+      if (presParts.length === 5 && aromaParts.length === 5) {
+        return `${presParts[0]}-${presParts[1]}-${aromaParts[2]}-${presParts[3]}-${presParts[4]}`;
+      }
+    }
+
+    if (presAttr?.sku) {
+      return presAttr.sku;
+    }
+
+    if (aromaAttr?.sku) {
+      return aromaAttr.sku;
+    }
+
+    for (const [attrName, val] of Object.entries(selectedAttributes)) {
+      const matched = product.rawAttributes.find(
+        (attr) => attr.name === attrName && attr.value === val && Boolean(attr.sku)
+      );
+      if (matched?.sku) return matched.sku;
+    }
+
+    const matchedVal = product.rawAttributes.find(
+      (attr) => attr.value === selectedPresentation && Boolean(attr.sku)
+    );
+    if (matchedVal?.sku) return matchedVal.sku;
+
+    return product.sku || null;
+  }, [
+    product.rawAttributes,
+    presentationAttrName,
+    selectedPresentation,
+    selectedAroma,
+    aromaAttrName,
+    selectedAttributes,
+    product.sku,
+  ]);
+
   const displayPrice = useMemo(() => {
     if (activePriceNumber !== null) {
       return `$${activePriceNumber.toLocaleString("es-MX", {
@@ -153,14 +228,15 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
         maximumFractionDigits: 2,
       })}`;
     }
-    if (product.salePrice && Number(product.salePrice) > 0) {
-      return `Desde $${product.salePrice}`;
-    }
-    if (product.regularPrice) {
-      return `$${product.regularPrice}`;
+    const priceVal =
+      product.salePrice && Number(product.salePrice) > 0
+        ? product.salePrice
+        : product.regularPrice;
+    if (priceVal) {
+      return product.hasMultipleVariations ? <><span className="text-[14px]">Desde</span> ${priceVal}</> : `$${priceVal}`;
     }
     return "Cotizar";
-  }, [activePriceNumber, product.salePrice, product.regularPrice]);
+  }, [activePriceNumber, product.salePrice, product.regularPrice, product.hasMultipleVariations]);
 
   // Documentos PDF (si no tiene en BD, datos dummy según mockup)
   const documents =
@@ -301,10 +377,9 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
 
           {/* Columna Derecha: Datos y compra (7 cols en lg) */}
           <div className="lg:col-span-6 flex flex-col">
-            {/* Meta: Marca y SKU */}
+            {/* Meta: Marca */}
             <p className="text-[14px] font-normal text-[var(--light-text-karmax)] tracking-wide mb-5">
-              Marca: <span className="uppercase">{product.brand || "KARMAX"}</span> | SKU:{" "}
-              <span className="uppercase">{product.sku}</span>
+              Marca: <span className="uppercase">{product.brand || "KARMAX"}</span>
             </p>
 
             {/* Título */}
@@ -360,7 +435,8 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                       product,
                       activePresentation,
                       1,
-                      activePriceNumber !== null ? activePriceNumber : undefined
+                      activePriceNumber !== null ? activePriceNumber : undefined,
+                      activeSku
                     );
                   }}
                   className="btn-primary gap-2 inline-flex items-center justify-center border border-[var(--green-karmax)] bg-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] hover:border-[var(--green-hover-karmax)] text-white px-8 py-3.5 rounded-full text-base shadow-xs hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
@@ -391,7 +467,8 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                         product,
                         activePresentation,
                         -1,
-                        activePriceNumber !== null ? activePriceNumber : undefined
+                        activePriceNumber !== null ? activePriceNumber : undefined,
+                        activeSku
                       )
                     }
                     className="w-5 h-5 flex items-center justify-center text-white text-2xl font-semibold hover:bg-black/10 rounded-full transition-colors cursor-pointer active:scale-90"
@@ -409,7 +486,8 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                         product,
                         activePresentation,
                         1,
-                        activePriceNumber !== null ? activePriceNumber : undefined
+                        activePriceNumber !== null ? activePriceNumber : undefined,
+                        activeSku
                       )
                     }
                     className="w-5 h-5 flex items-center justify-center text-white text-2xl font-semibold hover:bg-black/10 rounded-full transition-colors cursor-pointer active:scale-90"

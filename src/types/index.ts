@@ -48,6 +48,7 @@ export interface CatalogProductItem {
   isFeatured?: boolean;
   categoryIds?: number[];
   industryIds?: number[];
+  hasMultipleVariations?: boolean;
 }
 
 export type CatalogSortOption = "name" | "price_asc" | "price_desc";

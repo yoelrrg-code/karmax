@@ -35,7 +35,8 @@ interface QuoteContextType {
     product: Pick<CatalogProductItem, "id" | "name" | "slug" | "sku" | "imageUrl" | "regularPrice" | "salePrice">,
     presentation?: string,
     quantityDelta?: number,
-    customUnitPrice?: number | string
+    customUnitPrice?: number | string,
+    customSku?: string | null
   ) => void;
   updateQuantity: (productId: number, presentation: string, quantity: number) => void;
   removeItem: (productId: number, presentation: string) => void;
@@ -142,7 +143,8 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       product: Pick<CatalogProductItem, "id" | "name" | "slug" | "sku" | "imageUrl" | "regularPrice" | "salePrice">,
       presentation = "Estándar",
       quantityDelta = 1,
-      customUnitPrice?: number | string
+      customUnitPrice?: number | string,
+      customSku?: string | null
     ) => {
       const basePrice =
         product.salePrice && Number(product.salePrice) > 0
@@ -169,6 +171,7 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               ...updated[index],
               quantity: newQty,
               ...(customUnitPrice !== undefined && customUnitPrice !== null ? { unitPrice } : {}),
+              ...(customSku ? { sku: customSku } : {}),
             };
             showNotification(quantityDelta > 0 ? "added" : "removed", product.name);
           }
@@ -181,7 +184,7 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               productId: product.id,
               slug: product.slug,
               name: product.name,
-              sku: product.sku || `KMX-${product.id}`,
+              sku: customSku || product.sku || `KMX-${product.id}`,
               imageUrl: product.imageUrl,
               presentation,
               unitPrice,
