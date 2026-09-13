@@ -36,7 +36,7 @@ export default async function ProductosPage({ searchParams }: ProductosPageProps
   const categorySlug = params.category;
   const industrySlug = params.industry;
   const search = params.search;
-  const sortBy = params.sortBy || "name";
+  const sortBy = params.sortBy || "name_asc";
   const page = Math.max(1, parseInt(params.page || "1", 10));
 
   const [categories, industries, catalogData, footerInfo, socialLinks] = await Promise.all([

@@ -3,16 +3,53 @@ import { db, users, roles } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { verifyPassword } from "@/lib/auth/password";
 import { setSessionCookie } from "@/lib/auth/session";
+import { checkRateLimit, getClientIp } from "@/lib/security/rateLimiter";
+import { verifyAntiBot } from "@/lib/security/antiBot";
 
 export async function POST(request: Request) {
   try {
+    const clientIp = getClientIp(request);
+
+    // 1. Rate Limiting: máximo 5 intentos fallidos por cada 15 minutos por IP
+    const rateCheck = checkRateLimit(clientIp, "auth_login", {
+      limit: 7,
+      windowMs: 15 * 60 * 1000,
+    });
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { error: `Demasiados intentos fallidos. Por seguridad, espera ${rateCheck.resetInSec} segundos.` },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
-    const { email, password } = body;
+    const { email, password, antiBotToken, honeypot, turnstileToken } = body;
+
+    // 2. Anti-Bot / Captcha Invisible
+    const botCheck = await verifyAntiBot({
+      token: antiBotToken,
+      honeypot,
+      turnstileToken,
+      clientIp,
+    });
+    if (!botCheck.valid) {
+      return NextResponse.json(
+        { error: botCheck.reason || "Verificación de seguridad requerida." },
+        { status: 400 }
+      );
+    }
 
     if (!email || !password) {
       return NextResponse.json(
         { error: "Correo y contraseña son obligatorios." },
         { status: 400 }
+      );
+    }
+
+    if (typeof password === "string" && password.length > 128) {
+      return NextResponse.json(
+        { error: "Credenciales inválidas." },
+        { status: 401 }
       );
     }
 

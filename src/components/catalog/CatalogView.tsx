@@ -35,7 +35,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
   initialCategorySlug,
   initialIndustrySlug,
   initialSearch = "",
-  initialSortBy = "name",
+  initialSortBy = "name_asc",
 }) => {
   const [products, setProducts] = useState<CatalogProductItem[]>(initialProducts);
   const [total, setTotal] = useState(initialTotal);
@@ -46,7 +46,9 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
   const [industrySlug, setIndustrySlug] = useState<string | undefined>(initialIndustrySlug);
   const [searchInput, setSearchInput] = useState<string>(initialSearch);
   const [search, setSearch] = useState<string>(initialSearch);
-  const [sortBy, setSortBy] = useState<CatalogSortOption>(initialSortBy);
+  const [sortBy, setSortBy] = useState<CatalogSortOption>(
+    initialSortBy === "name" ? "name_asc" : initialSortBy
+  );
 
   const [isLoading, setIsLoading] = useState(false);
   const isFirstMount = useRef(true);
@@ -290,13 +292,14 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                 </label>
                 <select
                   id="sort-by"
-                  value={sortBy}
+                  value={sortBy === "name" ? "name_asc" : sortBy}
                   onChange={(e) => setSortBy(e.target.value as CatalogSortOption)}
                   className="bg-white border border-slate-200 text-slate-700 text-xs sm:text-sm rounded-lg py-1.5 px-3 focus:outline-none focus:ring-1 focus:ring-[var(--blue-karmax)] cursor-pointer shadow-2xs font-medium"
                 >
-                  <option value="name">Nombre</option>
-                  <option value="price_asc">Precio: menor a mayor</option>
-                  <option value="price_desc">Precio: mayor a menor</option>
+                  <option value="name_asc">De la A a la Z</option>
+                  <option value="name_desc">De la Z a la A</option>
+                  <option value="price_asc">Precio más bajo</option>
+                  <option value="price_desc">Precio más alto</option>
                 </select>
               </div>
             </div>

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useQuote } from "@/context/QuoteContext";
 import { useAuth } from "@/context/AuthContext";
 import { Trash2, X } from "lucide-react";
+import { InvisibleCaptcha, type InvisibleCaptchaRef } from "@/components/common/InvisibleCaptcha";
 
 const emptySubscribe = () => () => {};
 
@@ -36,6 +37,7 @@ export const QuoteDrawer: React.FC = () => {
   const { user, openAuthModal } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const captchaRef = useRef<InvisibleCaptchaRef>(null);
 
   const itemsRef = useRef(items);
   const userRef = useRef(user);
@@ -138,6 +140,8 @@ export const QuoteDrawer: React.FC = () => {
       const calculatedTax = Number((calculatedSubtotal * 0.16).toFixed(2));
       const calculatedTotal = Number((calculatedSubtotal + calculatedTax).toFixed(2));
 
+      const verification = captchaRef.current?.getVerificationData();
+
       const res = await fetch("/api/quotes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -150,6 +154,9 @@ export const QuoteDrawer: React.FC = () => {
           total: calculatedTotal,
           action,
           items: calculatedItems,
+          antiBotToken: verification?.antiBotToken,
+          honeypot: verification?.honeypot,
+          turnstileToken: verification?.turnstileToken,
         }),
       });
 
@@ -208,6 +215,9 @@ export const QuoteDrawer: React.FC = () => {
             isDrawerOpen ? "translate-x-0" : "translate-x-full"
           }`}
         >
+          {/* Invisible Captcha & Anti-Bot Defense */}
+          <InvisibleCaptcha ref={captchaRef} />
+
           {/* 1. Header */}
           <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
             <div>

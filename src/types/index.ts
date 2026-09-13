@@ -51,7 +51,7 @@ export interface CatalogProductItem {
   hasMultipleVariations?: boolean;
 }
 
-export type CatalogSortOption = "name" | "price_asc" | "price_desc";
+export type CatalogSortOption = "name_asc" | "name_desc" | "price_asc" | "price_desc" | "name";
 
 export interface CatalogQueryOptions {
   categorySlug?: string;

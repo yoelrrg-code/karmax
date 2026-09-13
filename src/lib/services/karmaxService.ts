@@ -173,9 +173,12 @@ export async function getProductsCatalog(
       }
     }
 
-    // Ordenamiento por nombre, precio asc o precio desc
+    // Ordenamiento por nombre (A-Z / Z-A) o precio (menor/mayor)
     let orderByClause;
     switch (sortBy) {
+      case "name_desc":
+        orderByClause = [desc(products.name)];
+        break;
       case "price_asc":
         orderByClause = [
           asc(sql`COALESCE(NULLIF(${products.salePrice}, 0), ${products.regularPrice})`),
@@ -188,6 +191,7 @@ export async function getProductsCatalog(
           asc(products.name),
         ];
         break;
+      case "name_asc":
       case "name":
       default:
         orderByClause = [asc(products.name)];

@@ -18,9 +18,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No se proporcionó ningún archivo" }, { status: 400 });
     }
 
-    // Validate mime type
-    const validMimes = ["image/jpeg", "image/png", "image/webp", "image/svg+xml", "application/pdf"];
-    if (!validMimes.includes(file.type)) {
+    // Validate mime type & determine strict extension
+    const MIME_EXTENSION_MAP: Record<string, string> = {
+      "image/jpeg": ".jpg",
+      "image/png": ".png",
+      "image/webp": ".webp",
+      "image/svg+xml": ".svg",
+      "application/pdf": ".pdf",
+    };
+
+    const ext = MIME_EXTENSION_MAP[file.type];
+    if (!ext) {
       return NextResponse.json(
         { error: "Tipo de archivo no permitido. Solo imágenes (JPG, PNG, WEBP, SVG) o PDF." },
         { status: 400 }
@@ -33,19 +41,33 @@ export async function POST(request: NextRequest) {
     }
 
     const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
+    let buffer = Buffer.from(bytes);
+
+    // Sanitización activa para archivos SVG contra XSS almacenado
+    if (file.type === "image/svg+xml") {
+      let svgText = buffer.toString("utf-8");
+      // Neutralizar etiquetas script, foreignObject y handlers inline
+      svgText = svgText
+        .replace(/<script[\s\S]*?<\/script>/gi, "")
+        .replace(/<foreignObject[\s\S]*?<\/foreignObject>/gi, "")
+        .replace(/on\w+\s*=\s*(["'][^"']*["']|[^\s>]+)/gi, "")
+        .replace(/href\s*=\s*["']\s*javascript:[^"']*["']/gi, 'href="#"')
+        .replace(/xlink:href\s*=\s*["']\s*javascript:[^"']*["']/gi, 'xlink:href="#"');
+      buffer = Buffer.from(svgText, "utf-8");
+    }
 
     // Sanitize filename
-    const ext = path.extname(file.name) || ".jpg";
+    const originalExt = path.extname(file.name);
     const baseName = path
-      .basename(file.name, ext)
+      .basename(file.name, originalExt)
       .toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .replace(/[^a-z0-9_-]/g, "-")
-      .replace(/-+/g, "-");
+      .replace(/-+/g, "-")
+      .slice(0, 80);
 
-    const uniqueName = `${baseName}-${Date.now()}${ext}`;
+    const uniqueName = `${baseName || "file"}-${Date.now()}${ext}`;
     const targetSubfolder = folder === "brands" ? "brands" : folder === "products" ? "products" : "uploads";
     const targetDir = path.join(process.cwd(), "public", "images", targetSubfolder);
 

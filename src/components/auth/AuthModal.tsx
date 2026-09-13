@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { X } from "lucide-react";
+import { InvisibleCaptcha, type InvisibleCaptchaRef } from "@/components/common/InvisibleCaptcha";
 
 export const AuthModal: React.FC = () => {
   const { isAuthModalOpen, closeAuthModal, login, register } = useAuth();
@@ -16,6 +17,7 @@ export const AuthModal: React.FC = () => {
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const captchaRef = useRef<InvisibleCaptchaRef>(null);
 
   if (!isAuthModalOpen) return null;
 
@@ -25,8 +27,10 @@ export const AuthModal: React.FC = () => {
     setIsSubmitting(true);
 
     try {
+      const verification = captchaRef.current?.getVerificationData();
+
       if (activeTab === "login") {
-        const res = await login(email, password);
+        const res = await login(email, password, verification);
         if (!res.success) {
           setErrorMsg(res.error || "Error al iniciar sesión.");
         }
@@ -41,12 +45,20 @@ export const AuthModal: React.FC = () => {
           setIsSubmitting(false);
           return;
         }
+        if (password.length < 8) {
+          setErrorMsg("La contraseña debe tener al menos 8 caracteres.");
+          setIsSubmitting(false);
+          return;
+        }
         const res = await register({
           name,
           email,
           phone,
           companyName,
           password,
+          antiBotToken: verification?.antiBotToken,
+          honeypot: verification?.honeypot,
+          turnstileToken: verification?.turnstileToken,
         });
         if (!res.success) {
           setErrorMsg(res.error || "Error al crear la cuenta.");
@@ -128,6 +140,7 @@ export const AuthModal: React.FC = () => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-3.5">
+          <InvisibleCaptcha ref={captchaRef} />
           {activeTab === "register" && (
             <>
               <div>

@@ -4,6 +4,8 @@ import { getSessionUser } from "@/lib/auth/session";
 import { eq, and, desc, inArray } from "drizzle-orm";
 import { getNextQuoteNumber } from "@/lib/quotes/consecutive";
 import { sendQuoteEmails } from "@/lib/email/mailer";
+import { checkRateLimit, getClientIp } from "@/lib/security/rateLimiter";
+import { verifyAntiBot } from "@/lib/security/antiBot";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +72,20 @@ export async function GET() {
 // POST /api/quotes - Guarda o envía una cotización
 export async function POST(request: Request) {
   try {
+    const clientIp = getClientIp(request);
+
+    // 1. Rate Limiting: máximo 10 cotizaciones por 10 minutos por IP
+    const rateCheck = checkRateLimit(clientIp, "quotes_post", {
+      limit: 10,
+      windowMs: 10 * 60 * 1000,
+    });
+    if (!rateCheck.allowed) {
+      return NextResponse.json(
+        { error: `Demasiadas solicitudes. Por favor intenta de nuevo en ${rateCheck.resetInSec} segundos.` },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const {
       savedQuoteId,
@@ -79,11 +95,28 @@ export async function POST(request: Request) {
       total,
       items,
       action = "send", // 'save' | 'send'
+      antiBotToken,
+      honeypot,
+      turnstileToken,
     } = body;
 
-    // Verify session
+    // 2. Verificación Anti-Bot / Captcha Invisible
+    const botCheck = await verifyAntiBot({
+      token: antiBotToken,
+      honeypot,
+      turnstileToken,
+      clientIp,
+    });
+    if (!botCheck.valid) {
+      return NextResponse.json(
+        { error: botCheck.reason || "Verificación de seguridad requerida." },
+        { status: 400 }
+      );
+    }
+
+    // 3. Verificación de sesión (nunca confiar en body.userId no autenticado)
     const session = await getSessionUser();
-    let userId = session?.userId || null;
+    const userId = session?.userId || null;
     let customerName = "Cliente";
     let companyName = "";
     let email = "cliente@karmax.com";
@@ -102,25 +135,40 @@ export async function POST(request: Request) {
         email = userRecord.email;
         phone = userRecord.phone || "";
       }
-    } else if (body.userId) {
-      userId = Number(body.userId);
-      const [userRecord] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, userId))
-        .limit(1);
-
-      if (userRecord) {
-        customerName = userRecord.name;
-        companyName = userRecord.companyName || "";
-        email = userRecord.email;
-        phone = userRecord.phone || "";
-      }
     }
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
         { error: "La cotización no contiene productos." },
+        { status: 400 }
+      );
+    }
+
+    // 4. Sanitización y validación de items
+    const sanitizedItems: QuoteItemPayload[] = [];
+    for (const rawItem of items) {
+      if (!rawItem || typeof rawItem !== "object") continue;
+      const rawQty = Number(rawItem.quantity);
+      const quantity = isNaN(rawQty) || rawQty < 1 ? 1 : Math.min(Math.floor(rawQty), 9999);
+      const rawUnitPrice = Number(rawItem.unitPrice);
+      const unitPrice = isNaN(rawUnitPrice) || rawUnitPrice < 0 ? 0 : Number(rawUnitPrice.toFixed(2));
+      const totalPrice = Number((quantity * unitPrice).toFixed(2));
+
+      sanitizedItems.push({
+        productId: rawItem.productId ? Number(rawItem.productId) : undefined,
+        productName: String(rawItem.productName || "Producto").trim().slice(0, 255),
+        presentation: rawItem.presentation ? String(rawItem.presentation).trim().slice(0, 100) : undefined,
+        sku: rawItem.sku ? String(rawItem.sku).trim().slice(0, 100) : undefined,
+        imageUrl: rawItem.imageUrl ? String(rawItem.imageUrl).trim().slice(0, 500) : undefined,
+        quantity,
+        unitPrice,
+        totalPrice,
+      });
+    }
+
+    if (sanitizedItems.length === 0) {
+      return NextResponse.json(
+        { error: "No se encontraron productos válidos en la cotización." },
         { status: 400 }
       );
     }
@@ -205,7 +253,7 @@ export async function POST(request: Request) {
     }
 
     // Insert items
-    for (const item of items as QuoteItemPayload[]) {
+    for (const item of sanitizedItems) {
       await db.insert(quoteItems).values({
         quoteRequestId,
         productId: item.productId ? Number(item.productId) : null,
@@ -213,9 +261,9 @@ export async function POST(request: Request) {
         presentation: item.presentation || null,
         sku: item.sku || null,
         imageUrl: item.imageUrl || null,
-        quantity: item.quantity ? Number(item.quantity) : 1,
-        unitPrice: item.unitPrice ? String(Number(item.unitPrice).toFixed(2)) : "0.00",
-        totalPrice: item.totalPrice ? String(Number(item.totalPrice).toFixed(2)) : "0.00",
+        quantity: item.quantity,
+        unitPrice: String(item.unitPrice.toFixed(2)),
+        totalPrice: String(item.totalPrice.toFixed(2)),
       });
     }
 
@@ -233,7 +281,7 @@ export async function POST(request: Request) {
           subtotal: subtotal || 0,
           tax: tax || 0,
           total: total || 0,
-          items: items.map((it) => ({
+          items: sanitizedItems.map((it) => ({
             productName: it.productName,
             presentation: it.presentation,
             sku: it.sku,

@@ -6,13 +6,20 @@ import type { AuthUser } from "@/types";
 interface AuthContextType {
   user: AuthUser | null;
   isLoading: boolean;
-  login: (email: string, pass: string) => Promise<{ success: boolean; error?: string }>;
+  login: (
+    email: string,
+    pass: string,
+    verification?: { antiBotToken?: string; honeypot?: string; turnstileToken?: string }
+  ) => Promise<{ success: boolean; error?: string }>;
   register: (data: {
     name: string;
     email: string;
     phone?: string;
     companyName?: string;
     password: string;
+    antiBotToken?: string;
+    honeypot?: string;
+    turnstileToken?: string;
   }) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   isAuthModalOpen: boolean;
@@ -49,12 +56,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const login = async (email: string, pass: string) => {
+  const login = async (
+    email: string,
+    pass: string,
+    verification?: { antiBotToken?: string; honeypot?: string; turnstileToken?: string }
+  ) => {
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password: pass }),
+        body: JSON.stringify({
+          email,
+          password: pass,
+          antiBotToken: verification?.antiBotToken,
+          honeypot: verification?.honeypot,
+          turnstileToken: verification?.turnstileToken,
+        }),
       });
       const data = await res.json();
 
@@ -80,6 +97,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     phone?: string;
     companyName?: string;
     password: string;
+    antiBotToken?: string;
+    honeypot?: string;
+    turnstileToken?: string;
   }) => {
     try {
       const res = await fetch("/api/auth/register", {

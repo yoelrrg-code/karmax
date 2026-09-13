@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const categorySlug = searchParams.get("category") || undefined;
     const industrySlug = searchParams.get("industry") || undefined;
     const search = searchParams.get("search") || undefined;
-    const sortBy = (searchParams.get("sortBy") as CatalogSortOption) || "name";
+    const sortBy = (searchParams.get("sortBy") as CatalogSortOption) || "name_asc";
     const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
     const limit = Math.max(1, Math.min(48, parseInt(searchParams.get("limit") || "12", 10)));
 
