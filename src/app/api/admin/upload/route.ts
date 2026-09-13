@@ -46,13 +46,14 @@ export async function POST(request: NextRequest) {
       .replace(/-+/g, "-");
 
     const uniqueName = `${baseName}-${Date.now()}${ext}`;
-    const targetDir = path.join(process.cwd(), "public", "images", folder === "products" ? "products" : "uploads");
+    const targetSubfolder = folder === "brands" ? "brands" : folder === "products" ? "products" : "uploads";
+    const targetDir = path.join(process.cwd(), "public", "images", targetSubfolder);
 
     await fs.mkdir(targetDir, { recursive: true });
     const targetFilePath = path.join(targetDir, uniqueName);
     await fs.writeFile(targetFilePath, buffer);
 
-    const relativeUrl = `/images/${folder === "products" ? "products" : "uploads"}/${uniqueName}`;
+    const relativeUrl = `/images/${targetSubfolder}/${uniqueName}`;
 
     return NextResponse.json({
       success: true,

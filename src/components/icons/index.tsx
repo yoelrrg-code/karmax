@@ -455,6 +455,38 @@ export const WhatsappIcon: React.FC<IconProps> = ({
   );
 };
 
+/**
+ * YouTube Social Icon (32x32)
+ */
+export const YoutubeIcon: React.FC<IconProps> = ({
+  size,
+  width = 32,
+  height = 32,
+  className = "",
+  ...props
+}) => {
+  const w = size ?? width;
+  const h = size ?? height;
+
+  return (
+    <svg
+      width={w}
+      height={h}
+      viewBox="0 0 32 32"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      {...props}
+    >
+      <circle cx="16" cy="16" r="15.5" fill="#16C24A" stroke="#16C24A" />
+      <path
+        d="M23.6 12.2C23.4 11.4 22.8 10.8 22 10.6C20.6 10.2 16 10.2 16 10.2C16 10.2 11.4 10.2 10 10.6C9.2 10.8 8.6 11.4 8.4 12.2C8 13.6 8 16 8 16C8 16 8 18.4 8.4 19.8C8.6 20.6 9.2 21.2 10 21.4C11.4 21.8 16 21.8 16 21.8C16 21.8 20.6 21.8 22 21.4C22.8 21.2 23.4 20.6 23.6 19.8C24 18.4 24 16 24 16C24 16 24 13.6 23.6 12.2ZM14.4 18.4V13.6L18.6 16L14.4 18.4Z"
+        fill="white"
+      />
+    </svg>
+  );
+};
+
 export const iconsMap = {
   "check-mark": CheckMarkIcon,
   cotiza: CotizaIcon,
@@ -467,6 +499,7 @@ export const iconsMap = {
   tiktok: TiktokIcon,
   user: UserIcon,
   whatsapp: WhatsappIcon,
+  youtube: YoutubeIcon,
 } as const;
 
 export type IconName = keyof typeof iconsMap;

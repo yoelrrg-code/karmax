@@ -3,6 +3,15 @@ import Link from "next/link";
 import { Logo } from "@/components/common/Logo";
 import { Icon } from "@/components/icons";
 
+export interface FooterSocialLinks {
+  facebook?: string;
+  instagram?: string;
+  tiktok?: string;
+  linkedin?: string;
+  whatsapp?: string;
+  youtube?: string;
+}
+
 export interface FooterProps {
   data?: {
     description?: string;
@@ -13,9 +22,10 @@ export interface FooterProps {
     facebookUrl?: string;
     instagramUrl?: string;
   };
+  socialLinks?: FooterSocialLinks;
 }
 
-export const Footer: React.FC<FooterProps> = ({ data }) => {
+export const Footer: React.FC<FooterProps> = ({ data, socialLinks }) => {
   const description =
     data?.description ||
     "Materia prima de la mejor calidad a precios incomparables.";
@@ -25,8 +35,12 @@ export const Footer: React.FC<FooterProps> = ({ data }) => {
   const phone = data?.phone || "+52 81 8659 0941";
   const phoneClean = phone.replace(/[^0-9+]/g, "");
   const email = data?.email || "contacto@karmax.mx";
-  const facebookUrl = data?.facebookUrl || "https://facebook.com";
-  const instagramUrl = data?.instagramUrl || "https://instagram.com";
+  const facebookUrl = socialLinks?.facebook ?? data?.facebookUrl ?? "https://facebook.com";
+  const instagramUrl = socialLinks?.instagram ?? data?.instagramUrl ?? "https://instagram.com";
+  const tiktokUrl = socialLinks?.tiktok ?? "https://tiktok.com";
+  const linkedinUrl = socialLinks?.linkedin ?? "https://linkedin.com";
+  const whatsappUrl = socialLinks?.whatsapp ?? "";
+  const youtubeUrl = socialLinks?.youtube ?? "";
 
   return (
     <footer id="contacto" className="bg-[var(--light-bg-karmax)] text-[var(--light-text-karmax)]">
@@ -117,42 +131,72 @@ export const Footer: React.FC<FooterProps> = ({ data }) => {
 
             {/* Social Icons */}
             <div className="flex items-center gap-3 pt-2">
-              <a
-                href={facebookUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Facebook"
-                className="opacity-85 hover:opacity-100 hover:scale-105 transition-all"
-              >
-                <Icon name="facebook" size={32} />
-              </a>
-              <a
-                href="https://tiktok.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="TikTok"
-                className="opacity-85 hover:opacity-100 hover:scale-105 transition-all"
-              >
-                <Icon name="tiktok" size={32} />
-              </a>
-              <a
-                href="https://linkedin.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="LinkedIn"
-                className="opacity-85 hover:opacity-100 hover:scale-105 transition-all"
-              >
-                <Icon name="linkedin" size={32} />
-              </a>
-              <a
-                href={instagramUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Instagram"
-                className="opacity-85 hover:opacity-100 hover:scale-105 transition-all"
-              >
-                <Icon name="instagram" size={32} />
-              </a>
+              {facebookUrl && (
+                <a
+                  href={facebookUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Facebook"
+                  className="opacity-85 hover:opacity-100 hover:scale-105 transition-all"
+                >
+                  <Icon name="facebook" size={32} />
+                </a>
+              )}
+              {tiktokUrl && (
+                <a
+                  href={tiktokUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="TikTok"
+                  className="opacity-85 hover:opacity-100 hover:scale-105 transition-all"
+                >
+                  <Icon name="tiktok" size={32} />
+                </a>
+              )}
+              {linkedinUrl && (
+                <a
+                  href={linkedinUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="LinkedIn"
+                  className="opacity-85 hover:opacity-100 hover:scale-105 transition-all"
+                >
+                  <Icon name="linkedin" size={32} />
+                </a>
+              )}
+              {instagramUrl && (
+                <a
+                  href={instagramUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Instagram"
+                  className="opacity-85 hover:opacity-100 hover:scale-105 transition-all"
+                >
+                  <Icon name="instagram" size={32} />
+                </a>
+              )}
+              {youtubeUrl && (
+                <a
+                  href={youtubeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="YouTube"
+                  className="opacity-85 hover:opacity-100 hover:scale-105 transition-all"
+                >
+                  <Icon name="youtube" size={32} />
+                </a>
+              )}
+              {whatsappUrl && (
+                <a
+                  href={whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="WhatsApp"
+                  className="opacity-85 hover:opacity-100 hover:scale-105 transition-all"
+                >
+                  <Icon name="whatsapp" size={32} />
+                </a>
+              )}
             </div>
           </div>
         </div>
@@ -163,14 +207,14 @@ export const Footer: React.FC<FooterProps> = ({ data }) => {
           <div className="flex items-center gap-2">
             <Link
               href="#privacidad"
-              className="text-[14px] sm:text-[14px] text-[var(--light-text-karmax)] hover:text-[var(--blue-karmax)] transition-colors"
+              className="text-[14px] sm:text-[14px] text-[var(--light-text-karmax)] hover:text-[var(--green-hover-karmax)] transition-colors"
             >
               Política de privacidad
             </Link>
             <span className="text-slate-400">|</span>
             <Link
               href="#terminos"
-              className="hover:text-[var(--blue-karmax)] transition-colors"
+              className="text-[14px] sm:text-[14px] text-[var(--light-text-karmax)] hover:text-[var(--green-hover-karmax)] transition-colors"
             >
               Términos y condiciones
             </Link>

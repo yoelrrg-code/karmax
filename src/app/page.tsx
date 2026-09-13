@@ -55,7 +55,10 @@ export default async function HomePage() {
       </main>
 
       {/* Footer corporativo */}
-      <Footer data={settings.footer_info as FooterProps["data"]} />
+      <Footer
+        data={settings.footer_info as FooterProps["data"]}
+        socialLinks={settings.social_links as FooterProps["socialLinks"]}
+      />
     </div>
   );
 }

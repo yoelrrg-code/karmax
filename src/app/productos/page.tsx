@@ -8,8 +8,10 @@ import {
   getCategories,
   getIndustries,
   getProductsCatalog,
+  getSiteSetting,
 } from "@/lib/services/karmaxService";
 import type { CatalogSortOption } from "@/types";
+import type { FooterProps } from "@/components/layout/Footer";
 
 export const metadata: Metadata = {
   title: "Catálogo de Productos | KARMAX",
@@ -37,7 +39,7 @@ export default async function ProductosPage({ searchParams }: ProductosPageProps
   const sortBy = params.sortBy || "name";
   const page = Math.max(1, parseInt(params.page || "1", 10));
 
-  const [categories, industries, catalogData] = await Promise.all([
+  const [categories, industries, catalogData, footerInfo, socialLinks] = await Promise.all([
     getCategories(),
     getIndustries(),
     getProductsCatalog({
@@ -48,6 +50,8 @@ export default async function ProductosPage({ searchParams }: ProductosPageProps
       page,
       limit: 12,
     }),
+    getSiteSetting<FooterProps["data"]>("footer_info", {}),
+    getSiteSetting<FooterProps["socialLinks"]>("social_links", {}),
   ]);
 
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "+529988436581";
@@ -78,7 +82,7 @@ export default async function ProductosPage({ searchParams }: ProductosPageProps
       </main>
 
       {/* 4. Footer idéntico a la homepage */}
-      <Footer />
+      <Footer data={footerInfo} socialLinks={socialLinks} />
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { useAuth } from "@/context/AuthContext";
@@ -282,79 +283,140 @@ export default function MisCotizacionesPage() {
         {/* Modal Detalle de Cotización */}
         {selectedQuote && (
           <div className="fixed inset-0 z-50 overflow-y-auto bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col">
-              <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+            <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl animate-in fade-in zoom-in-95 max-h-[90vh] flex flex-col">
+              {/* Header */}
+              <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
                 <div>
-                  <h3 className="font-bold text-lg text-[var(--dark-blue-karmax)]">
+                  <h3 className="font-semibold text-lg sm:text-xl text-[var(--dark-blue-karmax)]">
                     Detalle de Cotización #{selectedQuote.quoteNumber}
                   </h3>
-                  <p className="text-xs text-slate-400">
-                    {formatDate(selectedQuote.createdAt)} • {selectedQuote.status === "saved" ? "Borrador" : "Enviada"}
+                  <p className="!text-[14px] text-[var(--text-karmax)] font-normal mt-0.5">
+                    {formatDate(selectedQuote.createdAt)} • {selectedQuote.status === "saved" ? "Borrador guardado" : "Enviada a Karmax"}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setSelectedQuote(null)}
-                  className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+                  className="flex items-center gap-1.5 !text-[14px] text-[var(--light-text-karmax)] hover:text-[var(--green-hover-karmax)] p-2 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
                 >
+                  <span>Cerrar</span>
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              <div className="overflow-y-auto flex-1 pr-1 space-y-4">
-                {selectedQuote.notes && (
-                  <div className="bg-slate-50 p-3.5 rounded-xl text-xs text-slate-600 border border-slate-100">
-                    <strong className="text-slate-800 block mb-1">Notas o comentarios:</strong>
-                    {selectedQuote.notes}
-                  </div>
-                )}
-
-                <div className="border border-slate-100 rounded-2xl overflow-hidden">
-                  <table className="w-full text-left border-collapse text-xs">
+              {/* Body / Scrollable Content */}
+              <div className="overflow-y-auto flex-1 pr-1">
+                {/* Table */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs sm:text-sm">
                     <thead>
-                      <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-semibold uppercase">
-                        <th className="p-3">Producto</th>
-                        <th className="p-3 text-center">Pres.</th>
-                        <th className="p-3 text-center">Cant.</th>
-                        <th className="p-3 text-right">Unitario</th>
-                        <th className="p-3 text-right">Total</th>
+                      <tr className="border-b border-[#9AA1AA] text-[12px] font-semibold text-[var(--text-karmax)] uppercase tracking-wider">
+                        <th className="pb-2 min-w-[180px] font-semibold text-[12px]">Producto</th>
+                        <th className="pb-2 text-center min-w-[90px] font-semibold text-[12px]">Presentación</th>
+                        <th className="pb-2 text-center min-w-[90px] font-semibold text-[12px]">Cantidad</th>
+                        <th className="pb-2 text-right min-w-[120px] font-semibold text-[12px]">Precio Unitario</th>
+                        <th className="pb-2 text-right min-w-[80px] font-semibold text-[12px]">Total</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {selectedQuote.items?.map((it) => (
-                        <tr key={it.id}>
-                          <td className="p-3 font-medium text-slate-800">
-                            {it.productName}
-                            {it.sku && <span className="block text-[10px] text-slate-400 font-normal">SKU: {it.sku}</span>}
-                          </td>
-                          <td className="p-3 text-center text-slate-500">{it.presentation || "Estándar"}</td>
-                          <td className="p-3 text-center font-semibold text-slate-700">{it.quantity}</td>
-                          <td className="p-3 text-right text-slate-500">{formatCurrency(it.unitPrice)}</td>
-                          <td className="p-3 text-right font-bold text-slate-800">{formatCurrency(it.totalPrice)}</td>
-                        </tr>
-                      ))}
+                      {selectedQuote.items?.map((it) => {
+                        const unitPriceNum = typeof it.unitPrice === "number" ? it.unitPrice : parseFloat(String(it.unitPrice)) || 0;
+                        const totalPriceNum = typeof it.totalPrice === "number" ? it.totalPrice : parseFloat(String(it.totalPrice)) || 0;
+
+                        return (
+                          <tr key={it.id} className="group hover:bg-slate-50/60 transition-colors">
+                            {/* Product Image & Info */}
+                            <td className="py-3.5 pr-3 align-middle">
+                              <div className="flex items-center gap-3">
+                                <div className="relative w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 p-1 flex items-center justify-center">
+                                  <Image
+                                    src={it.imageUrl || "/images/products/placeholder.jpg"}
+                                    alt={it.productName}
+                                    fill
+                                    className="object-contain p-0.5"
+                                    sizes="48px"
+                                    unoptimized
+                                  />
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="!font-[600] text-[var(--text-karmax)] line-clamp-1 leading-tight !text-[14px]">
+                                    {it.productName}
+                                  </p>
+                                  <p className="text-[14px] text-[var(--light-text-karmax)] mt-0 !leading-tight">
+                                    SKU: {it.sku || "N/A"}
+                                  </p>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Presentación */}
+                            <td className="py-3.5 px-2 text-center align-middle text-slate-600 font-medium text-[14px]">
+                              {it.presentation || "-"}
+                            </td>
+
+                            {/* Cantidad */}
+                            <td className="py-3.5 px-2 text-center align-middle text-[var(--text-karmax)] font-medium text-[14px]">
+                              {it.quantity}
+                            </td>
+
+                            {/* Precio Unitario */}
+                            <td className="py-3.5 px-2 text-right align-middle text-[var(--text-karmax)] text-[14px]">
+                              {formatCurrency(unitPriceNum)}
+                            </td>
+
+                            {/* Total */}
+                            <td className="py-3.5 pl-2 text-right align-middle font-medium text-[var(--text-karmax)] text-[14px]">
+                              {formatCurrency(totalPriceNum)}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
 
-                <div className="pt-2 text-right text-xs sm:text-sm space-y-1">
-                  <p className="text-slate-500">
-                    Subtotal: <span className="font-semibold text-slate-800">{formatCurrency(selectedQuote.subtotal)}</span>
-                  </p>
-                  <p className="text-slate-500">
-                    I.V.A. (16%): <span className="font-semibold text-slate-800">{formatCurrency(selectedQuote.tax)}</span>
-                  </p>
-                  <p className="text-base font-bold text-[var(--green-karmax)] pt-1 border-t border-slate-100">
-                    Total: {formatCurrency(selectedQuote.total)}
-                  </p>
+                {/* Bottom Section: Comentarios + Resumen Financiero */}
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mt-8 pt-6 border-t border-slate-200">
+                  {/* Comentarios */}
+                  {selectedQuote.notes ? (
+                    <div className="md:col-span-7 flex flex-col">
+                      <label className="text-[12px] font-semibold uppercase text-[var(--text-karmax)] tracking-wider mb-2">
+                        Comentarios
+                      </label>
+                      <div className="w-full p-3 text-[14px] text-[var(--text-karmax)] rounded-xl border border-[#CCCCCC] bg-slate-50/50 whitespace-pre-wrap">
+                        {selectedQuote.notes}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="hidden md:block md:col-span-7" />
+                  )}
+
+                  {/* Subtotal, IVA 16%, Total */}
+                  <div className="md:col-span-5 flex flex-col justify-between space-y-2 text-xs sm:text-sm">
+                    <div className="flex items-center justify-between text-[var(--text-karmax)]">
+                      <span className="font-semibold">Subtotal</span>
+                      <span className="font-medium">{formatCurrency(selectedQuote.subtotal)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-[var(--text-karmax)] pt-2.5 border-t border-[#D6DADD]">
+                      <span className="font-semibold">IVA 16%</span>
+                      <span className="font-medium">{formatCurrency(selectedQuote.tax)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-[var(--text-karmax)] pt-2.5 border-t border-[#9AA1AA] text-sm sm:text-base">
+                      <span className="font-semibold">Total</span>
+                      <span className="text-[var(--text-karmax)] font-semibold text-[14px]">
+                        {formatCurrency(selectedQuote.total)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="pt-4 mt-4 border-t border-slate-100 flex items-center justify-end gap-3">
+              {/* Footer Actions */}
+              <div className="pt-4 mt-6 border-t border-slate-100 flex items-center justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => setSelectedQuote(null)}
-                  className="px-5 py-2 rounded-full text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
+                  className="px-6 py-2.5 rounded-full text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors cursor-pointer"
                 >
                   Cerrar
                 </button>
@@ -366,9 +428,10 @@ export default function MisCotizacionesPage() {
                       setSelectedQuote(null);
                       handleContinueQuote(q);
                     }}
-                    className="px-6 py-2 rounded-full text-xs font-semibold text-white bg-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] transition-colors cursor-pointer shadow-sm"
+                    className="inline-flex items-center gap-2 border border-[var(--green-karmax)] bg-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] hover:border-[var(--green-hover-karmax)] text-white px-6 py-2.5 rounded-full text-sm font-semibold shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer"
                   >
-                    Continuar cotización
+                    <span>Continuar cotización</span>
+                    <ArrowRight className="w-4 h-4" />
                   </button>
                 )}
               </div>

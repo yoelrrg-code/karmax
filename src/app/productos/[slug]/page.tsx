@@ -2,10 +2,11 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { getProductBySlug, getRelatedProducts } from "@/lib/services/karmaxService";
+import { getProductBySlug, getRelatedProducts, getSiteSetting } from "@/lib/services/karmaxService";
 import { ProductDetailView } from "@/components/product/ProductDetailView";
 import { QuoteSteps } from "@/components/home/QuoteSteps";
 import { PreFooterCta } from "@/components/home/PreFooterCta";
+import type { FooterProps } from "@/components/layout/Footer";
 
 interface ProductDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -49,11 +50,11 @@ export default async function ProductDetailPage({
     notFound();
   }
 
-  const relatedProducts = await getRelatedProducts(
-    product.id,
-    product.categoryId,
-    8
-  );
+  const [relatedProducts, footerInfo, socialLinks] = await Promise.all([
+    getRelatedProducts(product.id, product.categoryId, 8),
+    getSiteSetting<FooterProps["data"]>("footer_info", {}),
+    getSiteSetting<FooterProps["socialLinks"]>("social_links", {}),
+  ]);
 
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "+529988436581";
 
@@ -81,7 +82,7 @@ export default async function ProductDetailPage({
           ]}
         />
       </main>
-      <Footer />
+      <Footer data={footerInfo} socialLinks={socialLinks} />
     </div>
   );
 }

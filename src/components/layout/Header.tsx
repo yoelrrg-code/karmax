@@ -22,11 +22,22 @@ export const Header: React.FC = () => {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   useEffect(() => {
+    let ticking = false;
+
     const handleScroll = () => {
-      if (window.scrollY > 20) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const currentScroll = window.scrollY;
+          // Hysteresis: se encoge al bajar de 60px y sólo se expande al regresar cerca del tope (< 15px)
+          // para evitar saltos o parpadeos cuando el usuario hace scrolls pequeños.
+          setIsScrolled((prev) => {
+            if (!prev && currentScroll > 60) return true;
+            if (prev && currentScroll < 15) return false;
+            return prev;
+          });
+          ticking = false;
+        });
+        ticking = true;
       }
     };
 
@@ -39,9 +50,9 @@ export const Header: React.FC = () => {
   }, []);
 
   return (
-    <header className={`sticky top-0 z-40 bg-white transition-all duration-300 ${isScrolled ? "h-20" : "h-30"}`}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className={`flex items-center justify-between transition-all duration-300 ${isScrolled ? "h-20" : "h-30"}`}>
+    <header className={`sticky top-0 z-40 bg-white transition-all duration-300 ease-in-out ${isScrolled ? "h-20 shadow-2xs" : "h-30"}`}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+        <div className="flex items-center justify-between h-full">
           {/* Logo */}
           <div className="flex-shrink-0">
             <Logo />
