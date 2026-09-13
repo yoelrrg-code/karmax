@@ -112,6 +112,21 @@ export interface AuthUser {
   companyName?: string | null;
   roleId: number;
   roleName: "admin" | "cliente" | string;
+  discountPercentage?: number | null;
+}
+
+export interface AdminCustomerItem {
+  id: number;
+  name: string;
+  email: string;
+  phone: string | null;
+  companyName: string | null;
+  roleId: number;
+  roleName: string;
+  isActive: boolean;
+  discountPercentage: number;
+  quotesCount: number;
+  createdAt: string;
 }
 
 export interface QuoteCartItem {
@@ -122,5 +137,6 @@ export interface QuoteCartItem {
   imageUrl?: string | null;
   presentation: string;
   unitPrice: number;
+  regularPrice?: number | null;
   quantity: number;
 }

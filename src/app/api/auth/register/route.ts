@@ -71,6 +71,7 @@ export async function POST(request: Request) {
         companyName: companyName ? String(companyName).trim() : null,
         roleId,
         roleName: clientRole?.name || "cliente",
+        discountPercentage: 0,
       },
     });
   } catch (error) {

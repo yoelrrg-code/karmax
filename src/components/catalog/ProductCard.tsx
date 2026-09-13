@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useSyncExternalStore } from "react";
+import React, { useSyncExternalStore, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { CatalogProductItem } from "@/types";
 import { useQuote } from "@/context/QuoteContext";
+import { useAuth } from "@/context/AuthContext";
+import { computeProductPricing } from "@/lib/pricing/discounts";
 
 const emptySubscribe = () => () => {};
 
@@ -14,21 +16,36 @@ interface ProductCardProps {
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
   const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
+  const { user } = useAuth();
   const { getItemQuantity, addItem } = useQuote();
   const quantity = isMounted ? getItemQuantity(product.id) : 0;
 
-  const hasSalePrice = Boolean(product.salePrice && Number(product.salePrice) > 0);
-  const priceVal = hasSalePrice ? product.salePrice : product.regularPrice;
-  const displayPrice = priceVal
+  const pricing = useMemo(() => {
+    return computeProductPricing({
+      regularPrice: product.regularPrice,
+      salePrice: product.salePrice,
+      userDiscountPercentage: user?.discountPercentage,
+    });
+  }, [product.regularPrice, product.salePrice, user?.discountPercentage]);
+
+  const hasCatalogSale = Boolean(
+    product.salePrice &&
+    Number(product.salePrice) > 0 &&
+    product.regularPrice &&
+    Number(product.regularPrice) > 0 &&
+    Number(product.salePrice) < Number(product.regularPrice)
+  );
+
+  const displayPrice = pricing.finalPrice !== null
     ? product.hasMultipleVariations
-      ? <><span className="text-[14px] font-normal">Desde</span> ${priceVal}</>
-      : `$${priceVal}`
+      ? <><span className="text-[14px] font-normal">Desde</span> ${pricing.finalPrice.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</>
+      : `$${pricing.finalPrice.toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
     : "Cotizar";
 
   return (
     <div className="group relative bg-white rounded-2xl border border-slate-100/90 shadow-2xs hover:shadow-lg transition-all duration-300 p-4 sm:p-5 h-full flex flex-col justify-between items-center text-center">
-      {/* Badge Oferta si tiene sale_price */}
-      {hasSalePrice && (
+      {/* Badge Oferta si tiene sale_price de catálogo */}
+      {hasCatalogSale && (
         <span className="absolute top-3 left-3 z-10 text-[12px] font-bold text-white bg-[#FF6816] px-2.5 py-1 rounded-full uppercase tracking-wider shadow-xs flex items-center gap-2">
           <Image
             src={"/icons/arrow-down.svg"}
@@ -62,10 +79,38 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
           </h3>
         </Link>
 
-        <div className="mb-4">
-          <span className="text-[16px] sm:text-[20px] font-semibold text-[var(--green-karmax)]">
-            {displayPrice}
-          </span>
+        {/* Precio con descuento: Regular tachado + Precio final + Porcentaje a la derecha */}
+        <div className="mb-4 min-h-[28px] flex items-baseline justify-center gap-1.5 flex-wrap">
+          {pricing.hasDiscount ? (
+            <>
+              {product.hasMultipleVariations && (
+                <span className="text-[13px] sm:text-[14px] font-normal text-slate-500 mr-0.5">
+                  Desde
+                </span>
+              )}
+              <span className="text-[13px] sm:text-[15px] font-normal text-slate-400 line-through decoration-slate-400">
+                ${pricing.regularPrice?.toLocaleString("es-MX", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </span>
+              <span className="text-[16px] sm:text-[20px] font-bold text-[var(--green-karmax)]">
+                ${pricing.finalPrice?.toLocaleString("es-MX", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}
+              </span>
+              {pricing.discountPercentage > 0 && (
+                <span className="text-[13px] sm:text-[15px] font-semibold text-[var(--green-karmax)]">
+                  -{pricing.discountPercentage}%
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="text-[16px] sm:text-[20px] font-semibold text-[var(--green-karmax)]">
+              {displayPrice}
+            </span>
+          )}
         </div>
 
         {/* Botón de acción: "+ Agregar" o Contador "– [cant] +" (Imagen 1) */}

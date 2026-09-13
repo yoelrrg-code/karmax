@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useSyncExternalStore } from "react";
+import React, { useState, useEffect, useRef, useSyncExternalStore } from "react";
 import Image from "next/image";
 import { useQuote } from "@/context/QuoteContext";
 import { useAuth } from "@/context/AuthContext";
@@ -36,6 +36,17 @@ export const QuoteDrawer: React.FC = () => {
   const { user, openAuthModal } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const itemsRef = useRef(items);
+  const userRef = useRef(user);
+
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   useEffect(() => {
     if (!isDrawerOpen) return;
@@ -78,8 +89,10 @@ export const QuoteDrawer: React.FC = () => {
     }
 
     if (!user) {
-      openAuthModal(async () => {
-        await executeSave(action);
+      openAuthModal(() => {
+        setTimeout(() => {
+          executeSave(action);
+        }, 50);
       });
       return;
     }
@@ -92,6 +105,39 @@ export const QuoteDrawer: React.FC = () => {
     setSuccessMessage(null);
 
     try {
+      const currentItems = itemsRef.current;
+      const currentUser = userRef.current;
+      const userDiscount = Number(currentUser?.discountPercentage || 0);
+
+      const calculatedItems = currentItems.map((it) => {
+        let finalUnitPrice = it.unitPrice;
+        if (userDiscount > 0) {
+          if (it.regularPrice && it.regularPrice > it.unitPrice) {
+            // El item ya tiene el descuento aplicado
+            finalUnitPrice = it.unitPrice;
+          } else {
+            const baseRegular = it.regularPrice ?? it.unitPrice;
+            finalUnitPrice = Number((baseRegular * (1 - userDiscount / 100)).toFixed(2));
+          }
+        }
+        return {
+          productId: it.productId,
+          productName: it.name,
+          presentation: it.presentation,
+          sku: it.sku,
+          imageUrl: it.imageUrl,
+          quantity: it.quantity,
+          unitPrice: finalUnitPrice,
+          totalPrice: Number((finalUnitPrice * it.quantity).toFixed(2)),
+        };
+      });
+
+      const calculatedSubtotal = Number(
+        calculatedItems.reduce((acc, it) => acc + it.totalPrice, 0).toFixed(2)
+      );
+      const calculatedTax = Number((calculatedSubtotal * 0.16).toFixed(2));
+      const calculatedTotal = Number((calculatedSubtotal + calculatedTax).toFixed(2));
+
       const res = await fetch("/api/quotes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -99,20 +145,11 @@ export const QuoteDrawer: React.FC = () => {
           savedQuoteId,
           quoteNumber,
           notes: comments,
-          subtotal,
-          tax,
-          total,
+          subtotal: calculatedSubtotal,
+          tax: calculatedTax,
+          total: calculatedTotal,
           action,
-          items: items.map((it) => ({
-            productId: it.productId,
-            productName: it.name,
-            presentation: it.presentation,
-            sku: it.sku,
-            imageUrl: it.imageUrl,
-            quantity: it.quantity,
-            unitPrice: it.unitPrice,
-            totalPrice: it.unitPrice * it.quantity,
-          })),
+          items: calculatedItems,
         }),
       });
 
@@ -211,6 +248,18 @@ export const QuoteDrawer: React.FC = () => {
             </div>
           )}
 
+          {/* Active Client Discount Banner */}
+          {Number(user?.discountPercentage || 0) > 0 && (
+            <div className="mx-6 mt-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs sm:text-sm font-medium flex items-center gap-2.5">
+              <span className="inline-flex items-center justify-center bg-emerald-600 text-white text-[11px] font-bold px-2 py-0.5 rounded-full">
+                -{Number(user?.discountPercentage)}%
+              </span>
+              <span>
+                Tienes un <strong>{Number(user?.discountPercentage)}% de descuento</strong> de cliente aplicado a los productos de tu cotización.
+              </span>
+            </div>
+          )}
+
           {/* 2. Items Content / Table */}
           <div className="flex flex-col overflow-y-auto px-6 py-4 mb-8">
             {items.length === 0 ? (
@@ -299,7 +348,18 @@ export const QuoteDrawer: React.FC = () => {
 
                           {/* Precio Unitario */}
                           <td className="py-3.5 px-2 text-right align-middle text-[var(--text-karmax)] text-[14px]">
-                            {formatCurrency(item.unitPrice)}
+                            {item.regularPrice && item.regularPrice > item.unitPrice ? (
+                              <div className="flex flex-col items-end leading-tight">
+                                <span className="text-[12px] text-slate-400 line-through decoration-slate-400 font-normal">
+                                  {formatCurrency(item.regularPrice)}
+                                </span>
+                                <span className="font-semibold text-[var(--green-karmax)]">
+                                  {formatCurrency(item.unitPrice)}
+                                </span>
+                              </div>
+                            ) : (
+                              formatCurrency(item.unitPrice)
+                            )}
                           </td>
 
                           {/* Total */}

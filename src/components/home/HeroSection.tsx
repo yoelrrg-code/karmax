@@ -132,7 +132,26 @@ const HeroProductGrid: React.FC<HeroProductGridProps> = ({ className = "" }) => 
   );
 };
 
-export const HeroSection: React.FC = () => {
+export interface HeroSectionProps {
+  data?: {
+    badgeText?: string;
+    title?: string;
+    description?: string;
+    ctaText?: string;
+    ctaLink?: string;
+    whatsappText?: string;
+    whatsappMessage?: string;
+  };
+}
+
+export const HeroSection: React.FC<HeroSectionProps> = ({ data }) => {
+  const title = data?.title || "Todo lo que tu empresa necesita para limpieza e higiene";
+  const description =
+    data?.description ||
+    "Productos fabricados por KARMAX y marcas complementarias para abastecer tu operación en un solo lugar.";
+  const ctaText = data?.ctaText || "Ver productos";
+  const ctaLink = data?.ctaLink || "#productos";
+
   return (
     <section id="hero" className="relative w-full overflow-hidden text-white">
       {/* Background split (Desktop lg+) */}
@@ -165,18 +184,23 @@ export const HeroSection: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[460px] lg:min-h-[450px] xl:min-h-[520px]">
           {/* Left Column: Copy & CTA */}
           <div className="flex flex-col justify-center py-8 lg:py-0 pr-0">
+            {data?.badgeText && (
+              <span className="inline-block px-3.5 py-1 mb-3 text-xs font-semibold uppercase tracking-wider rounded-full bg-white/20 text-white w-fit">
+                {data.badgeText}
+              </span>
+            )}
             <h1 className="tracking-tight mb-5 text-white">
-              Todo lo que tu empresa necesita para limpieza e higiene
+              {title}
             </h1>
             <p className="text-base sm:text-lg text-white/90 font-normal leading-relaxed mb-8 max-w-lg">
-              Productos fabricados por KARMAX y marcas complementarias para abastecer tu operación en un solo lugar.
+              {description}
             </p>
             <div>
               <Link
-                href="#productos"
+                href={ctaLink}
                 className="btn-primary inline-flex items-center justify-center bg-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] text-white px-8 py-4 rounded-full text-base shadow-xs hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
               >
-                Ver productos
+                {ctaText}
               </Link>
             </div>
           </div>

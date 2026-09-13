@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { CatalogHeroBar } from "@/components/catalog/CatalogHeroBar";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { useQuote } from "@/context/QuoteContext";
+import { useAuth } from "@/context/AuthContext";
+import { computeProductPricing } from "@/lib/pricing/discounts";
 import type { ProductDetailItem, CatalogProductItem } from "@/types";
 
 const emptySubscribe = () => () => {};
@@ -24,6 +26,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   const [searchInput, setSearchInput] = useState("");
   const sliderRef = useRef<HTMLDivElement>(null);
   const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
+  const { user } = useAuth();
   const { addItem, getItemQuantity, items } = useQuote();
 
   // Imágenes de la galería (mínimo la principal, más fallbacks dummy si es única)
@@ -221,22 +224,32 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
     product.sku,
   ]);
 
+  const regularPriceNumber = useMemo(() => {
+    if (activePriceNumber !== null) return activePriceNumber;
+    if (product.regularPrice) return Number(product.regularPrice);
+    return null;
+  }, [activePriceNumber, product.regularPrice]);
+
+  const pricing = useMemo(() => {
+    return computeProductPricing({
+      regularPrice: regularPriceNumber,
+      salePrice: product.salePrice,
+      userDiscountPercentage: user?.discountPercentage,
+    });
+  }, [regularPriceNumber, product.salePrice, user?.discountPercentage]);
+
+  const showStrikethrough = pricing.hasDiscount;
+  const effectivePriceToAdd = activePriceNumber !== null ? activePriceNumber : undefined;
+
   const displayPrice = useMemo(() => {
-    if (activePriceNumber !== null) {
-      return `$${activePriceNumber.toLocaleString("es-MX", {
+    if (pricing.finalPrice !== null) {
+      return `$${pricing.finalPrice.toLocaleString("es-MX", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       })}`;
     }
-    const priceVal =
-      product.salePrice && Number(product.salePrice) > 0
-        ? product.salePrice
-        : product.regularPrice;
-    if (priceVal) {
-      return product.hasMultipleVariations ? <><span className="text-[14px]">Desde</span> ${priceVal}</> : `$${priceVal}`;
-    }
     return "Cotizar";
-  }, [activePriceNumber, product.salePrice, product.regularPrice, product.hasMultipleVariations]);
+  }, [pricing.finalPrice]);
 
   // Documentos PDF (si no tiene en BD, datos dummy según mockup)
   const documents =
@@ -333,6 +346,17 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
           <div className="lg:col-span-6 flex flex-col items-center">
             {/* Imagen Principal */}
             <div className="w-full aspect-square relative bg-white rounded-2xl border border-[var(--green-karmax)] shadow-2xs p-8 flex items-center justify-center overflow-hidden">
+              {pricing.hasDiscount && (
+                <span className="absolute top-4 left-4 z-10 text-[12px] font-bold text-white bg-[#FF6816] px-3 py-1 rounded-full uppercase tracking-wider shadow-xs flex items-center gap-2">
+                  <Image
+                    src={"/icons/arrow-down.svg"}
+                    alt="arrow down"
+                    width={8}
+                    height={11}
+                  />
+                  {Number(user?.discountPercentage) > 0 ? `-${pricing.discountPercentage}% Descuento` : "Oferta"}
+                </span>
+              )}
               <Image
                 src={gallery[activeImageIndex] || "/images/products/placeholder.jpg"}
                 alt={product.name}
@@ -388,19 +412,50 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
             </h2>
 
             {/* Precio */}
-            <div className="mb-5">
-              <span className="text-[32px] font-semibold text-[var(--green-karmax)]">
-                {displayPrice}
-              </span>
+            <div className="mb-5 flex items-baseline gap-3 flex-wrap">
+              {showStrikethrough ? (
+                <>
+                  {product.hasMultipleVariations && activePriceNumber === null && (
+                    <span className="text-[16px] sm:text-[18px] font-normal text-slate-500">
+                      Desde
+                    </span>
+                  )}
+                  <span className="text-[20px] sm:text-[24px] font-normal text-slate-400 line-through decoration-slate-400">
+                    ${pricing.regularPrice !== null
+                      ? pricing.regularPrice.toLocaleString("es-MX", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })
+                      : product.regularPrice}
+                  </span>
+                  <span className="text-[32px] font-semibold text-[var(--green-karmax)]">
+                    ${pricing.finalPrice !== null
+                      ? pricing.finalPrice.toLocaleString("es-MX", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })
+                      : product.salePrice}
+                  </span>
+                  {pricing.discountPercentage > 0 && (
+                    <span className="text-[20px] sm:text-[24px] font-semibold text-[var(--green-karmax)]">
+                      -{pricing.discountPercentage}%
+                    </span>
+                  )}
+                </>
+              ) : (
+                <span className="text-[32px] font-semibold text-[var(--green-karmax)]">
+                  {displayPrice}
+                </span>
+              )}
             </div>
 
             {/* Atributos dinámicos seleccionables */}
             {Object.entries(availableAttributes).map(([attrName, values]) => (
               <div key={attrName} className="mb-5">
-                <label className="block text-[18px] font-semibold text-[var(--text-karmax)] mb-4">
+                <label className="block text-[18px] font-semibold text-[var(--text-karmax)] mb-1">
                   {attrName}
                 </label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 mb-3">
                   {values.map((val) => {
                     const isSelected =
                       (attrName === presentationAttrName
@@ -435,7 +490,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                       product,
                       activePresentation,
                       1,
-                      activePriceNumber !== null ? activePriceNumber : undefined,
+                      effectivePriceToAdd,
                       activeSku
                     );
                   }}
@@ -467,7 +522,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                         product,
                         activePresentation,
                         -1,
-                        activePriceNumber !== null ? activePriceNumber : undefined,
+                        effectivePriceToAdd,
                         activeSku
                       )
                     }
@@ -486,7 +541,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                         product,
                         activePresentation,
                         1,
-                        activePriceNumber !== null ? activePriceNumber : undefined,
+                        effectivePriceToAdd,
                         activeSku
                       )
                     }

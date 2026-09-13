@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
 import type { QuoteCartItem, CatalogProductItem } from "@/types";
 import { useAuth } from "./AuthContext";
+import { computeProductPricing } from "@/lib/pricing/discounts";
 
 export interface QuoteNotification {
   visible: boolean;
@@ -146,14 +147,31 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       customUnitPrice?: number | string,
       customSku?: string | null
     ) => {
-      const basePrice =
-        product.salePrice && Number(product.salePrice) > 0
-          ? parsePrice(product.salePrice)
-          : parsePrice(product.regularPrice) || 49.0;
-      const unitPrice =
-        customUnitPrice !== undefined && customUnitPrice !== null
-          ? parsePrice(customUnitPrice)
-          : basePrice;
+      const userDiscount = Number(user?.discountPercentage || 0);
+      let unitPrice: number;
+      let regularPrice: number | null = null;
+      const regPriceNum = product.regularPrice ? parsePrice(product.regularPrice) : null;
+
+      if (customUnitPrice !== undefined && customUnitPrice !== null) {
+        const customNum = parsePrice(customUnitPrice);
+        if (userDiscount > 0) {
+          unitPrice = Number((customNum * (1 - userDiscount / 100)).toFixed(2));
+          regularPrice = customNum;
+        } else {
+          unitPrice = customNum;
+          if (regPriceNum && regPriceNum > unitPrice) {
+            regularPrice = regPriceNum;
+          }
+        }
+      } else {
+        const pricing = computeProductPricing({
+          regularPrice: product.regularPrice,
+          salePrice: product.salePrice,
+          userDiscountPercentage: userDiscount,
+        });
+        unitPrice = pricing.finalPrice !== null ? pricing.finalPrice : 49.0;
+        regularPrice = pricing.hasDiscount ? pricing.regularPrice : null;
+      }
 
       setItems((prev) => {
         const index = prev.findIndex(
@@ -171,6 +189,7 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               ...updated[index],
               quantity: newQty,
               ...(customUnitPrice !== undefined && customUnitPrice !== null ? { unitPrice } : {}),
+              regularPrice: regularPrice !== null ? regularPrice : (updated[index].regularPrice ?? null),
               ...(customSku ? { sku: customSku } : {}),
             };
             showNotification(quantityDelta > 0 ? "added" : "removed", product.name);
@@ -188,6 +207,7 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               imageUrl: product.imageUrl,
               presentation,
               unitPrice,
+              regularPrice,
               quantity: quantityDelta,
             },
           ];
@@ -195,7 +215,7 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         return prev;
       });
     },
-    [showNotification]
+    [showNotification, user?.discountPercentage]
   );
 
   const updateQuantity = useCallback(
@@ -281,19 +301,31 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setComments(quote.notes);
     }
     if (Array.isArray(quote.items)) {
-      const mappedItems: QuoteCartItem[] = quote.items.map((it) => ({
-        productId: it.productId || 0,
-        slug: "",
-        name: it.productName,
-        sku: it.sku || null,
-        imageUrl: it.imageUrl || null,
-        presentation: it.presentation || "Estándar",
-        unitPrice: Number(it.unitPrice) || 0,
-        quantity: Number(it.quantity) || 1,
-      }));
+      const userDiscount = Number(user?.discountPercentage || 0);
+      const mappedItems: QuoteCartItem[] = quote.items.map((it) => {
+        const itemObj = it as Record<string, unknown>;
+        const rawUnitPrice = Number(it.unitPrice) || 0;
+        const baseRegular = (itemObj.regularPrice !== undefined && itemObj.regularPrice !== null)
+          ? Number(itemObj.regularPrice)
+          : rawUnitPrice;
+        const finalPrice = userDiscount > 0
+          ? Number((baseRegular * (1 - userDiscount / 100)).toFixed(2))
+          : rawUnitPrice;
+        return {
+          productId: it.productId || 0,
+          slug: "",
+          name: it.productName,
+          sku: it.sku || null,
+          imageUrl: it.imageUrl || null,
+          presentation: it.presentation || "Estándar",
+          unitPrice: finalPrice,
+          regularPrice: userDiscount > 0 || (baseRegular > finalPrice) ? baseRegular : null,
+          quantity: Number(it.quantity) || 1,
+        };
+      });
       setItems(mappedItems);
     }
-  }, []);
+  }, [user?.discountPercentage]);
 
   const clearQuote = useCallback(() => {
     setItems([]);
@@ -310,6 +342,39 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
     refreshQuoteNumber();
   }, [refreshQuoteNumber]);
+
+  // Sincronizar o recalcular precios si cambia el porcentaje de descuento del usuario
+  const prevDiscountRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const currentDiscount = Number(user?.discountPercentage || 0);
+    if (prevDiscountRef.current === currentDiscount) return;
+    const previousDiscount = prevDiscountRef.current;
+    prevDiscountRef.current = currentDiscount;
+
+    if (previousDiscount !== null || currentDiscount > 0) {
+      setItems((prev) => {
+        if (!prev || prev.length === 0) return prev;
+        return prev.map((it) => {
+          const baseRegular = it.regularPrice ?? it.unitPrice;
+          if (currentDiscount > 0) {
+            const discountedPrice = Number((baseRegular * (1 - currentDiscount / 100)).toFixed(2));
+            return {
+              ...it,
+              regularPrice: baseRegular,
+              unitPrice: discountedPrice,
+            };
+          } else {
+            return {
+              ...it,
+              unitPrice: baseRegular,
+              regularPrice: null,
+            };
+          }
+        });
+      });
+    }
+  }, [user?.discountPercentage]);
 
   // Sincronizar cotización guardada al iniciar sesión o limpiar al cerrar sesión
   const prevUserIdRef = useRef<number | null | undefined>(undefined);

@@ -3,7 +3,31 @@ import Link from "next/link";
 import { Logo } from "@/components/common/Logo";
 import { Icon } from "@/components/icons";
 
-export const Footer: React.FC = () => {
+export interface FooterProps {
+  data?: {
+    description?: string;
+    phone?: string;
+    email?: string;
+    schedule?: string;
+    address?: string;
+    facebookUrl?: string;
+    instagramUrl?: string;
+  };
+}
+
+export const Footer: React.FC<FooterProps> = ({ data }) => {
+  const description =
+    data?.description ||
+    "Materia prima de la mejor calidad a precios incomparables.";
+  const address =
+    data?.address ||
+    "Calle Zaragoza PTE. #313, Col. Centro\nCadereyta Jimenez Nuevo León, CP 67480";
+  const phone = data?.phone || "+52 81 8659 0941";
+  const phoneClean = phone.replace(/[^0-9+]/g, "");
+  const email = data?.email || "contacto@karmax.mx";
+  const facebookUrl = data?.facebookUrl || "https://facebook.com";
+  const instagramUrl = data?.instagramUrl || "https://instagram.com";
+
   return (
     <footer id="contacto" className="bg-[var(--light-bg-karmax)] text-[var(--light-text-karmax)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8">
@@ -12,9 +36,8 @@ export const Footer: React.FC = () => {
           {/* 1. Brand & Value Proposition */}
           <div className="md:col-span-5 lg:col-span-4 space-y-5">
             <Logo size={{ w: 118, h: 20 }} />
-            <p className="text-[15px] sm:text-[16px] text-[var(--light-text-karmax)] leading-relaxed max-w-xs">
-              Materia prima de la mejor calidad
-              <br className="hidden sm:inline" /> a precios incomparables.
+            <p className="text-[15px] sm:text-[16px] text-[var(--light-text-karmax)] leading-relaxed max-w-xs whitespace-pre-line">
+              {description}
             </p>
           </div>
 
@@ -57,9 +80,8 @@ export const Footer: React.FC = () => {
                 size={22}
                 className="text-[var(--green-karmax)] flex-shrink-0 mt-0.5"
               />
-              <div>
-                <p>Calle Zaragoza PTE. #313, Col. Centro</p>
-                <p>Cadereyta Jimenez Nuevo León, CP 67480</p>
+              <div className="whitespace-pre-line">
+                <p>{address}</p>
               </div>
             </div>
 
@@ -71,10 +93,10 @@ export const Footer: React.FC = () => {
                 className="text-[var(--green-karmax)] flex-shrink-0"
               />
               <a
-                href="tel:+528186590941"
+                href={`tel:${phoneClean}`}
                 className="hover:text-[var(--green-karmax)] transition-colors"
               >
-                +52 81 8659 0941
+                {phone}
               </a>
             </div>
 
@@ -86,17 +108,17 @@ export const Footer: React.FC = () => {
                 className="text-[var(--green-karmax)] flex-shrink-0"
               />
               <a
-                href="mailto:contacto@karmax.mx"
+                href={`mailto:${email}`}
                 className="hover:text-[var(--green-karmax)] transition-colors"
               >
-                contacto@karmax.mx
+                {email}
               </a>
             </div>
 
             {/* Social Icons */}
             <div className="flex items-center gap-3 pt-2">
               <a
-                href="https://facebook.com"
+                href={facebookUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Facebook"
@@ -123,7 +145,7 @@ export const Footer: React.FC = () => {
                 <Icon name="linkedin" size={32} />
               </a>
               <a
-                href="https://instagram.com"
+                href={instagramUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Instagram"

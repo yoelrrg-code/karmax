@@ -19,6 +19,7 @@ export async function GET() {
         phone: users.phone,
         companyName: users.companyName,
         isActive: users.isActive,
+        discountPercentage: users.discountPercentage,
         roleName: roles.name,
       })
       .from(users)
@@ -39,6 +40,7 @@ export async function GET() {
         companyName: userRecord.companyName,
         roleId: userRecord.roleId,
         roleName: userRecord.roleName || "cliente",
+        discountPercentage: Number(userRecord.discountPercentage || 0),
       },
     });
   } catch (error) {

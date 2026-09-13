@@ -118,6 +118,7 @@ export const users = mysqlTable("users", {
   companyName: varchar("company_name", { length: 255 }),
   passwordHash: varchar("password_hash", { length: 255 }),
   isActive: boolean("is_active").default(true).notNull(),
+  discountPercentage: decimal("discount_percentage", { precision: 5, scale: 2 }).default("0.00").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -248,6 +249,15 @@ export const quoteItemsRelations = relations(quoteItems, ({ one }) => ({
   }),
 }));
 
+export const siteSettings = mysqlTable("site_settings", {
+  id: serial("id").primaryKey(),
+  key: varchar("key", { length: 100 }).notNull().unique(),
+  section: varchar("section", { length: 100 }).notNull(),
+  label: varchar("label", { length: 255 }).notNull(),
+  value: text("value").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 export type Category = typeof categories.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type ProductImage = typeof productImages.$inferSelect;
@@ -260,4 +270,5 @@ export type Role = typeof roles.$inferSelect;
 export type User = typeof users.$inferSelect;
 export type QuoteRequest = typeof quoteRequests.$inferSelect;
 export type QuoteItem = typeof quoteItems.$inferSelect;
+export type SiteSetting = typeof siteSettings.$inferSelect;
 

@@ -8,6 +8,7 @@ import {
   productAttributes,
   productDocuments,
   productImages,
+  siteSettings,
 } from "@/lib/db";
 import { CATEGORIES_DATA, INDUSTRIES_DATA } from "@/lib/data/mockData";
 import type {
@@ -487,5 +488,51 @@ export async function getRelatedProducts(
   } catch (error) {
     console.error("Error al obtener productos relacionados:", error);
     return [];
+  }
+}
+
+/**
+ * Obtiene la configuración/contenido de una sección del sitio desde MySQL
+ * con fallback a un valor por defecto.
+ */
+export async function getSiteSetting<T>(key: string, defaultValue: T): Promise<T> {
+  try {
+    const [row] = await db
+      .select({ value: siteSettings.value })
+      .from(siteSettings)
+      .where(eq(siteSettings.key, key))
+      .limit(1);
+
+    if (!row?.value) return defaultValue;
+
+    try {
+      return JSON.parse(row.value) as T;
+    } catch {
+      return row.value as unknown as T;
+    }
+  } catch (error) {
+    console.warn(`Fallback para site_setting "${key}":`, (error as Error).message);
+    return defaultValue;
+  }
+}
+
+/**
+ * Obtiene todas las configuraciones de secciones del sitio.
+ */
+export async function getAllSiteSettings(): Promise<Record<string, unknown>> {
+  try {
+    const rows = await db.select().from(siteSettings);
+    const map: Record<string, unknown> = {};
+    for (const r of rows) {
+      try {
+        map[r.key] = JSON.parse(r.value);
+      } catch {
+        map[r.key] = r.value;
+      }
+    }
+    return map;
+  } catch (error) {
+    console.error("Error al obtener site settings:", error);
+    return {};
   }
 }

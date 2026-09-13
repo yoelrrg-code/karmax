@@ -29,6 +29,7 @@ export async function POST(request: Request) {
         companyName: users.companyName,
         passwordHash: users.passwordHash,
         isActive: users.isActive,
+        discountPercentage: users.discountPercentage,
         roleName: roles.name,
       })
       .from(users)
@@ -81,6 +82,7 @@ export async function POST(request: Request) {
         companyName: userRecord.companyName,
         roleId: userRecord.roleId,
         roleName: userRecord.roleName || "cliente",
+        discountPercentage: Number(userRecord.discountPercentage || 0),
       },
     });
   } catch (error) {

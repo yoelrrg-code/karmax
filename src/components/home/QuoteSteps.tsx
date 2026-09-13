@@ -3,11 +3,22 @@ import Link from "next/link";
 import Image from "next/image";
 import { QUOTE_STEPS } from "@/lib/data/mockData";
 
-interface QuoteStepsProps {
+export interface QuoteStepsProps {
   showCta?: boolean;
+  steps?: Array<{
+    step: number;
+    title: string;
+    description: string;
+    iconUrl: string;
+  }>;
 }
 
-export const QuoteSteps: React.FC<QuoteStepsProps> = ({ showCta = true }) => {
+export const QuoteSteps: React.FC<QuoteStepsProps> = ({
+  showCta = true,
+  steps,
+}) => {
+  const items = steps && steps.length > 0 ? steps : QUOTE_STEPS;
+
   return (
     <section id="cotizacion">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -26,7 +37,7 @@ export const QuoteSteps: React.FC<QuoteStepsProps> = ({ showCta = true }) => {
           />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-10 relative z-10">
-            {QUOTE_STEPS.map((step) => {
+            {items.map((step) => {
 
               return (
                 <div key={step.step} className="flex flex-col items-center text-center">
