@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { motion } from "motion/react";
 
 interface FadeCellProps {
   images: Array<{ src: string; alt: string }>;
@@ -12,6 +13,7 @@ interface FadeCellProps {
   paddingClass?: string;
   minInterval?: number;
   maxInterval?: number;
+  entranceDelay?: number;
 }
 
 const HERO_CELL_IMAGES = {
@@ -55,6 +57,7 @@ const FadeCell: React.FC<FadeCellProps> = ({
   paddingClass = "",
   minInterval = 2800,
   maxInterval = 4800,
+  entranceDelay,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -93,7 +96,14 @@ const FadeCell: React.FC<FadeCellProps> = ({
   }, [images.length, minInterval, maxInterval]);
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, x: 80 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{
+        duration: 1.05,
+        delay: entranceDelay ?? 0.3,
+        ease: [0.16, 1, 0.3, 1],
+      }}
       className={`relative h-full flex items-center justify-center overflow-hidden ${className} ${paddingClass}`}
       style={style}
     >
@@ -118,7 +128,7 @@ const FadeCell: React.FC<FadeCellProps> = ({
           </div>
         ))}
       </div>
-    </div>
+    </motion.div>
   );
 };
 
@@ -128,8 +138,11 @@ interface HeroProductGridProps {
 
 const HeroProductGrid: React.FC<HeroProductGridProps> = ({ className = "" }) => {
   return (
-    <div className={`relative w-full h-full flex flex-col overflow-hidden select-none ${className}`}>
-      {/* Top Row (50% height): 50% | 25% | 25% */}
+    <div className={`relative w-full h-full flex flex-col overflow-hidden select-none ${className}`} style={{
+          background:
+            "linear-gradient(90deg, var(--light-blue-karmax) 0%, var(--blue-karmax) 100%)",
+        }}>
+      {/* Top Row (50% height): 50% | 25% | 25% - animaciones desfasadas de derecha a izquierda */}
       <div className="flex w-full h-1/2">
         {/* 1. Mop Bucket & Wringer Cart */}
         <FadeCell
@@ -138,6 +151,7 @@ const HeroProductGrid: React.FC<HeroProductGridProps> = ({ className = "" }) => 
           paddingClass="px-3 pb-0 sm:p-5 lg:p-2 lg:pb-0"
           sizes="(max-width: 1024px) 50vw, 25vw"
           images={HERO_CELL_IMAGES.cell1}
+          entranceDelay={0.7}
         />
 
         {/* 2. Heavy-duty Trash Bags */}
@@ -147,6 +161,7 @@ const HeroProductGrid: React.FC<HeroProductGridProps> = ({ className = "" }) => 
           paddingClass="p-2 sm:p-3 lg:p-10"
           sizes="(max-width: 1024px) 25vw, 13vw"
           images={HERO_CELL_IMAGES.cell2}
+          entranceDelay={0.5}
         />
 
         {/* 3. Spray Cleaner Bottle */}
@@ -156,10 +171,11 @@ const HeroProductGrid: React.FC<HeroProductGridProps> = ({ className = "" }) => 
           paddingClass="p-2 sm:p-3 lg:px-10 lg:pb-0"
           sizes="(max-width: 1024px) 25vw, 13vw"
           images={HERO_CELL_IMAGES.cell3}
+          entranceDelay={0.3}
         />
       </div>
 
-      {/* Bottom Row (50% height): 25% | 25% | 50% */}
+      {/* Bottom Row (50% height): 25% | 25% | 50% - animaciones desfasadas de derecha a izquierda */}
       <div className="flex w-full h-1/2">
         {/* 4. Industrial Broom Head */}
         <FadeCell
@@ -168,6 +184,7 @@ const HeroProductGrid: React.FC<HeroProductGridProps> = ({ className = "" }) => 
           paddingClass="px-2 pt-0 pb-2 sm:p-3 lg:px-2 lg:pt-0 lg:pb-20"
           sizes="(max-width: 1024px) 25vw, 13vw"
           images={HERO_CELL_IMAGES.cell4}
+          entranceDelay={0.78}
         />
 
         {/* 5. Paper / Soap Dispenser */}
@@ -177,6 +194,7 @@ const HeroProductGrid: React.FC<HeroProductGridProps> = ({ className = "" }) => 
           paddingClass="p-2 sm:p-3 lg:p-12"
           sizes="(max-width: 1024px) 25vw, 13vw"
           images={HERO_CELL_IMAGES.cell5}
+          entranceDelay={0.58}
         />
 
         {/* 6. Chemical Bottles Trio */}
@@ -186,11 +204,21 @@ const HeroProductGrid: React.FC<HeroProductGridProps> = ({ className = "" }) => 
           paddingClass="px-4 pb-0 pt-4 sm:p-5 lg:px-10 lg:pb-0 lg:pt-16"
           sizes="(max-width: 1024px) 50vw, 25vw"
           images={HERO_CELL_IMAGES.cell6}
+          entranceDelay={0.38}
         />
       </div>
 
       {/* Central KARMAX Badge */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 md:w-[250px] w-[200px] max-w-[280px] min-w-[120px] aspect-[532/379] pointer-events-none drop-shadow-md">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.7, x: "-50%", y: "-50%" }}
+        animate={{ opacity: 1, scale: 1, x: "-50%", y: "-50%" }}
+        transition={{
+          duration: 0.85,
+          delay: 0.9,
+          ease: [0.16, 1, 0.3, 1],
+        }}
+        className="absolute top-1/2 left-1/2 z-20 md:w-[250px] w-[200px] max-w-[280px] min-w-[120px] aspect-[532/379] pointer-events-none drop-shadow-md"
+      >
         <Image
           src="/images/hero/l-karmax-product.svg"
           alt="KARMAX Productos de Limpieza Profesionales"
@@ -199,7 +227,7 @@ const HeroProductGrid: React.FC<HeroProductGridProps> = ({ className = "" }) => 
           className="object-contain"
           sizes="(max-width: 1024px) 28vw, 15vw"
         />
-      </div>
+      </motion.div>
     </div>
   );
 };
@@ -254,27 +282,46 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ data }) => {
       {/* Foreground Content Container aligned with site grid (max-w-7xl mx-auto px-4 sm:px-6 lg:px-8) */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[460px] lg:min-h-[450px] xl:min-h-[520px]">
-          {/* Left Column: Copy & CTA */}
+          {/* Left Column: Copy & CTA con fade-up y delays desfasados */}
           <div className="flex flex-col justify-center py-8 lg:py-0 pr-0">
             {data?.badgeText && (
-              <span className="inline-block px-3.5 py-1 mb-3 text-xs font-semibold uppercase tracking-wider rounded-full bg-white/20 text-white w-fit">
+              <motion.span
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+                className="inline-block px-3.5 py-1 mb-3 text-xs font-semibold uppercase tracking-wider rounded-full bg-white/20 text-white w-fit"
+              >
                 {data.badgeText}
-              </span>
+              </motion.span>
             )}
-            <h1 className="tracking-tight mb-5 text-white">
+            <motion.h1
+              initial={{ opacity: 0, y: 45 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.95, delay: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="tracking-tight mb-5 text-white"
+            >
               {title}
-            </h1>
-            <p className="text-base sm:text-lg text-white/90 font-normal leading-relaxed mb-8 max-w-lg">
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.95, delay: 0.42, ease: [0.16, 1, 0.3, 1] }}
+              className="text-base sm:text-lg text-white/90 font-normal leading-relaxed mb-8 max-w-lg"
+            >
               {description}
-            </p>
-            <div>
+            </motion.p>
+            <motion.div
+              initial={{ opacity: 0, y: 35 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.9, delay: 0.62, ease: [0.16, 1, 0.3, 1] }}
+            >
               <Link
                 href={ctaLink}
                 className="btn-primary inline-flex items-center justify-center bg-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] text-white px-8 py-4 rounded-full text-base shadow-xs hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
               >
                 {ctaText}
               </Link>
-            </div>
+            </motion.div>
           </div>
 
           {/* Right Column: Visible only on mobile/tablet */}

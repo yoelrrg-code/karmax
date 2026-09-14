@@ -5,6 +5,7 @@ import { QuoteSteps, type QuoteStepsProps } from "@/components/home/QuoteSteps";
 import { PreFooterCta, type PreFooterCtaProps } from "@/components/home/PreFooterCta";
 import { ContactHeroBar } from "@/components/contact/ContactHeroBar";
 import { ContactSection } from "@/components/contact/ContactSection";
+import { RevealOnScroll } from "@/components/common/RevealOnScroll";
 import { getAllSiteSettings } from "@/lib/services/karmaxService";
 import type { ContactPageData } from "@/types";
 
@@ -35,13 +36,19 @@ export default async function ContactoPage() {
         <ContactHeroBar title={contactData.bannerTitle || "Contacto"} />
 
         {/* 3. Sección principal con formulario protegido y datos de contacto */}
-        <ContactSection pageData={contactData} footerInfo={footerInfo} />
+        <RevealOnScroll direction="up" delay={0.1}>
+          <ContactSection pageData={contactData} footerInfo={footerInfo} />
+        </RevealOnScroll>
 
         {/* 4. Cotiza y recibe tu pedido en 3 pasos */}
-        <QuoteSteps steps={quoteSteps} />
+        <RevealOnScroll direction="up" delay={0.1}>
+          <QuoteSteps steps={quoteSteps} />
+        </RevealOnScroll>
 
         {/* 5. Abastece tu empresa de forma fácil y conveniente */}
-        <PreFooterCta data={prefooterData} />
+        <RevealOnScroll direction="up" delay={0.1}>
+          <PreFooterCta data={prefooterData} />
+        </RevealOnScroll>
       </main>
 
       {/* 6. Footer institucional */}

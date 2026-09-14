@@ -6,6 +6,7 @@ import { PreFooterCta, type PreFooterCtaProps } from "@/components/home/PreFoote
 import { AboutHeroBar } from "@/components/about/AboutHeroBar";
 import { AboutStorySection } from "@/components/about/AboutStorySection";
 import { AboutValuesSection } from "@/components/about/AboutValuesSection";
+import { RevealOnScroll } from "@/components/common/RevealOnScroll";
 import { getAllSiteSettings } from "@/lib/services/karmaxService";
 import type { AboutUsPageData } from "@/types";
 
@@ -36,16 +37,24 @@ export default async function QuienesSomosPage() {
         <AboutHeroBar title={aboutData.bannerTitle || "Quiénes Somos"} />
 
         {/* 3. Sección 1: Historia, Misión, Visión y Mosaico (Fondo Blanco) */}
-        <AboutStorySection data={aboutData} />
+        <RevealOnScroll direction="up" delay={0.1}>
+          <AboutStorySection data={aboutData} />
+        </RevealOnScroll>
 
         {/* 4. Sección 2: Nuestros Valores (Fondo --light-bg-karmax) */}
-        <AboutValuesSection data={aboutData} />
+        <RevealOnScroll direction="up" delay={0.1}>
+          <AboutValuesSection data={aboutData} />
+        </RevealOnScroll>
 
         {/* 5. Cotiza y recibe tu pedido en 3 pasos */}
-        <QuoteSteps steps={quoteSteps} />
+        <RevealOnScroll direction="up" delay={0.1}>
+          <QuoteSteps steps={quoteSteps} />
+        </RevealOnScroll>
 
         {/* 6. Abastece tu empresa de forma fácil y conveniente */}
-        <PreFooterCta data={prefooterData} />
+        <RevealOnScroll direction="up" delay={0.1}>
+          <PreFooterCta data={prefooterData} />
+        </RevealOnScroll>
       </main>
 
       {/* 7. Footer institucional */}

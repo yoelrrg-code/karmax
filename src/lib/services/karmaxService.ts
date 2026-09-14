@@ -208,12 +208,12 @@ export async function getProductsCatalog(
     const totalPages = Math.ceil(total / limit);
     const offset = Math.max(0, (page - 1) * limit);
 
-    conditions.push(
-      and(
-        eq(products.isActive, true),
-        isNotNull(products.regularPrice)
-      )!
-    );
+    // conditions.push(
+    //   and(
+    //     eq(products.isActive, true),
+    //     isNotNull(products.regularPrice)
+    //   )!
+    // );
 
     // Consulta de productos paginados
     const rows = await db
