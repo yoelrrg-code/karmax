@@ -122,7 +122,7 @@ const FadeCell: React.FC<FadeCellProps> = ({
               alt={img.alt}
               fill
               priority={idx === 0}
-              className="!w-auto h-full mx-auto"
+              className="!w-auto !h-full mx-auto my-auto"
             />
           </div>
         ))}
