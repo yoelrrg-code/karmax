@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { CatalogHeroBar } from "./CatalogHeroBar";
 import { CatalogFiltersSidebar } from "./CatalogFiltersSidebar";
 import { ProductCard } from "./ProductCard";
@@ -279,7 +280,12 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
           {/* Columna Derecha: Grid de productos */}
           <div className="flex-1 w-full">
             {/* Barra de control: Contador dinámico y Ordenar por */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 mb-6">
+            <motion.div
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 mb-6"
+            >
               {/* Contador de productos dinámico */}
               <p className="text-[14px] sm:text-[15px] font-medium text-[var(--text-karmax)]">
                 {getCounterText()}
@@ -302,7 +308,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                   <option value="price_desc">Precio más alto</option>
                 </select>
               </div>
-            </div>
+            </motion.div>
             {isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 opacity-60">
                 {Array.from({ length: 6 }).map((_, idx) => (
@@ -319,17 +325,51 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
               </div>
             ) : products.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {products.map((product) => (
-                    <ProductCard key={product.id} product={product} />
-                  ))}
-                </div>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={`products-grid-p${page}-${categorySlug || "all"}-${industrySlug || "all"}-${sortBy}-${search || ""}`}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+                  >
+                    {products.map((product, idx) => (
+                      <motion.div
+                        key={product.id}
+                        initial={{ opacity: 0, y: 40 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true, amount: 0.1 }}
+                        transition={{
+                          duration: 0.8,
+                          delay: (idx % 3) * 0.12 + Math.floor(idx / 3) * 0.08,
+                          ease: [0.16, 1, 0.3, 1],
+                        }}
+                        className="h-full"
+                      >
+                        <ProductCard product={product} />
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                </AnimatePresence>
 
                 {/* Paginación */}
-                {renderPaginationButtons()}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.2 }}
+                  transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  {renderPaginationButtons()}
+                </motion.div>
               </>
             ) : (
-              <div className="bg-white rounded-2xl border border-slate-100 p-12 text-center my-8 shadow-xs">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                className="bg-white rounded-2xl border border-slate-100 p-12 text-center my-8 shadow-xs"
+              >
                 <div className="w-16 h-16 rounded-full bg-blue-50 text-[var(--blue-karmax)] flex items-center justify-center mx-auto mb-4 text-2xl">
                   🔍
                 </div>
@@ -351,7 +391,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                 >
                   Ver todos los productos
                 </button>
-              </div>
+              </motion.div>
             )}
           </div>
         </div>
