@@ -6,11 +6,13 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   FileText,
+  Mail,
   Users,
   Package,
   FolderTree,
   Factory,
   Layers,
+  Settings,
   ExternalLink,
   X,
 } from "lucide-react";
@@ -31,6 +33,11 @@ const NAV_ITEMS = [
     label: "Cotizaciones",
     href: "/admin/cotizaciones",
     icon: FileText,
+  },
+  {
+    label: "Mensajes",
+    href: "/admin/mensajes",
+    icon: Mail,
   },
   {
     label: "Clientes",
@@ -56,6 +63,11 @@ const NAV_ITEMS = [
     label: "Secciones del Sitio",
     href: "/admin/secciones",
     icon: Layers,
+  },
+  {
+    label: "Ajustes Generales",
+    href: "/admin/ajustes",
+    icon: Settings,
   },
 ];
 

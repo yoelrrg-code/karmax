@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { getKarmaxNotificationEmail } from "@/lib/services/karmaxService";
 
 export interface EmailQuoteItem {
   productName: string;
@@ -84,8 +85,7 @@ export async function sendQuoteEmails(data: QuoteEmailData): Promise<{ clientSen
     return { clientSent: false, adminSent: false };
   }
 
-  const karmaxAdminEmail =
-    process.env.KARMAX_NOTIFICATION_EMAIL || "dev.paco.lule@gmail.com";
+  const karmaxAdminEmail = await getKarmaxNotificationEmail();
   const fromAddress = `"Karmax México" <${process.env.GMAIL_USER}>`;
   const itemsHtml = buildItemsHtml(data.items);
 
@@ -226,3 +226,104 @@ export async function sendQuoteEmails(data: QuoteEmailData): Promise<{ clientSen
 
   return { clientSent, adminSent };
 }
+
+export interface ContactNotificationEmailData {
+  fullName: string;
+  company: string;
+  phone: string;
+  email: string;
+  message: string;
+  createdAt?: string;
+}
+
+/**
+ * Envía un correo de notificación a Karmax cuando un cliente envía un mensaje desde /contacto.
+ */
+export async function sendContactNotificationEmail(
+  data: ContactNotificationEmailData
+): Promise<boolean> {
+  const transporter = getTransporter();
+  if (!transporter) {
+    return false;
+  }
+
+  const karmaxAdminEmail = await getKarmaxNotificationEmail();
+  const fromAddress = `"Karmax México" <${process.env.GMAIL_USER}>`;
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"></head>
+    <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 24px; color: #1e293b;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+        <div style="background-color: #1A2B49; padding: 24px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 22px; letter-spacing: 1px;">KARMAX</h1>
+          <p style="color: #94a3b8; margin: 6px 0 0 0; font-size: 14px;">Nuevo Mensaje de Contacto Recibido</p>
+        </div>
+
+        <div style="padding: 24px;">
+          <div style="background-color: #f0fdf4; border-left: 4px solid #16a34a; padding: 12px 16px; margin-bottom: 20px; border-radius: 0 6px 6px 0;">
+            <p style="margin: 0; color: #166534; font-size: 14px; font-weight: 600;">
+              Se ha recibido un nuevo mensaje a través del formulario de contacto del sitio web.
+            </p>
+          </div>
+
+          <table style="width: 100%; border-collapse: collapse; margin-bottom: 24px; font-size: 14px;">
+            <tbody>
+              <tr style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 10px 0; color: #64748b; width: 150px;"><strong>Nombre completo:</strong></td>
+                <td style="padding: 10px 0; color: #0f172a; font-weight: 600;">${data.fullName}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 10px 0; color: #64748b;"><strong>Empresa:</strong></td>
+                <td style="padding: 10px 0; color: #0f172a;">${data.company}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 10px 0; color: #64748b;"><strong>Correo electrónico:</strong></td>
+                <td style="padding: 10px 0;"><a href="mailto:${data.email}" style="color: #0284c7; text-decoration: none;">${data.email}</a></td>
+              </tr>
+              <tr style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 10px 0; color: #64748b;"><strong>Teléfono:</strong></td>
+                <td style="padding: 10px 0;"><a href="tel:${data.phone}" style="color: #0f172a; text-decoration: none;">${data.phone}</a></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div style="margin-top: 20px;">
+            <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">
+              Mensaje del cliente:
+            </p>
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; font-size: 14px; line-height: 1.6; color: #334155; white-space: pre-wrap;">${data.message}</div>
+          </div>
+
+          <div style="margin-top: 30px; text-align: center;">
+            <a href="mailto:${data.email}?subject=Respuesta a tu mensaje en KARMAX" style="display: inline-block; background-color: #16a34a; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 9999px; font-weight: 600; font-size: 14px;">
+              Responder al Cliente
+            </a>
+          </div>
+        </div>
+
+        <div style="background-color: #f8fafc; padding: 16px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8;">
+          Este correo fue generado automáticamente por el sitio web de KARMAX.
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  try {
+    await transporter.sendMail({
+      from: fromAddress,
+      to: karmaxAdminEmail,
+      replyTo: data.email,
+      subject: `Nuevo mensaje de contacto: ${data.fullName} (${data.company})`,
+      html,
+    });
+    console.log(`[Mailer] Notificación de contacto enviada a Karmax: ${karmaxAdminEmail}`);
+    return true;
+  } catch (error) {
+    console.error(`[Mailer] Error enviando notificación de contacto a ${karmaxAdminEmail}:`, error);
+    return false;
+  }
+}
+

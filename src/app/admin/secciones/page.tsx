@@ -18,12 +18,15 @@ import {
   Upload,
   ImageIcon,
   Loader2,
+  MessageSquare,
+  Users2,
 } from "lucide-react";
 import { Icon } from "@/components/icons";
+import type { AboutUsPageData } from "@/types";
 
 export default function AdminSectionsPage() {
   const [activeTab, setActiveTab] = useState<
-    "hero" | "trust_badges" | "brands" | "quote_steps" | "prefooter_cta" | "footer_info" | "social_links"
+    "hero" | "trust_badges" | "brands" | "quote_steps" | "prefooter_cta" | "footer_info" | "social_links" | "contact_page" | "about_us"
   >("hero");
 
   const [isLoading, setIsLoading] = useState(true);
@@ -76,6 +79,52 @@ export default function AdminSectionsPage() {
     youtube: "",
   });
 
+  const [contactData, setContactData] = useState({
+    bannerTitle: "Contacto",
+    formTitle: "Estamos para ayudarte",
+    formSubtitle:
+      "¿Tienes dudas sobre nuestros productos, precios o pedidos? Envíanos un mensaje y nuestro equipo se pondrá en contacto contigo lo antes posible.",
+    submitButtonText: "Enviar mensaje",
+    phone: "",
+    email: "",
+    whatsappNumber: "",
+    schedule: "",
+    address: "",
+  });
+
+  const [aboutUsData, setAboutUsData] = useState<AboutUsPageData>({
+    bannerTitle: "Quiénes Somos",
+    storyTitle: "Calidad que nace en el corazón de Nuevo León",
+    storyParagraph1:
+      "KARMAX es una empresa 100% mexicana con sede en Cadereyta Jiménez. Fabricamos productos de limpieza profesional con materias primas seleccionadas y estrictos controles bajo estándares internacionales de calidad, a precios accesibles, para brindar eficacia y confianza en cada uso.",
+    storyParagraph2:
+      "Atendemos a hogares, empresas e industrias de Nuevo León, con servicio directo y entregas en Monterrey y su área metropolitana. Nuestro compromiso es ofrecer soluciones efectivas, respaldadas por una atención cercana.",
+    missionTitle: "Misión",
+    missionText:
+      "Fabricar y ofrecer productos de limpieza profesional de la más alta calidad, elaborados con materias primas seleccionadas y procesos certificados, a precios competitivos, para ayudar a hogares, empresas e industrias a mantener espacios limpios, seguros y saludables.",
+    visionTitle: "Visión",
+    visionText:
+      "Ser una marca mexicana líder en productos de limpieza profesional, reconocida por su calidad, precios competitivos y excelencia en el servicio. Aspiramos a convertirnos en el proveedor de confianza de miles de hogares y empresas, tanto a nivel local como nacional.",
+    mosaicImages: [
+      { id: 1, imageUrl: "/images/about/1-cadereyta.jpg", alt: "Parroquia histórica de Cadereyta Jiménez, Nuevo León" },
+      { id: 2, imageUrl: "/images/about/2-brand.png", alt: "Logotipo institucional de Karmax" },
+      { id: 3, imageUrl: "/images/about/3-products.png", alt: "Productos y químicos de limpieza Karmax" },
+      { id: 4, imageUrl: "/images/about/4-cleaner.jpg", alt: "Especialista en limpieza profesional Karmax" },
+      { id: 5, imageUrl: "/images/about/5-monterrey.jpg", alt: "Vista panorámica de Monterrey y Cerro de la Silla" },
+      { id: 6, imageUrl: "/images/about/6-warehouse.jpg", alt: "Almacén de distribución y logística Karmax" },
+    ],
+    valuesTitle: "Nuestros Valores",
+    values: [
+      { id: "calidad", iconName: "award", title: "Calidad", description: "Seleccionamos las mejores materias primas y mantenemos estándares internacionales en cada etapa de producción." },
+      { id: "confianza", iconName: "shield", title: "Confianza", description: "Construimos relaciones duraderas con nuestros clientes basados en transparencia y resultados comprobados." },
+      { id: "compromiso", iconName: "commitment", title: "Compromiso", description: "Nos dedicamos a superar las expectativas de nuestros clientes en cada interacción y producto." },
+      { id: "innovacion", iconName: "lightbulb", title: "Innovación", description: "Mejoramos constantemente nuestras formulaciones y procesos para ofrecer productos más efectivos." },
+      { id: "orgullo-mexicano", iconName: "flag", title: "Orgullo Mexicano", description: "Orgullosamente fabricado en México con tecnología de punta y talento nacional." },
+      { id: "responsabilidad", iconName: "globe", title: "Responsabilidad", description: "Nos preocupamos por el impacto de nuestros productos en la salud y el medio ambiente." },
+    ],
+  });
+  const [uploadingMosaicIdx, setUploadingMosaicIdx] = useState<number | null>(null);
+
   useEffect(() => {
     let ignore = false;
     async function loadSections() {
@@ -96,6 +145,18 @@ export default function AdminSectionsPage() {
               setSocialLinks((prev) => ({
                 ...prev,
                 ...s.social_links.value,
+              }));
+            }
+            if (s.contact_page?.value) {
+              setContactData((prev) => ({
+                ...prev,
+                ...s.contact_page.value,
+              }));
+            }
+            if (s.about_us?.value) {
+              setAboutUsData((prev) => ({
+                ...prev,
+                ...s.about_us.value,
               }));
             }
           }
@@ -169,6 +230,41 @@ export default function AdminSectionsPage() {
     }
   };
 
+  const handleUploadMosaicImage = async (idx: number, file: File) => {
+    setUploadingMosaicIdx(idx);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("folder", "about");
+
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Error al subir la imagen");
+      }
+
+      setAboutUsData((prev) => {
+        const currentMosaic = prev.mosaicImages ? [...prev.mosaicImages] : [];
+        currentMosaic[idx] = {
+          ...(currentMosaic[idx] || { id: idx + 1, alt: "" }),
+          imageUrl: data.url,
+        };
+        return { ...prev, mosaicImages: currentMosaic };
+      });
+
+      showToast("Imagen del mosaico subida correctamente");
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : "Error al subir la imagen";
+      alert(msg);
+    } finally {
+      setUploadingMosaicIdx(null);
+    }
+  };
+
   const tabs = [
     { id: "hero", label: "Sección Hero", icon: Sparkles },
     { id: "trust_badges", label: "Propuesta de Valor", icon: ShieldCheck },
@@ -177,6 +273,8 @@ export default function AdminSectionsPage() {
     { id: "prefooter_cta", label: "CTA Pre-Footer", icon: PhoneCall },
     { id: "footer_info", label: "Footer & Contacto", icon: Mail },
     { id: "social_links", label: "Redes Sociales", icon: Share2 },
+    { id: "contact_page", label: "Página de Contacto", icon: MessageSquare },
+    { id: "about_us", label: "Quiénes Somos", icon: Users2 },
   ] as const;
 
   if (isLoading) {
@@ -1077,6 +1175,552 @@ export default function AdminSectionsPage() {
                     No hay redes sociales configuradas actualmente.
                   </span>
                 )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 8: CONTACT PAGE */}
+      {activeTab === "contact_page" && (
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-2xs space-y-6 animate-in fade-in">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h3 className="text-base font-bold text-slate-900">
+                Página de Contacto (/contacto)
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Configura los títulos, textos explicativos del formulario y datos de contacto directos.
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled={isSaving}
+              onClick={() =>
+                handleSaveSection("contact_page", contactData, "Página de Contacto")
+              }
+              className="inline-flex items-center gap-1.5 bg-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] text-white text-xs font-semibold py-2 px-4 rounded-xl shadow-xs transition-all cursor-pointer"
+            >
+              <Save className="w-4 h-4" />
+              <span>Guardar Cambios</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Título del Banner Azul */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-800">
+                Título del Banner Superior
+              </label>
+              <input
+                type="text"
+                value={contactData.bannerTitle}
+                onChange={(e) =>
+                  setContactData((prev) => ({ ...prev, bannerTitle: e.target.value }))
+                }
+                placeholder="Contacto"
+                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white focus:border-[var(--green-karmax)] focus:ring-1 focus:ring-[var(--green-karmax)] outline-none text-slate-800"
+              />
+            </div>
+
+            {/* Texto del Botón de Envío */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-800">
+                Texto del Botón del Formulario
+              </label>
+              <input
+                type="text"
+                value={contactData.submitButtonText}
+                onChange={(e) =>
+                  setContactData((prev) => ({ ...prev, submitButtonText: e.target.value }))
+                }
+                placeholder="Enviar mensaje"
+                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white focus:border-[var(--green-karmax)] focus:ring-1 focus:ring-[var(--green-karmax)] outline-none text-slate-800"
+              />
+            </div>
+
+            {/* Título del Formulario */}
+            <div className="space-y-1.5 md:col-span-2">
+              <label className="text-xs font-bold text-slate-800">
+                Título del Formulario
+              </label>
+              <input
+                type="text"
+                value={contactData.formTitle}
+                onChange={(e) =>
+                  setContactData((prev) => ({ ...prev, formTitle: e.target.value }))
+                }
+                placeholder="Estamos para ayudarte"
+                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white focus:border-[var(--green-karmax)] focus:ring-1 focus:ring-[var(--green-karmax)] outline-none text-slate-800"
+              />
+            </div>
+
+            {/* Subtítulo / Descripción del Formulario */}
+            <div className="space-y-1.5 md:col-span-2">
+              <label className="text-xs font-bold text-slate-800">
+                Subtítulo / Instrucciones del Formulario
+              </label>
+              <textarea
+                rows={3}
+                value={contactData.formSubtitle}
+                onChange={(e) =>
+                  setContactData((prev) => ({ ...prev, formSubtitle: e.target.value }))
+                }
+                placeholder="¿Tienes dudas sobre nuestros productos, precios o pedidos? Envíanos un mensaje..."
+                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white focus:border-[var(--green-karmax)] focus:ring-1 focus:ring-[var(--green-karmax)] outline-none text-slate-800 resize-none"
+              />
+            </div>
+          </div>
+
+          {/* Información de Contacto Complementaria */}
+          <div className="pt-4 border-t border-slate-100">
+            <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-4">
+              Canales de Contacto Directo (Opcional - Hereda de Footer si se deja vacío)
+            </h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* WhatsApp */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-800">
+                  Número de WhatsApp (ej: +528186590941)
+                </label>
+                <input
+                  type="text"
+                  value={contactData.whatsappNumber}
+                  onChange={(e) =>
+                    setContactData((prev) => ({ ...prev, whatsappNumber: e.target.value }))
+                  }
+                  placeholder="+528186590941"
+                  className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white focus:border-[var(--green-karmax)] focus:ring-1 focus:ring-[var(--green-karmax)] outline-none text-slate-800"
+                />
+              </div>
+
+              {/* Teléfono */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-800">
+                  Teléfono de Atención
+                </label>
+                <input
+                  type="text"
+                  value={contactData.phone}
+                  onChange={(e) =>
+                    setContactData((prev) => ({ ...prev, phone: e.target.value }))
+                  }
+                  placeholder="+52 81 8659 0941"
+                  className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white focus:border-[var(--green-karmax)] focus:ring-1 focus:ring-[var(--green-karmax)] outline-none text-slate-800"
+                />
+              </div>
+
+              {/* Correo Electrónico */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-800">
+                  Correo Electrónico de Contacto
+                </label>
+                <input
+                  type="email"
+                  value={contactData.email}
+                  onChange={(e) =>
+                    setContactData((prev) => ({ ...prev, email: e.target.value }))
+                  }
+                  placeholder="contacto@karmax.mx"
+                  className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white focus:border-[var(--green-karmax)] focus:ring-1 focus:ring-[var(--green-karmax)] outline-none text-slate-800"
+                />
+              </div>
+
+              {/* Horario */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-800">
+                  Horario de Atención
+                </label>
+                <input
+                  type="text"
+                  value={contactData.schedule}
+                  onChange={(e) =>
+                    setContactData((prev) => ({ ...prev, schedule: e.target.value }))
+                  }
+                  placeholder="Horario de lunes a viernes de 9:00 - 18:00 hrs"
+                  className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white focus:border-[var(--green-karmax)] focus:ring-1 focus:ring-[var(--green-karmax)] outline-none text-slate-800"
+                />
+              </div>
+
+              {/* Dirección */}
+              <div className="space-y-1.5 md:col-span-2">
+                <label className="text-xs font-bold text-slate-800">
+                  Dirección Física
+                </label>
+                <input
+                  type="text"
+                  value={contactData.address}
+                  onChange={(e) =>
+                    setContactData((prev) => ({ ...prev, address: e.target.value }))
+                  }
+                  placeholder="Calle Zaragoza PTE. #313, Col. Centro Cadereyta Jimenez Nuevo León, CP 67480"
+                  className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white focus:border-[var(--green-karmax)] focus:ring-1 focus:ring-[var(--green-karmax)] outline-none text-slate-800"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 9: QUIÉNES SOMOS */}
+      {activeTab === "about_us" && (
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-2xs space-y-8 animate-in fade-in">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+            <div>
+              <h3 className="text-base font-bold text-slate-900">
+                Página de Quiénes Somos
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Edita la historia institucional, misión, visión, imágenes del mosaico fotográfico y valores de la empresa.
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled={isSaving}
+              onClick={() =>
+                handleSaveSection("about_us", aboutUsData, "Página Quiénes Somos")
+              }
+              className="inline-flex items-center gap-1.5 bg-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] text-white text-xs font-semibold py-2 px-4 rounded-xl shadow-xs transition-all cursor-pointer"
+            >
+              <Save className="w-4 h-4" />
+              <span>Guardar Cambios</span>
+            </button>
+          </div>
+
+          {/* Banner Superior */}
+          <div className="space-y-4">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              Banner Superior
+            </h4>
+            <div className="space-y-1.5 max-w-md">
+              <label className="text-xs font-bold text-slate-800">
+                Título del Banner Azul
+              </label>
+              <input
+                type="text"
+                value={aboutUsData.bannerTitle || ""}
+                onChange={(e) =>
+                  setAboutUsData((prev) => ({ ...prev, bannerTitle: e.target.value }))
+                }
+                placeholder="Quiénes Somos"
+                className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white focus:border-[var(--green-karmax)] focus:ring-1 focus:ring-[var(--green-karmax)] outline-none text-slate-800"
+              />
+            </div>
+          </div>
+
+          {/* Historia y Presentación */}
+          <div className="space-y-4 border-t border-slate-100 pt-6">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              Historia Institucional
+            </h4>
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-800">
+                  Titular de la Historia
+                </label>
+                <input
+                  type="text"
+                  value={aboutUsData.storyTitle || ""}
+                  onChange={(e) =>
+                    setAboutUsData((prev) => ({ ...prev, storyTitle: e.target.value }))
+                  }
+                  placeholder="Calidad que nace en el corazón de Nuevo León"
+                  className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white focus:border-[var(--green-karmax)] focus:ring-1 focus:ring-[var(--green-karmax)] outline-none text-slate-800"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">
+                    Primer Párrafo de la Historia
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={aboutUsData.storyParagraph1 || ""}
+                    onChange={(e) =>
+                      setAboutUsData((prev) => ({ ...prev, storyParagraph1: e.target.value }))
+                    }
+                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white focus:border-[var(--green-karmax)] focus:ring-1 focus:ring-[var(--green-karmax)] outline-none text-slate-800"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">
+                    Segundo Párrafo de la Historia
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={aboutUsData.storyParagraph2 || ""}
+                    onChange={(e) =>
+                      setAboutUsData((prev) => ({ ...prev, storyParagraph2: e.target.value }))
+                    }
+                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white focus:border-[var(--green-karmax)] focus:ring-1 focus:ring-[var(--green-karmax)] outline-none text-slate-800"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Misión y Visión */}
+          <div className="space-y-4 border-t border-slate-100 pt-6">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+              Misión y Visión
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/50 space-y-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">
+                    Título de Misión
+                  </label>
+                  <input
+                    type="text"
+                    value={aboutUsData.missionTitle || ""}
+                    onChange={(e) =>
+                      setAboutUsData((prev) => ({ ...prev, missionTitle: e.target.value }))
+                    }
+                    placeholder="Misión"
+                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white focus:border-[var(--green-karmax)] focus:ring-1 focus:ring-[var(--green-karmax)] outline-none text-slate-800"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">
+                    Texto de Misión
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={aboutUsData.missionText || ""}
+                    onChange={(e) =>
+                      setAboutUsData((prev) => ({ ...prev, missionText: e.target.value }))
+                    }
+                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white focus:border-[var(--green-karmax)] focus:ring-1 focus:ring-[var(--green-karmax)] outline-none text-slate-800"
+                  />
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/50 space-y-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">
+                    Título de Visión
+                  </label>
+                  <input
+                    type="text"
+                    value={aboutUsData.visionTitle || ""}
+                    onChange={(e) =>
+                      setAboutUsData((prev) => ({ ...prev, visionTitle: e.target.value }))
+                    }
+                    placeholder="Visión"
+                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white focus:border-[var(--green-karmax)] focus:ring-1 focus:ring-[var(--green-karmax)] outline-none text-slate-800"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-800">
+                    Texto de Visión
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={aboutUsData.visionText || ""}
+                    onChange={(e) =>
+                      setAboutUsData((prev) => ({ ...prev, visionText: e.target.value }))
+                    }
+                    className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white focus:border-[var(--green-karmax)] focus:ring-1 focus:ring-[var(--green-karmax)] outline-none text-slate-800"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Mosaico de Imágenes (6) */}
+          <div className="space-y-4 border-t border-slate-100 pt-6">
+            <div>
+              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Mosaico Fotográfico (2x3)
+              </h4>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Imágenes que acompañan la historia: Parroquia Cadereyta, Distintivo Marca, Productos, Especialista de Limpieza, Monterrey/Cerro de la Silla y Almacén.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {(aboutUsData.mosaicImages || []).map((img, idx) => (
+                <div
+                  key={img.id || idx}
+                  className="p-3.5 rounded-xl border border-slate-200/80 bg-slate-50/50 space-y-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800">
+                      Foto #{idx + 1}
+                    </span>
+                    {uploadingMosaicIdx === idx && (
+                      <Loader2 className="w-3.5 h-3.5 text-[var(--green-karmax)] animate-spin" />
+                    )}
+                  </div>
+
+                  {/* Thumbnail */}
+                  <div
+                    className="relative w-full h-32 rounded-lg border border-slate-200 overflow-hidden flex items-center justify-center"
+                    style={{ backgroundColor: img.bgColor || "#ffffff" }}
+                  >
+                    {img.imageUrl ? (
+                      <Image
+                        src={img.imageUrl}
+                        alt={img.alt || `Mosaico ${idx + 1}`}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    ) : (
+                      <ImageIcon className="w-8 h-8 text-slate-300" />
+                    )}
+                  </div>
+
+                  {/* Subir archivo */}
+                  <div>
+                    <label className="inline-flex items-center gap-1.5 w-full justify-center text-xs font-semibold py-1.5 px-3 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 cursor-pointer transition-colors shadow-2xs">
+                      <Upload className="w-3.5 h-3.5 text-slate-500" />
+                      <span>{uploadingMosaicIdx === idx ? "Subiendo..." : "Cambiar imagen"}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        disabled={uploadingMosaicIdx === idx}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleUploadMosaicImage(idx, file);
+                        }}
+                      />
+                    </label>
+                  </div>
+
+                  {/* Alt text */}
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-medium text-slate-600">
+                      Descripción (Alt)
+                    </label>
+                    <input
+                      type="text"
+                      value={img.alt || ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setAboutUsData((prev) => {
+                          const list = prev.mosaicImages ? [...prev.mosaicImages] : [];
+                          list[idx] = { ...(list[idx] || { id: idx + 1, imageUrl: "" }), alt: val };
+                          return { ...prev, mosaicImages: list };
+                        });
+                      }}
+                      className="w-full text-[11px] p-2 rounded-lg border border-slate-200 bg-white focus:border-[var(--green-karmax)] outline-none text-slate-800"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Nuestros Valores */}
+          <div className="space-y-4 border-t border-slate-100 pt-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Nuestros Valores (6 Tarjetas)
+                </h4>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Tarjetas de valor con icono delineado y descripción institucional.
+                </p>
+              </div>
+              <div className="space-y-1 sm:w-64">
+                <label className="text-xs font-bold text-slate-800">
+                  Título de la Sección
+                </label>
+                <input
+                  type="text"
+                  value={aboutUsData.valuesTitle || ""}
+                  onChange={(e) =>
+                    setAboutUsData((prev) => ({ ...prev, valuesTitle: e.target.value }))
+                  }
+                  placeholder="Nuestros Valores"
+                  className="w-full text-xs p-2 rounded-xl border border-slate-200 bg-white focus:border-[var(--green-karmax)] outline-none text-slate-800"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {(aboutUsData.values || []).map((val, idx) => (
+                <div
+                  key={val.id || idx}
+                  className="p-4 rounded-xl border border-slate-200/80 bg-slate-50/50 space-y-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800">
+                      Valor #{idx + 1}
+                    </span>
+                    <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-slate-200 text-slate-700">
+                      {val.iconName}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-medium text-slate-600">
+                      Icono
+                    </label>
+                    <select
+                      value={val.iconName}
+                      onChange={(e) => {
+                        const newIcon = e.target.value;
+                        setAboutUsData((prev) => {
+                          const list = prev.values ? [...prev.values] : [];
+                          list[idx] = { ...list[idx], iconName: newIcon };
+                          return { ...prev, values: list };
+                        });
+                      }}
+                      className="w-full text-xs p-2 rounded-lg border border-slate-200 bg-white focus:border-[var(--green-karmax)] outline-none text-slate-800"
+                    >
+                      <option value="award">Premio / Calidad (Award)</option>
+                      <option value="shield">Escudo / Confianza (Shield)</option>
+                      <option value="commitment">Alianza / Compromiso (HeartHandshake)</option>
+                      <option value="lightbulb">Bombilla / Innovación (Lightbulb)</option>
+                      <option value="flag">Bandera / Orgullo Mexicano (Flag)</option>
+                      <option value="globe">Planeta / Responsabilidad (Globe)</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-medium text-slate-600">
+                      Título
+                    </label>
+                    <input
+                      type="text"
+                      value={val.title}
+                      onChange={(e) => {
+                        const newTitle = e.target.value;
+                        setAboutUsData((prev) => {
+                          const list = prev.values ? [...prev.values] : [];
+                          list[idx] = { ...list[idx], title: newTitle };
+                          return { ...prev, values: list };
+                        });
+                      }}
+                      className="w-full text-xs p-2 rounded-lg border border-slate-200 bg-white focus:border-[var(--green-karmax)] outline-none text-slate-800"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-medium text-slate-600">
+                      Descripción
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={val.description}
+                      onChange={(e) => {
+                        const newDesc = e.target.value;
+                        setAboutUsData((prev) => {
+                          const list = prev.values ? [...prev.values] : [];
+                          list[idx] = { ...list[idx], description: newDesc };
+                          return { ...prev, values: list };
+                        });
+                      }}
+                      className="w-full text-xs p-2 rounded-lg border border-slate-200 bg-white focus:border-[var(--green-karmax)] outline-none text-slate-800"
+                    />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>

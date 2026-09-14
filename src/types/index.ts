@@ -140,3 +140,59 @@ export interface QuoteCartItem {
   regularPrice?: number | null;
   quantity: number;
 }
+
+export interface ContactPageData {
+  bannerTitle?: string;
+  formTitle?: string;
+  formSubtitle?: string;
+  submitButtonText?: string;
+  whatsappText?: string;
+  whatsappNumber?: string;
+  phone?: string;
+  email?: string;
+  schedule?: string;
+  address?: string;
+}
+
+export interface ContactMessageItem {
+  id: number;
+  fullName: string;
+  company: string;
+  phone: string;
+  email: string;
+  message: string;
+  status: "unread" | "read" | "replied";
+  ipAddress?: string | null;
+  createdAt: string;
+}
+
+export interface AboutValueItem {
+  id: string;
+  iconName: string;
+  title: string;
+  description: string;
+}
+
+export interface AboutMosaicItem {
+  id: number;
+  imageUrl: string;
+  alt: string;
+  title?: string;
+  bgColor?: string;
+}
+
+export interface AboutUsPageData {
+  bannerTitle?: string;
+  storyTitle?: string;
+  storyParagraph1?: string;
+  storyParagraph2?: string;
+  missionTitle?: string;
+  missionText?: string;
+  visionTitle?: string;
+  visionText?: string;
+  mosaicImages?: AboutMosaicItem[];
+  valuesTitle?: string;
+  values?: AboutValueItem[];
+}
+
+

@@ -258,6 +258,18 @@ export const siteSettings = mysqlTable("site_settings", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const contactMessages = mysqlTable("contact_messages", {
+  id: serial("id").primaryKey(),
+  fullName: varchar("full_name", { length: 255 }).notNull(),
+  company: varchar("company", { length: 255 }).notNull(),
+  phone: varchar("phone", { length: 50 }).notNull(),
+  email: varchar("email", { length: 255 }).notNull(),
+  message: text("message").notNull(),
+  status: varchar("status", { length: 50 }).default("unread").notNull(),
+  ipAddress: varchar("ip_address", { length: 100 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 export type Category = typeof categories.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type ProductImage = typeof productImages.$inferSelect;
@@ -271,4 +283,5 @@ export type User = typeof users.$inferSelect;
 export type QuoteRequest = typeof quoteRequests.$inferSelect;
 export type QuoteItem = typeof quoteItems.$inferSelect;
 export type SiteSetting = typeof siteSettings.$inferSelect;
+export type ContactMessage = typeof contactMessages.$inferSelect;
 

@@ -67,13 +67,13 @@ export const Header: React.FC = () => {
               Productos
             </Link>
             <Link
-              href="#quienes-somos"
+              href="/quienes-somos"
               className="hover:text-[var(--green-karmax)] transition-colors"
             >
               Quiénes somos
             </Link>
             <Link
-              href="#contacto"
+              href="/contacto"
               className="hover:text-[var(--green-karmax)] transition-colors"
             >
               Contacto
@@ -267,16 +267,16 @@ export const Header: React.FC = () => {
             Productos
           </Link>
           <Link
-            href="#quienes-somos"
+            href="/quienes-somos"
             onClick={() => setIsMobileMenuOpen(false)}
             className="block py-2 text-base font-medium text-slate-800 hover:text-[var(--green-karmax)] transition-colors"
           >
             Quiénes somos
           </Link>
           <Link
-            href="#contacto"
+            href="/contacto"
             onClick={() => setIsMobileMenuOpen(false)}
-            className="block py-2 text-base font-medium text-slate-800 hover:text-[var(--green-karmax)] transition-colors"
+            className="block py-2 text-base font-medium text-[var(--blue-karmax)] hover:text-[var(--green-karmax)]"
           >
             Contacto
           </Link>

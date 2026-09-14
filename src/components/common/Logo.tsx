@@ -18,7 +18,6 @@ export const Logo: React.FC<LogoProps> = ({
         alt="Logo Karmax"
         width={size.w}
         height={size.h}
-        style={{ width: "auto", height: "auto" }}
         priority
       />
     </Link>

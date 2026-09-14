@@ -49,7 +49,7 @@ export const Footer: React.FC<FooterProps> = ({ data, socialLinks }) => {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-10 lg:gap-8 items-start pb-12">
           {/* 1. Brand & Value Proposition */}
           <div className="md:col-span-5 lg:col-span-4 space-y-5">
-            <Logo size={{ w: 118, h: 20 }} />
+            <Logo size={{ w: 160, h: 40 }} />
             <p className="text-[15px] sm:text-[16px] text-[var(--light-text-karmax)] leading-relaxed max-w-xs whitespace-pre-line">
               {description}
             </p>
@@ -71,13 +71,13 @@ export const Footer: React.FC<FooterProps> = ({ data, socialLinks }) => {
                 Productos
               </Link>
               <Link
-                href="#quienes-somos"
+                href="/quienes-somos"
                 className="text-[16px] font-medium text-[var(--blue-karmax)] hover:text-[var(--green-karmax)] transition-colors w-fit"
               >
                 Quiénes Somos
               </Link>
               <Link
-                href="#contacto"
+                href="/contacto"
                 className="text-[16px] font-medium text-[var(--blue-karmax)] hover:text-[var(--green-karmax)] transition-colors w-fit"
               >
                 Contacto
@@ -130,7 +130,7 @@ export const Footer: React.FC<FooterProps> = ({ data, socialLinks }) => {
             </div>
 
             {/* Social Icons */}
-            <div className="flex items-center gap-3 pt-2">
+            <div className="flex items-center gap-3 pt-4">
               {facebookUrl && (
                 <a
                   href={facebookUrl}

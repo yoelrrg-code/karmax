@@ -536,7 +536,27 @@ export async function getAllSiteSettings(): Promise<Record<string, unknown>> {
     }
     return map;
   } catch (error) {
-    console.error("Error al obtener site settings:", error);
+    console.error("Error al obtener configuraciones del sitio:", error);
     return {};
   }
+}
+
+/**
+ * Obtiene el correo electrónico de notificaciones configurado para Karmax.
+ * Prioriza el valor guardado en site_settings ('general_settings.notificationEmail')
+ * y tiene como fallback la variable de entorno KARMAX_NOTIFICATION_EMAIL.
+ */
+export async function getKarmaxNotificationEmail(): Promise<string> {
+  try {
+    const generalSettings = await getSiteSetting<{ notificationEmail?: string }>(
+      "general_settings",
+      {}
+    );
+    if (generalSettings?.notificationEmail && generalSettings.notificationEmail.trim()) {
+      return generalSettings.notificationEmail.trim();
+    }
+  } catch (error) {
+    console.warn("Fallback para getKarmaxNotificationEmail:", (error as Error).message);
+  }
+  return process.env.KARMAX_NOTIFICATION_EMAIL || "dev.paco.lule@gmail.com";
 }
