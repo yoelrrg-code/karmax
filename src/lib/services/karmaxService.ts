@@ -21,7 +21,7 @@ import type {
   ProductDocumentItem,
   ProductDetailItem,
 } from "@/types";
-import { asc, desc, eq, and, or, like, inArray, sql } from "drizzle-orm";
+import { asc, desc, eq, isNotNull, gt, and, or, like, inArray, sql } from "drizzle-orm";
 
 export async function getCategories(featured?: boolean): Promise<CategoryItem[]> {
   try {
@@ -207,6 +207,13 @@ export async function getProductsCatalog(
     const total = Number(countResult?.count || 0);
     const totalPages = Math.ceil(total / limit);
     const offset = Math.max(0, (page - 1) * limit);
+
+    conditions.push(
+      and(
+        eq(products.isActive, true),
+        isNotNull(products.regularPrice)
+      )!
+    );
 
     // Consulta de productos paginados
     const rows = await db

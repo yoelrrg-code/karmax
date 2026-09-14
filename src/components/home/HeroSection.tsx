@@ -16,34 +16,34 @@ interface FadeCellProps {
 
 const HERO_CELL_IMAGES = {
   cell1: [
-    { src: "/images/hero/1.png", alt: "Carrito exprimidor para limpieza" },
-    { src: "/images/hero/11.png", alt: "Cubeta con exprimidor industrial" },
-    { src: "/images/hero/111.png", alt: "Cubeta giratoria profesional" },
+    { src: "/images/hero/H1-1.png", alt: "Carrito exprimidor para limpieza" },
+    { src: "/images/hero/H2-1.png", alt: "Cubeta con exprimidor industrial" },
+    { src: "/images/hero/H3-1.png", alt: "Cubeta giratoria profesional" },
   ],
   cell2: [
-    { src: "/images/hero/2.png", alt: "Bolsas para residuos pesados" },
-    { src: "/images/hero/22.png", alt: "Bolsas de alta resistencia" },
-    { src: "/images/hero/222.png", alt: "Guantes de nitrilo profesionales" },
+    { src: "/images/hero/H1-2.png", alt: "Bolsas para residuos pesados" },
+    { src: "/images/hero/H2-2.png", alt: "Bolsas de alta resistencia" },
+    { src: "/images/hero/H3-2.png", alt: "Guantes de nitrilo profesionales" },
   ],
   cell3: [
-    { src: "/images/hero/3.png", alt: "Limpiador multisuperficies KARMAX" },
-    { src: "/images/hero/33.png", alt: "Desinfectante de superficies para atomizador" },
-    { src: "/images/hero/333.png", alt: "Limpiador de cristales profesional" },
+    { src: "/images/hero/H1-3.png", alt: "Limpiador multisuperficies KARMAX" },
+    { src: "/images/hero/H2-3.png", alt: "Desinfectante de superficies para atomizador" },
+    { src: "/images/hero/H3-3.png", alt: "Limpiador de cristales profesional" },
   ],
   cell4: [
-    { src: "/images/hero/4.png", alt: "Escobillón de uso rudo" },
-    { src: "/images/hero/44.png", alt: "Escoba industrial grande" },
-    { src: "/images/hero/444.png", alt: "Trapeador microfibra profesional" },
+    { src: "/images/hero/H1-4.png", alt: "Escobillón de uso rudo" },
+    { src: "/images/hero/H2-4.png", alt: "Escoba industrial grande" },
+    { src: "/images/hero/H3-4.png", alt: "Trapeador microfibra profesional" },
   ],
   cell5: [
-    { src: "/images/hero/5.png", alt: "Dispensador institucional" },
-    { src: "/images/hero/55.png", alt: "Despachador de toalla de papel" },
-    { src: "/images/hero/555.png", alt: "Despachador institucional jumbo" },
+    { src: "/images/hero/H1-5.png", alt: "Dispensador institucional" },
+    { src: "/images/hero/H2-5.png", alt: "Despachador de toalla de papel" },
+    { src: "/images/hero/H3-5.png", alt: "Despachador institucional jumbo" },
   ],
   cell6: [
-    { src: "/images/hero/6.png", alt: "Línea química y desinfección KARMAX" },
-    { src: "/images/hero/66.png", alt: "Limpiador multiusos 10 Lts" },
-    { src: "/images/hero/666.png", alt: "Químicos y jabón para manos" },
+    { src: "/images/hero/H1-6.png", alt: "Línea química y desinfección KARMAX" },
+    { src: "/images/hero/H2-6.png", alt: "Limpiador multiusos 10 Lts" },
+    { src: "/images/hero/H3-6.png", alt: "Químicos y jabón para manos" },
   ],
 };
 
