@@ -122,8 +122,7 @@ const FadeCell: React.FC<FadeCellProps> = ({
               alt={img.alt}
               fill
               priority={idx === 0}
-              className="object-contain"
-              sizes={sizes}
+              className="!w-auto h-full mx-auto"
             />
           </div>
         ))}
@@ -148,7 +147,7 @@ const HeroProductGrid: React.FC<HeroProductGridProps> = ({ className = "" }) => 
         <FadeCell
           className="w-1/2"
           style={{ backgroundColor: "#FFF5DE" }}
-          paddingClass="px-3 pb-0 sm:p-5 lg:p-2 lg:pb-0"
+          paddingClass="p-0"
           sizes="(max-width: 1024px) 50vw, 25vw"
           images={HERO_CELL_IMAGES.cell1}
           entranceDelay={0.7}
@@ -158,7 +157,7 @@ const HeroProductGrid: React.FC<HeroProductGridProps> = ({ className = "" }) => 
         <FadeCell
           className="w-1/4"
           style={{ backgroundColor: "#B3EAF7" }}
-          paddingClass="p-2 sm:p-3 lg:p-10"
+          paddingClass="p-0"
           sizes="(max-width: 1024px) 25vw, 13vw"
           images={HERO_CELL_IMAGES.cell2}
           entranceDelay={0.5}
@@ -168,7 +167,7 @@ const HeroProductGrid: React.FC<HeroProductGridProps> = ({ className = "" }) => 
         <FadeCell
           className="w-1/4"
           style={{ backgroundColor: "#FF9844" }}
-          paddingClass="p-2 sm:p-3 lg:px-10 lg:pb-0"
+          paddingClass="p-0"
           sizes="(max-width: 1024px) 25vw, 13vw"
           images={HERO_CELL_IMAGES.cell3}
           entranceDelay={0.3}
@@ -181,7 +180,7 @@ const HeroProductGrid: React.FC<HeroProductGridProps> = ({ className = "" }) => 
         <FadeCell
           className="w-1/4"
           style={{ backgroundColor: "#FFCB26" }}
-          paddingClass="px-2 pt-0 pb-2 sm:p-3 lg:px-2 lg:pt-0 lg:pb-20"
+          paddingClass="p-0"
           sizes="(max-width: 1024px) 25vw, 13vw"
           images={HERO_CELL_IMAGES.cell4}
           entranceDelay={0.78}
@@ -191,7 +190,7 @@ const HeroProductGrid: React.FC<HeroProductGridProps> = ({ className = "" }) => 
         <FadeCell
           className="w-1/4"
           style={{ backgroundColor: "#39A0DA" }}
-          paddingClass="p-2 sm:p-3 lg:p-12"
+          paddingClass="p-0"
           sizes="(max-width: 1024px) 25vw, 13vw"
           images={HERO_CELL_IMAGES.cell5}
           entranceDelay={0.58}
@@ -201,7 +200,7 @@ const HeroProductGrid: React.FC<HeroProductGridProps> = ({ className = "" }) => 
         <FadeCell
           className="w-1/2"
           style={{ backgroundColor: "#BADD65" }}
-          paddingClass="px-4 pb-0 pt-4 sm:p-5 lg:px-10 lg:pb-0 lg:pt-16"
+          paddingClass="p-0"
           sizes="(max-width: 1024px) 50vw, 25vw"
           images={HERO_CELL_IMAGES.cell6}
           entranceDelay={0.38}
