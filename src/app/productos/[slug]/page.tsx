@@ -6,6 +6,7 @@ import { getProductBySlug, getRelatedProducts, getSiteSetting } from "@/lib/serv
 import { ProductDetailView } from "@/components/product/ProductDetailView";
 import { QuoteSteps } from "@/components/home/QuoteSteps";
 import { PreFooterCta } from "@/components/home/PreFooterCta";
+import { RevealOnScroll } from "@/components/common/RevealOnScroll";
 import type { FooterProps } from "@/components/layout/Footer";
 
 interface ProductDetailPageProps {
@@ -67,20 +68,24 @@ export default async function ProductDetailPage({
           relatedProducts={relatedProducts}
         />
         {/* 5. Pasos de cotización (reutilizado) */}
-        <QuoteSteps showCta={false} />
+        <RevealOnScroll direction="up" delay={0.1}>
+          <QuoteSteps showCta={false} />
+        </RevealOnScroll>
 
         {/* 6. Pre-Footer CTA */}
-        <PreFooterCta
-          title="¿Necesitas ayuda para elegir productos o calcular cantidades para tu empresa?"
-          description=""
-          cta={[
-            {
-              label: "Hablar con un asesor por WhatsApp",
-              link: `https://wa.me/${whatsappNumber}`,
-              target: "_blank",
-            },
-          ]}
-        />
+        <RevealOnScroll direction="up" delay={0.1}>
+          <PreFooterCta
+            title="¿Necesitas ayuda para elegir productos o calcular cantidades para tu empresa?"
+            description=""
+            cta={[
+              {
+                label: "Hablar con un asesor por WhatsApp",
+                link: `https://wa.me/${whatsappNumber}`,
+                target: "_blank",
+              },
+            ]}
+          />
+        </RevealOnScroll>
       </main>
       <Footer data={footerInfo} socialLinks={socialLinks} />
     </div>

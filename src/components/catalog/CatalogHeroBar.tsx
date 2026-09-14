@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { motion } from "motion/react";
 
 interface CatalogHeroBarProps {
   search: string;
@@ -32,12 +33,20 @@ export const CatalogHeroBar: React.FC<CatalogHeroBarProps> = ({
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
         {/* Title */}
-        <h1 className="tracking-tight text-white text-center sm:text-left">
+        <motion.h1
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+          className="tracking-tight text-white text-center sm:text-left"
+        >
           Productos
-        </h1>
+        </motion.h1>
 
         {/* Search Bar */}
-        <form
+        <motion.form
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
           onSubmit={handleSubmit}
           className="relative flex items-center w-full max-w-md"
         >
@@ -82,7 +91,7 @@ export const CatalogHeroBar: React.FC<CatalogHeroBarProps> = ({
               />
             </svg>
           </button>
-        </form>
+        </motion.form>
       </div>
     </div>
   );

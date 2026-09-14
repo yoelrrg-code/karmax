@@ -4,6 +4,7 @@ import React, { useState, useRef, useMemo, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "motion/react";
 import { CatalogHeroBar } from "@/components/catalog/CatalogHeroBar";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { useQuote } from "@/context/QuoteContext";
@@ -316,8 +317,11 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-16">
-        {/* 2. Breadcrumb */}
-        <nav
+        {/* 2. Breadcrumb con animación suave */}
+        <motion.nav
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           aria-label="Breadcrumb"
           className="flex items-center gap-2 text-xs sm:text-[16px] text-[var(--blue-karmax)] mb-10 flex-wrap"
         >
@@ -338,16 +342,26 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
           <span className="text-[var(--text-karmax)] font-medium truncate max-w-xs sm:max-w-md">
             {formattedTitle}
           </span>
-        </nav>
+        </motion.nav>
 
         {/* 3. Contenedor de Detalle de Producto (2 Columnas) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start mb-12">
-          {/* Columna Izquierda: Galería de imágenes (5 cols en lg) */}
+          {/* Columna Izquierda: Galería de imágenes (6 cols en lg) */}
           <div className="lg:col-span-6 flex flex-col items-center">
-            {/* Imagen Principal */}
-            <div className="w-full aspect-square relative bg-white rounded-2xl border border-[var(--green-karmax)] shadow-2xs p-8 flex items-center justify-center overflow-hidden">
+            {/* Imagen Principal con escala y fade-in de entrada */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ duration: 0.9, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full aspect-square relative bg-white rounded-2xl border border-[var(--green-karmax)] shadow-2xs p-8 flex items-center justify-center overflow-hidden"
+            >
               {pricing.hasDiscount && (
-                <span className="absolute top-4 left-4 z-10 text-[12px] font-bold text-white bg-[#FF6816] px-3 py-1 rounded-full uppercase tracking-wider shadow-xs flex items-center gap-2">
+                <motion.span
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  className="absolute top-4 left-4 z-10 text-[12px] font-bold text-white bg-[#FF6816] px-3 py-1 rounded-full uppercase tracking-wider shadow-xs flex items-center gap-2"
+                >
                   <Image
                     src={"/icons/arrow-down.svg"}
                     alt="arrow down"
@@ -355,30 +369,51 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                     height={11}
                   />
                   {Number(user?.discountPercentage) > 0 ? `-${pricing.discountPercentage}% Descuento` : "Oferta"}
-                </span>
+                </motion.span>
               )}
-              <Image
-                src={gallery[activeImageIndex] || "/images/products/placeholder.jpg"}
-                alt={product.name}
-                fill
-                priority
-                loading="eager"
-                className="object-contain p-4 transition-all duration-300"
-                sizes="(max-width: 1024px) 100vw, 40vw"
-              />
-            </div>
+              {/* Transición suave entre fotos de la galería al hacer clic */}
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={gallery[activeImageIndex] || activeImageIndex}
+                  initial={{ opacity: 0, scale: 0.96 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                  className="relative w-full h-full"
+                >
+                  <Image
+                    src={gallery[activeImageIndex] || "/images/products/placeholder.jpg"}
+                    alt={product.name}
+                    fill
+                    priority
+                    loading="eager"
+                    className="object-contain p-4"
+                    sizes="(max-width: 1024px) 100vw, 40vw"
+                  />
+                </motion.div>
+              </AnimatePresence>
+            </motion.div>
 
-            {/* Miniaturas de la galería */}
+            {/* Miniaturas de la galería escalonadas */}
             {gallery.length > 1 && (
               <div className="grid grid-cols-4 gap-4 mt-3 w-full">
                 {gallery.map((imgUrl, idx) => {
                   const isActive = idx === activeImageIndex;
                   return (
-                    <button
+                    <motion.button
                       key={idx}
                       type="button"
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{
+                        duration: 0.55,
+                        delay: 0.2 + idx * 0.06,
+                        ease: [0.16, 1, 0.3, 1],
+                      }}
+                      whileHover={{ scale: 1.04 }}
+                      whileTap={{ scale: 0.96 }}
                       onClick={() => setActiveImageIndex(idx)}
-                      className={`relative aspect-square w-full rounded-xl bg-white p-2 border transition-all cursor-pointer flex items-center justify-center ${
+                      className={`relative aspect-square w-full rounded-xl bg-white p-2 border transition-colors cursor-pointer flex items-center justify-center ${
                         isActive
                           ? "border-1 border-[var(--green-karmax)] shadow-xs"
                           : "border-slate-200 hover:border-slate-300 opacity-70 hover:opacity-100"
@@ -392,27 +427,42 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                         className="object-contain p-1.5"
                         sizes="(max-width: 1024px) 25vw, 120px"
                       />
-                    </button>
+                    </motion.button>
                   );
                 })}
               </div>
             )}
           </div>
 
-          {/* Columna Derecha: Datos y compra (7 cols en lg) */}
+          {/* Columna Derecha: Datos y compra con coreografía escalonada */}
           <div className="lg:col-span-6 flex flex-col">
             {/* Meta: Marca */}
-            <p className="text-[14px] font-normal text-[var(--light-text-karmax)] tracking-wide mb-5">
+            <motion.p
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.75, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+              className="text-[14px] font-normal text-[var(--light-text-karmax)] tracking-wide mb-5"
+            >
               Marca: <span className="uppercase">{product.brand || "KARMAX"}</span>
-            </p>
+            </motion.p>
 
             {/* Título */}
-            <h2 className="text-[var(--text-karmax)] mb-4 leading-tight">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.22, ease: [0.16, 1, 0.3, 1] }}
+              className="text-[var(--text-karmax)] mb-4 leading-tight"
+            >
               {formattedTitle}
-            </h2>
+            </motion.h2>
 
             {/* Precio */}
-            <div className="mb-5 flex items-baseline gap-3 flex-wrap">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="mb-5 flex items-baseline gap-3 flex-wrap"
+            >
               {showStrikethrough ? (
                 <>
                   {product.hasMultipleVariations && activePriceNumber === null && (
@@ -447,44 +497,59 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                   {displayPrice}
                 </span>
               )}
-            </div>
+            </motion.div>
 
             {/* Atributos dinámicos seleccionables */}
-            {Object.entries(availableAttributes).map(([attrName, values]) => (
-              <div key={attrName} className="mb-5">
-                <label className="block text-[18px] font-semibold text-[var(--text-karmax)] mb-1">
-                  {attrName}
-                </label>
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {values.map((val) => {
-                    const isSelected =
-                      (attrName === presentationAttrName
-                        ? selectedPresentation === val
-                        : (selectedAttributes[attrName] || values[0]) === val);
-                    return (
-                      <button
-                        key={val}
-                        type="button"
-                        onClick={() => handleSelectAttribute(attrName, val)}
-                        className={`px-4 py-3 rounded-lg text-xs sm:text-sm font-medium border transition-all cursor-pointer ${
-                          isSelected
-                            ? "border-[var(--green-hover-karmax)] bg-[var(--green-hover-karmax)] text-[var(--white-karmax)] font-semibold"
-                            : "border-[var(--blue-karmax)] bg-white text-[var(--blue-karmax)] hover:border-[var(--green-hover-karmax)] hover:text-[var(--green-hover-karmax)]"
-                        }`}
-                      >
-                        {val}
-                      </button>
-                    );
-                  })}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.38, ease: [0.16, 1, 0.3, 1] }}
+            >
+              {Object.entries(availableAttributes).map(([attrName, values]) => (
+                <div key={attrName} className="mb-5">
+                  <label className="block text-[18px] font-semibold text-[var(--text-karmax)] mb-1">
+                    {attrName}
+                  </label>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {values.map((val) => {
+                      const isSelected =
+                        (attrName === presentationAttrName
+                          ? selectedPresentation === val
+                          : (selectedAttributes[attrName] || values[0]) === val);
+                      return (
+                        <motion.button
+                          key={val}
+                          type="button"
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.97 }}
+                          onClick={() => handleSelectAttribute(attrName, val)}
+                          className={`px-4 py-3 rounded-lg text-xs sm:text-sm font-medium border transition-colors cursor-pointer ${
+                            isSelected
+                              ? "border-[var(--green-hover-karmax)] bg-[var(--green-hover-karmax)] text-[var(--white-karmax)] font-semibold"
+                              : "border-[var(--blue-karmax)] bg-white text-[var(--blue-karmax)] hover:border-[var(--green-hover-karmax)] hover:text-[var(--green-hover-karmax)]"
+                          }`}
+                        >
+                          {val}
+                        </motion.button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </motion.div>
 
             {/* Botón de Agregar a Cotización o Selector de Cantidad (– [cant] +) */}
-            <div className="my-3 mb-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.46, ease: [0.16, 1, 0.3, 1] }}
+              className="my-3 mb-6"
+            >
               {quantity === 0 ? (
-                <button
+                <motion.button
                   type="button"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                   onClick={() => {
                     addItem(
                       product,
@@ -494,7 +559,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                       activeSku
                     );
                   }}
-                  className="btn-primary gap-2 inline-flex items-center justify-center border border-[var(--green-karmax)] bg-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] hover:border-[var(--green-hover-karmax)] text-white px-8 py-3.5 rounded-full text-base shadow-xs hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                  className="btn-primary gap-2 inline-flex items-center justify-center border border-[var(--green-karmax)] bg-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] hover:border-[var(--green-hover-karmax)] text-white px-8 py-3.5 rounded-full text-base shadow-xs hover:shadow-md transition-all duration-300 cursor-pointer"
                 >
                   <svg
                     width="18"
@@ -510,9 +575,10 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                     <line x1="5" y1="12" x2="19" y2="12" />
                   </svg>
                   Agregar a cotización
-                </button>
+                </motion.button>
               ) : (
-                <div
+                <motion.div
+                  layout
                   className="inline-flex items-center justify-between bg-[var(--green-karmax)] text-white font-bold py-2.5 px-6 rounded-full transition-all duration-200 shadow-xs w-full max-w-[240px] select-none"
                 >
                   <button
@@ -550,12 +616,18 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                   >
                     +
                   </button>
-                </div>
+                </motion.div>
               )}
-            </div>
+            </motion.div>
 
             {/* Descripción del producto */}
-            <div id="product-description" className="text-[var(--text-karmax)] leading-relaxed space-y-4 mb-10 pt-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.54, ease: [0.16, 1, 0.3, 1] }}
+              id="product-description"
+              className="text-[var(--text-karmax)] leading-relaxed space-y-4 mb-10 pt-6"
+            >
               {product.description ? (
                 <div
                   dangerouslySetInnerHTML={{ __html: product.description }}
@@ -566,10 +638,16 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
               ) : (
                 <p>El Abrillantador Exterior tipo Armor All está diseñado para restaurar, proteger y dar brillo a las superficies exteriores del vehículo, dejando un acabado limpio, brillante y renovado.</p>
               )}
-            </div>
+            </motion.div>
 
             {/* Caja de Información de Entrega */}
-            <div id="delivery-info" className="bg-[var(--light-green-karmax)] rounded-2xl p-6 mb-12">
+            <motion.div
+              initial={{ opacity: 0, y: 25 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.62, ease: [0.16, 1, 0.3, 1] }}
+              id="delivery-info"
+              className="bg-[var(--light-green-karmax)] rounded-2xl p-6 mb-12"
+            >
               {product.deliveryInfo ? (
                 <div
                   dangerouslySetInnerHTML={{ __html: product.deliveryInfo }}
@@ -599,17 +677,25 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                   </ul>
                 </>
               )}
-            </div>
+            </motion.div>
 
             {/* Documentos asociados (Ficha técnica y Hoja de seguridad) */}
-            <div className="flex flex-wrap sm:flex-nowrap gap-6 mb-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.7, ease: [0.16, 1, 0.3, 1] }}
+              className="flex flex-wrap sm:flex-nowrap gap-6 mb-6"
+            >
               {documents.map((doc) => (
-                <a
+                <motion.a
                   key={doc.id}
                   href={doc.fileUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-white border border-[#D6DADD] hover:border-[var(--green-hover-karmax)] rounded-2xl pt-3 pb-4.5 pl-4 pr-5 flex items-center gap-3 transition-all duration-200 shadow-2xs group cursor-pointer"
+                  whileHover={{ y: -3, scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  transition={{ duration: 0.2 }}
+                  className="bg-white border border-[#D6DADD] hover:border-[var(--green-hover-karmax)] rounded-2xl pt-3 pb-4.5 pl-4 pr-5 flex items-center gap-3 transition-colors duration-200 shadow-2xs group cursor-pointer"
                 >
                   <Image
                     src="/icons/pdf.svg"
@@ -627,25 +713,33 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                       {doc.fileSize || "PDF"}
                     </span>
                   </div>
-                </a>
+                </motion.a>
               ))}
-            </div>
+            </motion.div>
           </div>
         </div>
       </div>
-      {/* 4. Sección: Productos Relacionados */}
+      {/* 4. Sección: Productos Relacionados con scroll reveal */}
       {relatedProducts.length > 0 && (
         <div className="w-full bg-[var(--light-bg-karmax)]">
           <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-16">
-            <div className="flex items-center justify-between mb-6">
+            <motion.div
+              initial={{ opacity: 0, y: 25 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+              className="flex items-center justify-between mb-6"
+            >
               <h3 className="text-xl sm:text-2xl font-bold text-[var(--dark-blue-karmax)]">
                 Productos relacionados
               </h3>
 
               {/* Botones de navegación del slider */}
               <div className="flex items-center gap-2">
-                <button
+                <motion.button
                   type="button"
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.92 }}
                   onClick={() => scrollSlider("left")}
                   aria-label="Productos anteriores"
                   className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-[var(--green-karmax)] shadow-2xs hover:shadow-xs border border-slate-100 hover:border-slate-200 transition-all cursor-pointer"
@@ -662,9 +756,11 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                   >
                     <path d="M15 18l-6-6 6-6" />
                   </svg>
-                </button>
-                <button
+                </motion.button>
+                <motion.button
                   type="button"
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.92 }}
                   onClick={() => scrollSlider("right")}
                   aria-label="Productos siguientes"
                   className="w-9 h-9 rounded-full bg-white flex items-center justify-center text-[var(--green-karmax)] shadow-2xs hover:shadow-xs border border-slate-100 hover:border-slate-200 transition-all cursor-pointer"
@@ -681,24 +777,32 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                   >
                     <path d="M9 18l6-6-6-6" />
                   </svg>
-                </button>
+                </motion.button>
               </div>
-            </div>
+            </motion.div>
 
-            {/* Contenedor deslizante de productos */}
+            {/* Contenedor deslizante de productos con animación escalonada */}
             <div
               ref={sliderRef}
               className="flex items-stretch gap-5 overflow-x-auto pb-4 scroll-smooth scrollbar-none"
               style={{ scrollSnapType: "x mandatory" }}
             >
-              {relatedProducts.map((relProduct) => (
-                <div
+              {relatedProducts.map((relProduct, idx) => (
+                <motion.div
                   key={relProduct.id}
+                  initial={{ opacity: 0, y: 35 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.15 }}
+                  transition={{
+                    duration: 0.8,
+                    delay: (idx % 4) * 0.12,
+                    ease: [0.16, 1, 0.3, 1],
+                  }}
                   className="flex-shrink-0 w-64 sm:w-72"
                   style={{ scrollSnapAlign: "start" }}
                 >
                   <ProductCard product={relProduct} />
-                </div>
+                </motion.div>
               ))}
             </div>
           </section>
