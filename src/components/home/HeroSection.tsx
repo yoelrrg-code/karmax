@@ -6,8 +6,7 @@ import Image from "next/image";
 import { motion } from "motion/react";
 
 interface FadeCellProps {
-  images: Array<{ src: string; alt: string }>;
-  sizes: string;
+  images: Array<{ src: string; alt: string; width: number; height: number }>;
   className: string;
   style?: React.CSSProperties;
   paddingClass?: string;
@@ -18,40 +17,39 @@ interface FadeCellProps {
 
 const HERO_CELL_IMAGES = {
   cell1: [
-    { src: "/images/hero/H1-1.png", alt: "Carrito exprimidor para limpieza" },
-    { src: "/images/hero/H2-1.png", alt: "Cubeta con exprimidor industrial" },
-    { src: "/images/hero/H3-1.png", alt: "Cubeta giratoria profesional" },
+    { src: "/images/hero/H1-1.png", alt: "Carrito exprimidor para limpieza", width: 800, height: 520 },
+    { src: "/images/hero/H2-1.png", alt: "Cubeta con exprimidor industrial", width: 800, height: 520 },
+    { src: "/images/hero/H3-1.png", alt: "Cubeta giratoria profesional", width: 800, height: 520 },
   ],
   cell2: [
-    { src: "/images/hero/H1-2.png", alt: "Bolsas para residuos pesados" },
-    { src: "/images/hero/H2-2.png", alt: "Bolsas de alta resistencia" },
-    { src: "/images/hero/H3-2.png", alt: "Guantes de nitrilo profesionales" },
+    { src: "/images/hero/H1-2.png", alt: "Bolsas para residuos pesados", width: 362, height: 520 },
+    { src: "/images/hero/H2-2.png", alt: "Bolsas de alta resistencia", width: 362, height: 520 },
+    { src: "/images/hero/H3-2.png", alt: "Guantes de nitrilo profesionales", width: 362, height: 520 },
   ],
   cell3: [
-    { src: "/images/hero/H1-3.png", alt: "Limpiador multisuperficies KARMAX" },
-    { src: "/images/hero/H2-3.png", alt: "Desinfectante de superficies para atomizador" },
-    { src: "/images/hero/H3-3.png", alt: "Limpiador de cristales profesional" },
+    { src: "/images/hero/H1-3.png", alt: "Limpiador multisuperficies KARMAX", width: 400, height: 520 },
+    { src: "/images/hero/H2-3.png", alt: "Desinfectante de superficies para atomizador", width: 400, height: 520 },
+    { src: "/images/hero/H3-3.png", alt: "Limpiador de cristales profesional", width: 400, height: 520 },
   ],
   cell4: [
-    { src: "/images/hero/H1-4.png", alt: "Escobillón de uso rudo" },
-    { src: "/images/hero/H2-4.png", alt: "Escoba industrial grande" },
-    { src: "/images/hero/H3-4.png", alt: "Trapeador microfibra profesional" },
+    { src: "/images/hero/H1-4.png", alt: "Escobillón de uso rudo", width: 410, height: 520 },
+    { src: "/images/hero/H2-4.png", alt: "Escoba industrial grande", width: 410, height: 520 },
+    { src: "/images/hero/H3-4.png", alt: "Trapeador microfibra profesional", width: 410, height: 520 },
   ],
   cell5: [
-    { src: "/images/hero/H1-5.png", alt: "Dispensador institucional" },
-    { src: "/images/hero/H2-5.png", alt: "Despachador de toalla de papel" },
-    { src: "/images/hero/H3-5.png", alt: "Despachador institucional jumbo" },
+    { src: "/images/hero/H1-5.png", alt: "Dispensador institucional", width: 380, height: 520 },
+    { src: "/images/hero/H2-5.png", alt: "Despachador de toalla de papel", width: 380, height: 520 },
+    { src: "/images/hero/H3-5.png", alt: "Despachador institucional jumbo", width: 380, height: 520 },
   ],
   cell6: [
-    { src: "/images/hero/H1-6.png", alt: "Línea química y desinfección KARMAX" },
-    { src: "/images/hero/H2-6.png", alt: "Limpiador multiusos 10 Lts" },
-    { src: "/images/hero/H3-6.png", alt: "Químicos y jabón para manos" },
+    { src: "/images/hero/H1-6.png", alt: "Línea química y desinfección KARMAX", width: 660, height: 520 },
+    { src: "/images/hero/H2-6.png", alt: "Limpiador multiusos 10 Lts", width: 660, height: 520 },
+    { src: "/images/hero/H3-6.png", alt: "Químicos y jabón para manos", width: 660, height: 520 },
   ],
 };
 
 const FadeCell: React.FC<FadeCellProps> = ({
   images,
-  sizes,
   className,
   style,
   paddingClass = "",
@@ -107,7 +105,7 @@ const FadeCell: React.FC<FadeCellProps> = ({
       className={`relative h-full flex items-center justify-center overflow-hidden ${className} ${paddingClass}`}
       style={style}
     >
-      <div className="relative w-full h-full flex items-center justify-center">
+      <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
         {images.map((img, idx) => (
           <div
             key={img.src}
@@ -120,9 +118,10 @@ const FadeCell: React.FC<FadeCellProps> = ({
             <Image
               src={img.src}
               alt={img.alt}
-              fill
+              width={img.width}
+              height={img.height}
               priority={idx === 0}
-              className="!w-auto !h-full mx-auto my-auto"
+              className="h-full lg:h-[260px] w-auto max-w-none shrink-0 object-contain pointer-events-none select-none"
             />
           </div>
         ))}
@@ -137,18 +136,20 @@ interface HeroProductGridProps {
 
 const HeroProductGrid: React.FC<HeroProductGridProps> = ({ className = "" }) => {
   return (
-    <div className={`relative w-full h-full flex flex-col overflow-hidden select-none ${className}`} style={{
-          background:
-            "linear-gradient(90deg, var(--light-blue-karmax) 0%, var(--blue-karmax) 100%)",
-        }}>
-      {/* Top Row (50% height): 50% | 25% | 25% - animaciones desfasadas de derecha a izquierda */}
-      <div className="flex w-full h-1/2">
+    <div
+      className={`relative w-full h-full lg:h-[520px] flex flex-col overflow-hidden select-none ${className}`}
+      style={{
+        background:
+          "linear-gradient(90deg, var(--light-blue-karmax) 0%, var(--blue-karmax) 100%)",
+      }}
+    >
+      {/* Top Row: 50% | 25% | 25% - animaciones desfasadas de derecha a izquierda */}
+      <div className="flex w-full h-1/2 lg:h-[260px]">
         {/* 1. Mop Bucket & Wringer Cart */}
         <FadeCell
           className="w-1/2"
           style={{ backgroundColor: "#FFF5DE" }}
           paddingClass="p-0"
-          sizes="(max-width: 1024px) 50vw, 25vw"
           images={HERO_CELL_IMAGES.cell1}
           entranceDelay={0.7}
         />
@@ -158,7 +159,6 @@ const HeroProductGrid: React.FC<HeroProductGridProps> = ({ className = "" }) => 
           className="w-1/4"
           style={{ backgroundColor: "#B3EAF7" }}
           paddingClass="p-0"
-          sizes="(max-width: 1024px) 25vw, 13vw"
           images={HERO_CELL_IMAGES.cell2}
           entranceDelay={0.5}
         />
@@ -168,20 +168,18 @@ const HeroProductGrid: React.FC<HeroProductGridProps> = ({ className = "" }) => 
           className="w-1/4"
           style={{ backgroundColor: "#FF9844" }}
           paddingClass="p-0"
-          sizes="(max-width: 1024px) 25vw, 13vw"
           images={HERO_CELL_IMAGES.cell3}
           entranceDelay={0.3}
         />
       </div>
 
-      {/* Bottom Row (50% height): 25% | 25% | 50% - animaciones desfasadas de derecha a izquierda */}
-      <div className="flex w-full h-1/2">
+      {/* Bottom Row: 25% | 25% | 50% - animaciones desfasadas de derecha a izquierda */}
+      <div className="flex w-full h-1/2 lg:h-[260px]">
         {/* 4. Industrial Broom Head */}
         <FadeCell
           className="w-1/4"
           style={{ backgroundColor: "#FFCB26" }}
           paddingClass="p-0"
-          sizes="(max-width: 1024px) 25vw, 13vw"
           images={HERO_CELL_IMAGES.cell4}
           entranceDelay={0.78}
         />
@@ -191,7 +189,6 @@ const HeroProductGrid: React.FC<HeroProductGridProps> = ({ className = "" }) => 
           className="w-1/4"
           style={{ backgroundColor: "#39A0DA" }}
           paddingClass="p-0"
-          sizes="(max-width: 1024px) 25vw, 13vw"
           images={HERO_CELL_IMAGES.cell5}
           entranceDelay={0.58}
         />
@@ -201,7 +198,6 @@ const HeroProductGrid: React.FC<HeroProductGridProps> = ({ className = "" }) => 
           className="w-1/2"
           style={{ backgroundColor: "#BADD65" }}
           paddingClass="p-0"
-          sizes="(max-width: 1024px) 50vw, 25vw"
           images={HERO_CELL_IMAGES.cell6}
           entranceDelay={0.38}
         />
@@ -264,7 +260,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ data }) => {
           }}
         />
         {/* Right 50%: Product Grid */}
-        <div className="w-1/2 h-full relative overflow-hidden">
+        <div className="w-1/2 h-full relative overflow-hidden flex items-center">
           <HeroProductGrid />
         </div>
       </div>
@@ -280,7 +276,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ data }) => {
 
       {/* Foreground Content Container aligned with site grid (max-w-7xl mx-auto px-4 sm:px-6 lg:px-8) */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[460px] lg:min-h-[450px] xl:min-h-[520px]">
+        <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[460px] lg:min-h-[520px]">
           {/* Left Column: Copy & CTA con fade-up y delays desfasados */}
           <div className="flex flex-col justify-center py-8 lg:py-0 pr-0">
             {data?.badgeText && (
