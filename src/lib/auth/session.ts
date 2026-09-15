@@ -2,7 +2,23 @@ import crypto from "node:crypto";
 import { cookies } from "next/headers";
 
 const SESSION_COOKIE_NAME = "karmax_session";
-const SESSION_SECRET = process.env.SESSION_SECRET || "karmax-super-secret-key-production-2026";
+function getSessionSecret(): string {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret || secret.length < 32) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "CRITICAL SECURITY CONFIGURATION: SESSION_SECRET must be defined with at least 32 characters in production."
+      );
+    }
+    console.warn(
+      "[Security Warning] SESSION_SECRET is not set or has less than 32 characters. Set a secure SESSION_SECRET in .env.local."
+    );
+    return secret || "karmax-dev-only-ephemeral-secret-key-at-least-32-chars";
+  }
+  return secret;
+}
+
+export { getSessionSecret };
 
 interface SessionPayload {
   userId: number;
@@ -16,7 +32,7 @@ export function createSessionToken(payload: Omit<SessionPayload, "exp">): string
   const data = JSON.stringify({ ...payload, exp });
   const base64Data = Buffer.from(data).toString("base64url");
   const signature = crypto
-    .createHmac("sha256", SESSION_SECRET)
+    .createHmac("sha256", getSessionSecret())
     .update(base64Data)
     .digest("base64url");
 
@@ -30,11 +46,19 @@ export function verifySessionToken(token: string): SessionPayload | null {
 
     const [base64Data, signature] = parts;
     const expectedSig = crypto
-      .createHmac("sha256", SESSION_SECRET)
+      .createHmac("sha256", getSessionSecret())
       .update(base64Data)
       .digest("base64url");
 
-    if (signature !== expectedSig) return null;
+    const sigBuffer = Buffer.from(signature, "base64url");
+    const expectedSigBuffer = Buffer.from(expectedSig, "base64url");
+
+    if (
+      sigBuffer.length !== expectedSigBuffer.length ||
+      !crypto.timingSafeEqual(sigBuffer, expectedSigBuffer)
+    ) {
+      return null;
+    }
 
     const data: SessionPayload = JSON.parse(
       Buffer.from(base64Data, "base64url").toString("utf8")

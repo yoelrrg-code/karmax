@@ -27,6 +27,8 @@ export async function GET() {
         slug: categories.slug,
         description: categories.description,
         imageUrl: categories.imageUrl,
+        metaTitle: categories.metaTitle,
+        metaDescription: categories.metaDescription,
         featured: categories.featured,
         orderIndex: categories.orderIndex,
         isActive: categories.isActive,
@@ -67,7 +69,17 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { name, slug: customSlug, description, imageUrl, featured = false, orderIndex = 0, isActive = true } = body;
+    const {
+      name,
+      slug: customSlug,
+      description,
+      imageUrl,
+      metaTitle,
+      metaDescription,
+      featured = false,
+      orderIndex = 0,
+      isActive = true,
+    } = body;
 
     if (!name || !name.trim()) {
       return NextResponse.json({ error: "El nombre de la categoría es obligatorio" }, { status: 400 });
@@ -89,6 +101,8 @@ export async function POST(request: NextRequest) {
       slug: finalSlug,
       description: description || null,
       imageUrl: imageUrl || null,
+      metaTitle: metaTitle?.trim() || null,
+      metaDescription: metaDescription?.trim() || null,
       featured: Boolean(featured),
       orderIndex: Number(orderIndex) || 0,
       isActive: Boolean(isActive),

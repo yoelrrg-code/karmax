@@ -23,6 +23,16 @@ export interface QuoteEmailData {
   items: EmailQuoteItem[];
 }
 
+export function escapeHtml(str: unknown): string {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 function formatCurrency(val: number | string): string {
   const num = typeof val === "number" ? val : parseFloat(String(val)) || 0;
   return new Intl.NumberFormat("es-MX", {
@@ -58,14 +68,14 @@ function buildItemsHtml(items: EmailQuoteItem[]): string {
       (item) => `
       <tr style="border-bottom: 1px solid #e2e8f0;">
         <td style="padding: 12px 8px; font-size: 14px; color: #1e293b;">
-          <strong>${item.productName}</strong>
-          ${item.sku ? `<br><span style="font-size: 12px; color: #64748b;">SKU: ${item.sku}</span>` : ""}
+          <strong>${escapeHtml(item.productName)}</strong>
+          ${item.sku ? `<br><span style="font-size: 12px; color: #64748b;">SKU: ${escapeHtml(item.sku)}</span>` : ""}
         </td>
         <td style="padding: 12px 8px; font-size: 14px; color: #475569; text-align: center;">
-          ${item.presentation || "Estándar"}
+          ${escapeHtml(item.presentation || "Estándar")}
         </td>
         <td style="padding: 12px 8px; font-size: 14px; color: #475569; text-align: center;">
-          ${item.quantity}
+          ${escapeHtml(item.quantity)}
         </td>
         <td style="padding: 12px 8px; font-size: 14px; color: #475569; text-align: right;">
           ${formatCurrency(item.unitPrice)}
@@ -89,6 +99,13 @@ export async function sendQuoteEmails(data: QuoteEmailData): Promise<{ clientSen
   const fromAddress = `"Karmax México" <${process.env.GMAIL_USER}>`;
   const itemsHtml = buildItemsHtml(data.items);
 
+  const safeQuoteNumber = escapeHtml(data.quoteNumber);
+  const safeCustomerName = escapeHtml(data.customerName);
+  const safeCompanyName = escapeHtml(data.companyName || "No especificada");
+  const safePhone = escapeHtml(data.phone);
+  const safeEmail = escapeHtml(data.email);
+  const safeNotes = data.notes ? escapeHtml(data.notes) : "";
+
   // 1. Email para el Cliente
   const clientHtml = `
     <!DOCTYPE html>
@@ -101,17 +118,17 @@ export async function sendQuoteEmails(data: QuoteEmailData): Promise<{ clientSen
           <p style="color: #94a3b8; margin: 4px 0 0 0; font-size: 13px;">Comprobante de Cotización</p>
         </div>
         <div style="padding: 24px;">
-          <h2 style="color: #00A859; font-size: 18px; margin-top: 0;">¡Hola ${data.customerName}!</h2>
+          <h2 style="color: #00A859; font-size: 18px; margin-top: 0;">¡Hola ${safeCustomerName}!</h2>
           <p style="font-size: 14px; line-height: 1.5; color: #475569;">
-            Hemos recibido tu solicitud de cotización <strong>#${data.quoteNumber}</strong>. Uno de nuestros asesores comerciales revisará la disponibilidad y se comunicará contigo a la brevedad.
+            Hemos recibido tu solicitud de cotización <strong>#${safeQuoteNumber}</strong>. Uno de nuestros asesores comerciales revisará la disponibilidad y se comunicará contigo a la brevedad.
           </p>
 
           <div style="background-color: #f1f5f9; border-radius: 8px; padding: 16px; margin: 20px 0; font-size: 13px;">
-            <p style="margin: 4px 0;"><strong>Cotización:</strong> #${data.quoteNumber}</p>
-            <p style="margin: 4px 0;"><strong>Empresa:</strong> ${data.companyName || "No especificada"}</p>
-            <p style="margin: 4px 0;"><strong>Teléfono:</strong> ${data.phone}</p>
-            <p style="margin: 4px 0;"><strong>Correo:</strong> ${data.email}</p>
-            ${data.notes ? `<p style="margin: 4px 0;"><strong>Notas adicionales:</strong> ${data.notes}</p>` : ""}
+            <p style="margin: 4px 0;"><strong>Cotización:</strong> #${safeQuoteNumber}</p>
+            <p style="margin: 4px 0;"><strong>Empresa:</strong> ${safeCompanyName}</p>
+            <p style="margin: 4px 0;"><strong>Teléfono:</strong> ${safePhone}</p>
+            <p style="margin: 4px 0;"><strong>Correo:</strong> ${safeEmail}</p>
+            ${safeNotes ? `<p style="margin: 4px 0;"><strong>Notas adicionales:</strong> ${safeNotes}</p>` : ""}
           </div>
 
           <h3 style="font-size: 15px; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 12px;">Productos Solicitados</h3>
@@ -154,16 +171,16 @@ export async function sendQuoteEmails(data: QuoteEmailData): Promise<{ clientSen
     <body style="font-family: Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 24px; color: #1e293b;">
       <div style="max-width: 650px; margin: 0 auto; background-color: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
         <div style="background-color: #00A859; padding: 20px; text-align: center;">
-          <h1 style="color: #ffffff; margin: 0; font-size: 20px;">NUEVA COTIZACIÓN ENTRANTE #${data.quoteNumber}</h1>
+          <h1 style="color: #ffffff; margin: 0; font-size: 20px;">NUEVA COTIZACIÓN ENTRANTE #${safeQuoteNumber}</h1>
         </div>
         <div style="padding: 24px;">
           <h3 style="font-size: 15px; margin-top: 0; color: #1e293b;">Datos de Contacto del Cliente</h3>
           <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; font-size: 14px; line-height: 1.6;">
-            <p style="margin: 2px 0;"><strong>Cliente:</strong> ${data.customerName}</p>
-            <p style="margin: 2px 0;"><strong>Empresa:</strong> ${data.companyName || "No especificada"}</p>
-            <p style="margin: 2px 0;"><strong>Email:</strong> <a href="mailto:${data.email}">${data.email}</a></p>
-            <p style="margin: 2px 0;"><strong>Teléfono:</strong> <a href="tel:${data.phone}">${data.phone}</a></p>
-            ${data.notes ? `<p style="margin: 6px 0; padding-top: 6px; border-top: 1px dashed #cbd5e1;"><strong>Notas del cliente:</strong> ${data.notes}</p>` : ""}
+            <p style="margin: 2px 0;"><strong>Cliente:</strong> ${safeCustomerName}</p>
+            <p style="margin: 2px 0;"><strong>Empresa:</strong> ${safeCompanyName}</p>
+            <p style="margin: 2px 0;"><strong>Email:</strong> <a href="mailto:${safeEmail}">${safeEmail}</a></p>
+            <p style="margin: 2px 0;"><strong>Teléfono:</strong> <a href="tel:${safePhone}">${safePhone}</a></p>
+            ${safeNotes ? `<p style="margin: 6px 0; padding-top: 6px; border-top: 1px dashed #cbd5e1;"><strong>Notas del cliente:</strong> ${safeNotes}</p>` : ""}
           </div>
 
           <h3 style="font-size: 15px; margin: 24px 0 10px 0; color: #1e293b;">Desglose de Productos</h3>
@@ -249,6 +266,11 @@ export async function sendContactNotificationEmail(
 
   const karmaxAdminEmail = await getKarmaxNotificationEmail();
   const fromAddress = `"Karmax México" <${process.env.GMAIL_USER}>`;
+  const safeFullName = escapeHtml(data.fullName);
+  const safeCompany = escapeHtml(data.company);
+  const safeEmail = escapeHtml(data.email);
+  const safePhone = escapeHtml(data.phone);
+  const safeMessage = escapeHtml(data.message);
 
   const html = `
     <!DOCTYPE html>
@@ -272,19 +294,19 @@ export async function sendContactNotificationEmail(
             <tbody>
               <tr style="border-bottom: 1px solid #f1f5f9;">
                 <td style="padding: 10px 0; color: #64748b; width: 150px;"><strong>Nombre completo:</strong></td>
-                <td style="padding: 10px 0; color: #0f172a; font-weight: 600;">${data.fullName}</td>
+                <td style="padding: 10px 0; color: #0f172a; font-weight: 600;">${safeFullName}</td>
               </tr>
               <tr style="border-bottom: 1px solid #f1f5f9;">
                 <td style="padding: 10px 0; color: #64748b;"><strong>Empresa:</strong></td>
-                <td style="padding: 10px 0; color: #0f172a;">${data.company}</td>
+                <td style="padding: 10px 0; color: #0f172a;">${safeCompany}</td>
               </tr>
               <tr style="border-bottom: 1px solid #f1f5f9;">
                 <td style="padding: 10px 0; color: #64748b;"><strong>Correo electrónico:</strong></td>
-                <td style="padding: 10px 0;"><a href="mailto:${data.email}" style="color: #0284c7; text-decoration: none;">${data.email}</a></td>
+                <td style="padding: 10px 0;"><a href="mailto:${safeEmail}" style="color: #0284c7; text-decoration: none;">${safeEmail}</a></td>
               </tr>
               <tr style="border-bottom: 1px solid #f1f5f9;">
                 <td style="padding: 10px 0; color: #64748b;"><strong>Teléfono:</strong></td>
-                <td style="padding: 10px 0;"><a href="tel:${data.phone}" style="color: #0f172a; text-decoration: none;">${data.phone}</a></td>
+                <td style="padding: 10px 0;"><a href="tel:${safePhone}" style="color: #0f172a; text-decoration: none;">${safePhone}</a></td>
               </tr>
             </tbody>
           </table>
@@ -293,11 +315,11 @@ export async function sendContactNotificationEmail(
             <p style="margin: 0 0 8px 0; font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">
               Mensaje del cliente:
             </p>
-            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; font-size: 14px; line-height: 1.6; color: #334155; white-space: pre-wrap;">${data.message}</div>
+            <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; font-size: 14px; line-height: 1.6; color: #334155; white-space: pre-wrap;">${safeMessage}</div>
           </div>
 
           <div style="margin-top: 30px; text-align: center;">
-            <a href="mailto:${data.email}?subject=Respuesta a tu mensaje en KARMAX" style="display: inline-block; background-color: #16a34a; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 9999px; font-weight: 600; font-size: 14px;">
+            <a href="mailto:${safeEmail}?subject=Respuesta a tu mensaje en KARMAX" style="display: inline-block; background-color: #16a34a; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 9999px; font-weight: 600; font-size: 14px;">
               Responder al Cliente
             </a>
           </div>

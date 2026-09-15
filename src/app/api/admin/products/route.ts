@@ -150,6 +150,9 @@ export async function POST(request: NextRequest) {
       description,
       deliveryInfo,
       imageUrl,
+      metaTitle,
+      metaDescription,
+      metaKeywords,
       categoryIds = [],
       industryIds = [],
       images = [],
@@ -193,6 +196,9 @@ export async function POST(request: NextRequest) {
       shortDescription: shortDescription || null,
       description: description || null,
       deliveryInfo: deliveryInfo || null,
+      metaTitle: metaTitle?.trim() || null,
+      metaDescription: metaDescription?.trim() || null,
+      metaKeywords: metaKeywords?.trim() || null,
       imageUrl:
         Array.isArray(images) && images.length > 0
           ? (images as Array<{ isPrimary?: boolean; url: string }>).find((img) => Boolean(img.isPrimary))?.url || images[0]?.url || imageUrl || "/images/products/placeholder.jpg"

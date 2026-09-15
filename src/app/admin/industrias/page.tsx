@@ -22,6 +22,8 @@ interface IndustryData {
   orderIndex: number;
   isActive: boolean;
   productsCount: number;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
 }
 
 export default function AdminIndustriesPage() {
@@ -40,6 +42,8 @@ export default function AdminIndustriesPage() {
     iconUrl: "",
     orderIndex: 0,
     isActive: true,
+    metaTitle: "",
+    metaDescription: "",
   });
 
   const loadIndustries = async () => {
@@ -92,6 +96,8 @@ export default function AdminIndustriesPage() {
       iconUrl: "",
       orderIndex: industries.length,
       isActive: true,
+      metaTitle: "",
+      metaDescription: "",
     });
     setIsModalOpen(true);
   };
@@ -106,6 +112,8 @@ export default function AdminIndustriesPage() {
       iconUrl: ind.iconUrl || "",
       orderIndex: ind.orderIndex,
       isActive: Boolean(ind.isActive),
+      metaTitle: ind.metaTitle || "",
+      metaDescription: ind.metaDescription || "",
     });
     setIsModalOpen(true);
   };
@@ -463,6 +471,44 @@ export default function AdminIndustriesPage() {
                     />
                     <span>Activa</span>
                   </label>
+                </div>
+              </div>
+
+              {/* SEO Fields */}
+              <div className="pt-3 border-t border-slate-100 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[var(--blue-karmax)]">Optimización SEO (Opcional)</span>
+                  <span className="text-[10px] text-slate-400">Google SERP y Social Cards</span>
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="text-[11px] font-semibold text-slate-700">Título SEO (Meta Title)</label>
+                    <span className="text-[10px] text-slate-400">{formData.metaTitle.length}/60</span>
+                  </div>
+                  <input
+                    type="text"
+                    maxLength={70}
+                    value={formData.metaTitle}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, metaTitle: e.target.value }))}
+                    placeholder={formData.name ? `Soluciones para ${formData.name} | KARMAX` : "Título para motores de búsqueda"}
+                    className="w-full text-xs p-2.5 rounded-xl text-[var(--blue-karmax)] border border-slate-200 focus:outline-none focus:border-[var(--green-karmax)] focus:ring-2 focus:ring-[var(--green-karmax)]/20"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="text-[11px] font-semibold text-slate-700">Meta Descripción</label>
+                    <span className="text-[10px] text-slate-400">{formData.metaDescription.length}/160</span>
+                  </div>
+                  <textarea
+                    rows={2}
+                    maxLength={170}
+                    value={formData.metaDescription}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, metaDescription: e.target.value }))}
+                    placeholder="Descripción optimizada que aparecerá en los resultados de Google..."
+                    className="w-full text-xs p-2.5 rounded-xl text-[var(--blue-karmax)] border border-slate-200 focus:outline-none focus:border-[var(--green-karmax)] focus:ring-2 focus:ring-[var(--green-karmax)]/20"
+                  />
                 </div>
               </div>
 

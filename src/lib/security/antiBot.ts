@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
+import { getSessionSecret } from "@/lib/auth/session";
 
-const ANTI_BOT_SECRET = process.env.SESSION_SECRET || "karmax-anti-bot-default-secret-2026";
 const TURNSTILE_SECRET_KEY = process.env.TURNSTILE_SECRET_KEY || "";
 
 export interface AntiBotVerificationParams {
@@ -25,7 +25,7 @@ export function generateAntiBotToken(): string {
   const nonce = crypto.randomBytes(8).toString("hex");
   const payload = `${timestamp}:${nonce}`;
   const signature = crypto
-    .createHmac("sha256", ANTI_BOT_SECRET)
+    .createHmac("sha256", getSessionSecret())
     .update(payload)
     .digest("hex");
 
@@ -35,8 +35,8 @@ export function generateAntiBotToken(): string {
 /**
  * Valida de forma completa la defensa anti-bots:
  * 1. Comprueba honeypot (debe estar completamente vacío).
- * 2. Si hay Turnstile configurado y token provisto, valida contra Cloudflare.
- * 3. Valida la firma del token y la ventana de tiempo humana (1.5s <= tiempo <= 2h).
+ * 2. Si hay Turnstile configurado, valida obligatoriamente contra Cloudflare.
+ * 3. Valida la firma del token y la ventana de tiempo humana (1.2s <= tiempo <= 2h).
  */
 export async function verifyAntiBot(params: AntiBotVerificationParams): Promise<AntiBotResult> {
   const {
@@ -53,8 +53,12 @@ export async function verifyAntiBot(params: AntiBotVerificationParams): Promise<
     return { valid: false, reason: "Detección de actividad automatizada (honeypot)." };
   }
 
-  // 2. Si Cloudflare Turnstile está configurado con secret key
-  if (TURNSTILE_SECRET_KEY && turnstileToken) {
+  // 2. Si Cloudflare Turnstile está configurado con secret key en el servidor
+  if (TURNSTILE_SECRET_KEY) {
+    if (!turnstileToken) {
+      return { valid: false, reason: "Verificación de seguridad Turnstile requerida." };
+    }
+
     try {
       const formData = new URLSearchParams();
       formData.append("secret", TURNSTILE_SECRET_KEY);
@@ -73,7 +77,7 @@ export async function verifyAntiBot(params: AntiBotVerificationParams): Promise<
       return { valid: false, reason: "Verificación de seguridad Turnstile inválida." };
     } catch (err) {
       console.error("Error validando Cloudflare Turnstile:", err);
-      // Continúa con la validación de time-trap como fallback
+      return { valid: false, reason: "Error al validar la verificación de seguridad." };
     }
   }
 
@@ -90,7 +94,7 @@ export async function verifyAntiBot(params: AntiBotVerificationParams): Promise<
   const [timestampStr, nonce, receivedSig] = parts;
   const payload = `${timestampStr}:${nonce}`;
   const expectedSig = crypto
-    .createHmac("sha256", ANTI_BOT_SECRET)
+    .createHmac("sha256", getSessionSecret())
     .update(payload)
     .digest("hex");
 

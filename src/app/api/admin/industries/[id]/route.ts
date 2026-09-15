@@ -31,7 +31,7 @@ export async function PUT(
     }
 
     const body = await request.json();
-    const { name, slug: customSlug, description, iconName, iconUrl, orderIndex, isActive } = body;
+    const { name, slug: customSlug, description, iconName, iconUrl, orderIndex, isActive, metaTitle, metaDescription } = body;
 
     if (!name || !name.trim()) {
       return NextResponse.json({ error: "El nombre es obligatorio" }, { status: 400 });
@@ -49,6 +49,8 @@ export async function PUT(
         iconUrl: iconUrl !== undefined ? iconUrl : undefined,
         orderIndex: orderIndex !== undefined ? Number(orderIndex) : undefined,
         isActive: isActive !== undefined ? Boolean(isActive) : undefined,
+        metaTitle: metaTitle !== undefined ? (metaTitle?.trim() || null) : undefined,
+        metaDescription: metaDescription !== undefined ? (metaDescription?.trim() || null) : undefined,
       })
       .where(eq(industries.id, indId));
 

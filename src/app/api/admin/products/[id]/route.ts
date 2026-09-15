@@ -120,6 +120,9 @@ export async function PUT(
       description,
       deliveryInfo,
       imageUrl,
+      metaTitle,
+      metaDescription,
+      metaKeywords,
       categoryIds = [],
       industryIds = [],
       images = [],
@@ -151,6 +154,9 @@ export async function PUT(
         shortDescription: shortDescription || null,
         description: description || null,
         deliveryInfo: deliveryInfo || null,
+        metaTitle: metaTitle !== undefined ? (metaTitle?.trim() || null) : undefined,
+        metaDescription: metaDescription !== undefined ? (metaDescription?.trim() || null) : undefined,
+        metaKeywords: metaKeywords !== undefined ? (metaKeywords?.trim() || null) : undefined,
         imageUrl:
           Array.isArray(images) && images.length > 0
             ? (images as Array<{ isPrimary?: boolean; url: string }>).find((img) => Boolean(img.isPrimary))?.url || images[0]?.url || imageUrl || "/images/products/placeholder.jpg"

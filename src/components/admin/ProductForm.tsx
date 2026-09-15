@@ -7,12 +7,12 @@ import Link from "next/link";
 import {
   ArrowLeft,
   Upload,
-  Plus,
   Trash2,
   Save,
   CheckCircle2,
   Star,
   FileText,
+  Globe,
 } from "lucide-react";
 
 interface CategoryOption {
@@ -77,6 +77,11 @@ export const ProductForm: React.FC<ProductFormProps> = ({ initialProductId }) =>
   const [description, setDescription] = useState("");
   const [deliveryInfo, setDeliveryInfo] = useState("");
 
+  // SEO State
+  const [metaTitle, setMetaTitle] = useState("");
+  const [metaDescription, setMetaDescription] = useState("");
+  const [metaKeywords, setMetaKeywords] = useState("");
+
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
   const [selectedIndustryIds, setSelectedIndustryIds] = useState<number[]>([]);
   const [images, setImages] = useState<ImageItem[]>([]);
@@ -131,6 +136,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({ initialProductId }) =>
             setShortDescription(p.shortDescription || "");
             setDescription(p.description || "");
             setDeliveryInfo(p.deliveryInfo || "");
+            setMetaTitle(p.metaTitle || "");
+            setMetaDescription(p.metaDescription || "");
+            setMetaKeywords(p.metaKeywords || "");
 
             const loadedCats = Array.from(
               new Set([
@@ -372,6 +380,9 @@ export const ProductForm: React.FC<ProductFormProps> = ({ initialProductId }) =>
         shortDescription,
         description,
         deliveryInfo,
+        metaTitle: metaTitle.trim() || null,
+        metaDescription: metaDescription.trim() || null,
+        metaKeywords: metaKeywords.trim() || null,
         imageUrl: primaryImg,
         categoryIds: selectedCategoryIds,
         industryIds: selectedIndustryIds,
@@ -872,6 +883,101 @@ export const ProductForm: React.FC<ProductFormProps> = ({ initialProductId }) =>
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Card 6: Optimización SEO & Google SERP Preview */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-2xs space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Globe className="w-5 h-5 text-[var(--blue-karmax)]" />
+                <div>
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-700">
+                    Optimización SEO (Google y Redes Sociales)
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Personaliza cómo aparece este producto en Google y al compartir enlaces.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Vista Previa SERP Google */}
+            <div>
+              <span className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                Vista previa en Google Search (SERP)
+              </span>
+              <div className="p-4 rounded-xl bg-slate-50/90 border border-slate-200/70 font-sans space-y-1">
+                <div className="flex items-center gap-2 text-xs text-slate-500 truncate">
+                  <span className="w-4 h-4 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold text-slate-700">K</span>
+                  <span>karmax.mx</span>
+                  <span>›</span>
+                  <span className="text-slate-400 truncate">productos › {slug || "producto"}</span>
+                </div>
+                <h4 className="text-base sm:text-lg font-medium text-[#1a0dab] hover:underline cursor-pointer leading-snug line-clamp-1">
+                  {metaTitle || (name ? `${name} | KARMAX` : "Nombre del Producto | KARMAX")}
+                </h4>
+                <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
+                  {metaDescription || shortDescription || description?.slice(0, 155) || "Explora las características, presentaciones y cotiza este producto químico y de limpieza profesional en KARMAX México."}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-2">
+              {/* Meta Título */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-slate-700">
+                    Meta Título SEO
+                  </label>
+                  <span className={`text-[11px] font-mono ${metaTitle.length > 60 ? "text-amber-600 font-semibold" : "text-slate-400"}`}>
+                    {metaTitle.length}/60 caracteres {metaTitle.length > 60 ? "(se truncará en Google)" : "(óptimo: 50-60)"}
+                  </span>
+                </div>
+                <input
+                  type="text"
+                  value={metaTitle}
+                  onChange={(e) => setMetaTitle(e.target.value)}
+                  placeholder={name ? `${name} | Químicos KARMAX` : "Título optimizado para Google"}
+                  className="w-full text-xs sm:text-sm p-3 rounded-xl text-[var(--blue-karmax)] border border-slate-200 focus:outline-none focus:border-[var(--green-karmax)] focus:ring-2 focus:ring-[var(--green-karmax)]/20"
+                />
+              </div>
+
+              {/* Meta Descripción */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-slate-700">
+                    Meta Descripción SEO
+                  </label>
+                  <span className={`text-[11px] font-mono ${metaDescription.length > 160 ? "text-amber-600 font-semibold" : "text-slate-400"}`}>
+                    {metaDescription.length}/160 caracteres {metaDescription.length > 160 ? "(se truncará en Google)" : "(óptimo: 140-160)"}
+                  </span>
+                </div>
+                <textarea
+                  rows={3}
+                  value={metaDescription}
+                  onChange={(e) => setMetaDescription(e.target.value)}
+                  placeholder="Escribe un resumen persuasivo con palabras clave para invitar al clic desde los resultados de búsqueda..."
+                  className="w-full text-xs sm:text-sm p-3 rounded-xl text-[var(--blue-karmax)] border border-slate-200 focus:outline-none focus:border-[var(--green-karmax)] focus:ring-2 focus:ring-[var(--green-karmax)]/20 resize-none"
+                />
+              </div>
+
+              {/* Palabras Clave */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Palabras Clave (Keywords)
+                </label>
+                <input
+                  type="text"
+                  value={metaKeywords}
+                  onChange={(e) => setMetaKeywords(e.target.value)}
+                  placeholder="limpieza industrial, desengrasante, mayoreo químicos, karmax"
+                  className="w-full text-xs sm:text-sm p-3 rounded-xl text-[var(--blue-karmax)] border border-slate-200 focus:outline-none focus:border-[var(--green-karmax)] focus:ring-2 focus:ring-[var(--green-karmax)]/20"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Separadas por comas. Utilizadas para etiquetado contextual y motores de búsqueda.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 

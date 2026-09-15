@@ -30,8 +30,18 @@ export async function PUT(
       return NextResponse.json({ error: "ID inválido" }, { status: 400 });
     }
 
-    const body = await request.json();
-    const { name, slug: customSlug, description, imageUrl, featured, orderIndex, isActive } = body;
+    const body = await request.json().catch(() => ({}));
+    const {
+      name,
+      slug: customSlug,
+      description,
+      imageUrl,
+      metaTitle,
+      metaDescription,
+      featured,
+      orderIndex,
+      isActive,
+    } = body;
 
     if (!name || !name.trim()) {
       return NextResponse.json({ error: "El nombre es obligatorio" }, { status: 400 });
@@ -46,6 +56,8 @@ export async function PUT(
         slug: finalSlug,
         description: description !== undefined ? description : undefined,
         imageUrl: imageUrl !== undefined ? imageUrl : undefined,
+        metaTitle: metaTitle !== undefined ? (metaTitle?.trim() || null) : undefined,
+        metaDescription: metaDescription !== undefined ? (metaDescription?.trim() || null) : undefined,
         featured: featured !== undefined ? Boolean(featured) : undefined,
         orderIndex: orderIndex !== undefined ? Number(orderIndex) : undefined,
         isActive: isActive !== undefined ? Boolean(isActive) : undefined,

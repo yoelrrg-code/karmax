@@ -3,6 +3,8 @@ export interface CategoryItem {
   name: string;
   slug: string;
   imageUrl: string;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
   featured?: boolean;
 }
 
@@ -14,6 +16,8 @@ export interface IndustryItem {
   iconName: string;
   iconUrl: string;
   catLink: string;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
 }
 
 export interface BrandItem {
@@ -98,10 +102,24 @@ export interface ProductDetailItem extends CatalogProductItem {
   shortDescription?: string | null;
   deliveryInfo?: string | null;
   stockStatus?: string;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
+  metaKeywords?: string | null;
   galleryImages?: string[];
   attributes: Record<string, string[]>;
   rawAttributes?: ProductAttributeItem[];
   documents: ProductDocumentItem[];
+}
+
+export interface SeoSettings {
+  siteUrl?: string;
+  metaTitleDefault?: string;
+  metaDescriptionDefault?: string;
+  metaKeywordsDefault?: string;
+  ogImageUrlDefault?: string;
+  companyName?: string;
+  telephone?: string;
+  address?: string;
 }
 
 export interface AuthUser {

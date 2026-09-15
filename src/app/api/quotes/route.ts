@@ -173,23 +173,43 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validar acción 'save': solo usuarios autenticados pueden guardar borradores
+    if (action === "save" && !userId) {
+      return NextResponse.json(
+        { error: "Debes iniciar sesión para guardar un borrador de cotización." },
+        { status: 401 }
+      );
+    }
+
     // Check if we are updating an existing saved quote
     let existingSavedQuote: typeof quoteRequests.$inferSelect | undefined;
 
     if (savedQuoteId) {
+      if (!userId) {
+        return NextResponse.json(
+          { error: "Debes iniciar sesión para modificar una cotización guardada." },
+          { status: 401 }
+        );
+      }
+
       const [found] = await db
         .select()
         .from(quoteRequests)
         .where(
           and(
             eq(quoteRequests.id, Number(savedQuoteId)),
-            userId ? eq(quoteRequests.userId, userId) : undefined
+            eq(quoteRequests.userId, userId)
           )
         )
         .limit(1);
-      if (found && found.status === "saved") {
-        existingSavedQuote = found;
+
+      if (!found || found.status !== "saved") {
+        return NextResponse.json(
+          { error: "La cotización guardada no existe o no tienes permisos para modificarla." },
+          { status: 404 }
+        );
       }
+      existingSavedQuote = found;
     } else if (userId) {
       // Find latest saved quote for user
       const [found] = await db

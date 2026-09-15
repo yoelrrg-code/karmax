@@ -15,9 +15,13 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  title: "KARMAX | Todo lo que tu empresa necesita para limpieza e higiene",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://karmax.mx"),
+  title: {
+    default: "KARMAX | Soluciones Químicas y Limpieza Industrial",
+    template: "%s | KARMAX",
+  },
   description:
-    "Venta y cotización de productos de limpieza industrial, higiene institucional, jarcería y químicos por mayoreo para empresas.",
+    "Venta y cotización de productos de limpieza industrial, higiene institucional, jarcería y químicos por mayoreo para empresas con cobertura nacional.",
   keywords: [
     "KARMAX",
     "productos de limpieza por mayoreo",
@@ -26,6 +30,7 @@ export const metadata: Metadata = {
     "artículos de higiene para empresas",
     "químicos de limpieza",
     "insumos para hoteles y restaurantes",
+    "químicos industriales nuevo león",
   ],
 };
 

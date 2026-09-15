@@ -1,3 +1,4 @@
+import { Metadata } from "next";
 import { Header } from "@/components/layout/Header";
 import { HeroSection, type HeroSectionProps } from "@/components/home/HeroSection";
 import { TrustBadges, type TrustBadgesProps } from "@/components/home/TrustBadges";
@@ -12,20 +13,75 @@ import {
   getCategories,
   getIndustries,
   getAllSiteSettings,
+  getSeoSettings,
 } from "@/lib/services/karmaxService";
+import {
+  JsonLd,
+  buildOrganizationSchema,
+  buildLocalBusinessSchema,
+  buildWebSiteSchema,
+} from "@/components/seo/JsonLd";
 
 export const revalidate = 60; // Regenerar incremental cada 60s si hay cambios en MySQL
 
+export async function generateMetadata(): Promise<Metadata> {
+  const seo = await getSeoSettings();
+  const baseUrl = (seo.siteUrl || "https://karmax.mx").replace(/\/$/, "");
+  const title = seo.metaTitleDefault || "KARMAX | Soluciones Químicas de Alta Calidad";
+  const description =
+    seo.metaDescriptionDefault ||
+    "Fabricación y distribución de soluciones químicas para limpieza, mantenimiento institucional e industrial con cobertura nacional.";
+  const ogImage = seo.ogImageUrlDefault || "/images/hero/hero-bg.jpg";
+  const fullOgImage = ogImage.startsWith("http") ? ogImage : `${baseUrl}${ogImage}`;
+
+  return {
+    title,
+    description,
+    keywords: seo.metaKeywordsDefault ? seo.metaKeywordsDefault.split(",").map((k) => k.trim()) : undefined,
+    alternates: {
+      canonical: baseUrl,
+    },
+    openGraph: {
+      title,
+      description,
+      url: baseUrl,
+      siteName: seo.companyName || "KARMAX",
+      images: [
+        {
+          url: fullOgImage,
+          width: 1200,
+          height: 630,
+          alt: title,
+        },
+      ],
+      locale: "es_MX",
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [fullOgImage],
+    },
+  };
+}
+
 export default async function HomePage() {
-  const [featuredCategories, otherCategories, industries, settings] = await Promise.all([
+  const [featuredCategories, otherCategories, industries, settings, seo] = await Promise.all([
     getCategories(true),
     getCategories(false),
     getIndustries(),
     getAllSiteSettings(),
+    getSeoSettings(),
   ]);
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-slate-900 selection:bg-[#00509d] selection:text-white w-full max-w-[2560px] mx-auto">
+      {/* Schema.org Structured Data */}
+      <JsonLd data={buildOrganizationSchema(seo)} />
+      <JsonLd data={buildLocalBusinessSchema(seo)} />
+      <JsonLd data={buildWebSiteSchema(seo.siteUrl || "https://karmax.mx")} />
+
       {/* Top Header & Navigation */}
       <Header />
 

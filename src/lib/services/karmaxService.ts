@@ -20,8 +20,9 @@ import type {
   ProductAttributeItem,
   ProductDocumentItem,
   ProductDetailItem,
+  SeoSettings,
 } from "@/types";
-import { asc, desc, eq, isNotNull, gt, and, or, like, inArray, sql } from "drizzle-orm";
+import { asc, desc, eq, and, or, like, inArray, sql } from "drizzle-orm";
 
 export async function getCategories(featured?: boolean): Promise<CategoryItem[]> {
   try {
@@ -36,6 +37,8 @@ export async function getCategories(featured?: boolean): Promise<CategoryItem[]>
         name: categories.name,
         slug: categories.slug,
         imageUrl: categories.imageUrl,
+        metaTitle: categories.metaTitle,
+        metaDescription: categories.metaDescription,
         featured: categories.featured,
       })
       .from(categories)
@@ -48,6 +51,8 @@ export async function getCategories(featured?: boolean): Promise<CategoryItem[]>
         name: r.name,
         slug: r.slug,
         imageUrl: r.imageUrl || "/images/categories/limpieza-general.jpg",
+        metaTitle: r.metaTitle,
+        metaDescription: r.metaDescription,
         featured: r.featured,
       }));
     }
@@ -72,6 +77,8 @@ export async function getIndustries(): Promise<IndustryItem[]> {
         description: industries.description,
         iconName: industries.iconName,
         iconUrl: industries.iconUrl,
+        metaTitle: industries.metaTitle,
+        metaDescription: industries.metaDescription,
       })
       .from(industries)
       .where(eq(industries.isActive, true))
@@ -87,6 +94,8 @@ export async function getIndustries(): Promise<IndustryItem[]> {
           iconName: r.iconName,
           iconUrl: r.iconUrl || `/icons/ico-${r.slug}.svg`,
           catLink: `/category/${r.slug}`,
+          metaTitle: r.metaTitle,
+          metaDescription: r.metaDescription,
         };
       });
     }
@@ -365,6 +374,9 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
         salePrice: products.salePrice,
         stockStatus: products.stockStatus,
         isFeatured: products.isFeatured,
+        metaTitle: products.metaTitle,
+        metaDescription: products.metaDescription,
+        metaKeywords: products.metaKeywords,
       })
       .from(products)
       .leftJoin(categories, eq(products.categoryId, categories.id))
@@ -417,6 +429,9 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
       description: row.description,
       deliveryInfo: row.deliveryInfo,
       stockStatus: row.stockStatus,
+      metaTitle: row.metaTitle,
+      metaDescription: row.metaDescription,
+      metaKeywords: row.metaKeywords,
       galleryImages: galleryImages.length > 0 ? galleryImages : [row.imageUrl || "/images/products/placeholder.jpg"],
       attributes,
       rawAttributes: rawAttrs,
@@ -566,4 +581,40 @@ export async function getKarmaxNotificationEmail(): Promise<string> {
     console.warn("Fallback para getKarmaxNotificationEmail:", (error as Error).message);
   }
   return process.env.KARMAX_NOTIFICATION_EMAIL || "dev.paco.lule@gmail.com";
+}
+
+/**
+ * Obtiene las configuraciones globales de SEO guardadas en site_settings ('seo_settings').
+ * Si no existen o la base de datos está offline, provee valores predeterminados optimizados.
+ */
+export async function getSeoSettings(): Promise<SeoSettings> {
+  const defaults: SeoSettings = {
+    siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "https://karmax.mx",
+    metaTitleDefault: "KARMAX | Productos de Limpieza Industrial e Higiene Institucional",
+    metaDescriptionDefault:
+      "Venta y cotización de químicos de limpieza industrial, jarcería e higiene institucional por mayoreo para empresas, hoteles y restaurantes.",
+    metaKeywordsDefault:
+      "KARMAX, limpieza industrial, jarcería por mayoreo, químicos de limpieza, higiene institucional México, insumos hoteles",
+    ogImageUrlDefault: "/images/hero-banner.jpg",
+    companyName: "KARMAX de México",
+    telephone: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "+529988436581",
+    address: "Cadereyta Jiménez, Nuevo León, México",
+  };
+
+  try {
+    const saved = await getSiteSetting<SeoSettings>("seo_settings", defaults);
+    return {
+      siteUrl: saved?.siteUrl?.trim() || defaults.siteUrl,
+      metaTitleDefault: saved?.metaTitleDefault?.trim() || defaults.metaTitleDefault,
+      metaDescriptionDefault: saved?.metaDescriptionDefault?.trim() || defaults.metaDescriptionDefault,
+      metaKeywordsDefault: saved?.metaKeywordsDefault?.trim() || defaults.metaKeywordsDefault,
+      ogImageUrlDefault: saved?.ogImageUrlDefault?.trim() || defaults.ogImageUrlDefault,
+      companyName: saved?.companyName?.trim() || defaults.companyName,
+      telephone: saved?.telephone?.trim() || defaults.telephone,
+      address: saved?.address?.trim() || defaults.address,
+    };
+  } catch (error) {
+    console.warn("Fallback para getSeoSettings:", (error as Error).message);
+    return defaults;
+  }
 }

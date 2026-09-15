@@ -28,6 +28,8 @@ export async function GET() {
         description: industries.description,
         iconName: industries.iconName,
         iconUrl: industries.iconUrl,
+        metaTitle: industries.metaTitle,
+        metaDescription: industries.metaDescription,
         orderIndex: industries.orderIndex,
         isActive: industries.isActive,
       })
@@ -66,7 +68,17 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { name, slug: customSlug, description, iconName = "Building2", iconUrl, orderIndex = 0, isActive = true } = body;
+    const {
+      name,
+      slug: customSlug,
+      description,
+      iconName = "Building2",
+      iconUrl,
+      metaTitle,
+      metaDescription,
+      orderIndex = 0,
+      isActive = true,
+    } = body;
 
     if (!name || !name.trim()) {
       return NextResponse.json({ error: "El nombre de la industria es obligatorio" }, { status: 400 });
@@ -89,6 +101,8 @@ export async function POST(request: NextRequest) {
       description: description || "Soluciones para el sector",
       iconName: iconName || "Building2",
       iconUrl: iconUrl || null,
+      metaTitle: metaTitle?.trim() || null,
+      metaDescription: metaDescription?.trim() || null,
       orderIndex: Number(orderIndex) || 0,
       isActive: Boolean(isActive),
     });
