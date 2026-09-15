@@ -17,7 +17,7 @@ export const AdminLayoutClient: React.FC<AdminLayoutClientProps> = ({
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div id="admin-layout" className="min-h-screen bg-slate-50 flex">
       {/* Sidebar Navigation */}
       <AdminSidebar
         isOpen={isMobileSidebarOpen}
@@ -30,7 +30,7 @@ export const AdminLayoutClient: React.FC<AdminLayoutClientProps> = ({
           user={user}
           onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
         />
-        <main className="flex-1 p-4 sm:p-8 max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-4 sm:p-8 max-w-8xl w-full mx-auto">
           {children}
         </main>
       </div>

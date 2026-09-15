@@ -187,9 +187,9 @@ export default function AdminMessagesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+            <h3 className="text-2xl font-bold text-slate-900 tracking-tight">
               Mensajes de Contacto
-            </h1>
+            </h3>
             {unreadCount > 0 && (
               <span className="bg-amber-500 text-white text-xs font-bold px-2.5 py-0.5 rounded-full">
                 {unreadCount} {unreadCount === 1 ? "nuevo" : "nuevos"}
