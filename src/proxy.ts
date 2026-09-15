@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 const ALLOWED_ORIGINS = [
   process.env.NEXT_PUBLIC_SITE_URL || "https://karmax.mx",
   "https://karmax.mx",
+  "https://karmax-beta.vercel.app/",
   "http://localhost:3000",
   "http://127.0.0.1:3000",
 ];
