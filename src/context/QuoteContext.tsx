@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from "react";
-import type { QuoteCartItem, CatalogProductItem } from "@/types";
+import type { QuoteCartItem, CatalogProductItem, TaxSettings } from "@/types";
 import { useAuth } from "./AuthContext";
 import { computeProductPricing } from "@/lib/pricing/discounts";
 
@@ -48,6 +48,7 @@ interface QuoteContextType {
   getItemQuantity: (productId: number, presentation?: string) => number;
   totalItemsCount: number;
   subtotal: number;
+  taxSettings: TaxSettings;
   tax: number;
   total: number;
   comments: string;
@@ -85,6 +86,7 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   });
   const [comments, setComments] = useState("");
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [taxSettings, setTaxSettings] = useState<TaxSettings>({ enabled: true, rate: 16 });
   const [quoteNumber, setQuoteNumber] = useState<string>(() => {
     if (typeof window !== "undefined") {
       try {
@@ -269,6 +271,12 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const res = await fetch("/api/quotes/next-number");
       if (res.ok) {
         const data = await res.json();
+        if (data.taxSettings && typeof data.taxSettings.enabled === "boolean") {
+          setTaxSettings({
+            enabled: Boolean(data.taxSettings.enabled),
+            rate: Number(data.taxSettings.rate) || 0,
+          });
+        }
         if (data.nextQuoteNumber) {
           setQuoteNumber(data.nextQuoteNumber);
           if (typeof window !== "undefined") {
@@ -435,8 +443,9 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [items]);
 
   const tax = useMemo(() => {
-    return subtotal * 0.16;
-  }, [subtotal]);
+    if (!taxSettings.enabled || taxSettings.rate <= 0) return 0;
+    return subtotal * (taxSettings.rate / 100);
+  }, [subtotal, taxSettings]);
 
   const total = useMemo(() => {
     return subtotal + tax;
@@ -445,11 +454,16 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     let ignore = false;
     async function fetchInitialNumber() {
-      if (savedQuoteIdRef.current) return;
       try {
         const res = await fetch("/api/quotes/next-number");
         if (res.ok) {
           const data = await res.json();
+          if (!ignore && data.taxSettings && typeof data.taxSettings.enabled === "boolean") {
+            setTaxSettings({
+              enabled: Boolean(data.taxSettings.enabled),
+              rate: Number(data.taxSettings.rate) || 0,
+            });
+          }
           if (!ignore && data.nextQuoteNumber && !savedQuoteIdRef.current) {
             setQuoteNumber(data.nextQuoteNumber);
             if (typeof window !== "undefined") {
@@ -488,6 +502,7 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         getItemQuantity,
         totalItemsCount,
         subtotal,
+        taxSettings,
         tax,
         total,
         comments,

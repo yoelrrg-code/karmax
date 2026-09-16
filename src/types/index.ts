@@ -122,6 +122,11 @@ export interface SeoSettings {
   address?: string;
 }
 
+export interface TaxSettings {
+  enabled: boolean;
+  rate: number;
+}
+
 export interface AuthUser {
   id: number;
   name: string;
@@ -212,5 +217,29 @@ export interface AboutUsPageData {
   valuesTitle?: string;
   values?: AboutValueItem[];
 }
+
+export interface PriceSyncReport {
+  totalRows: number;
+  updatedProducts: number;
+  updatedAttributes: number;
+  notFoundCount: number;
+  sampleNotFound?: string[];
+  durationMs?: number;
+  message?: string;
+}
+
+export interface PriceSyncSettings {
+  enabled: boolean;
+  sheetUrl: string;
+  syncHour: string; // "HH:mm" en hora de Ciudad de México (America/Mexico_City)
+  lastSyncAt?: string | null;
+  lastSyncStatus?: "success" | "error" | "running" | null;
+  lastSyncReport?: PriceSyncReport | null;
+}
+
+export const DEFAULT_SHEET_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vR-URR428Bn9U3PvAzOkCwwD__GGhwB3HBINmfNSyKM-VE9RO9FWw7NPQ7kXNJjnQ/pub?gid=986321110&single=true&output=csv";
+
+
 
 

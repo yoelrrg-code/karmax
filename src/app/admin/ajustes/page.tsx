@@ -13,12 +13,35 @@ import {
   Globe,
   Search,
   Upload,
+  Percent,
+  Calculator,
+  RefreshCw,
+  FileSpreadsheet,
+  Clock,
+  ExternalLink,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
-import { SeoSettings } from "@/types";
+import { SeoSettings, TaxSettings, PriceSyncSettings, DEFAULT_SHEET_URL } from "@/types";
 
 export default function AdminSettingsPage() {
   const [notificationEmail, setNotificationEmail] = useState("");
   const [defaultEnvEmail, setDefaultEnvEmail] = useState("");
+  const [taxSettings, setTaxSettings] = useState<TaxSettings>({
+    enabled: true,
+    rate: 16,
+  });
+  const [priceSyncSettings, setPriceSyncSettings] = useState<PriceSyncSettings>({
+    enabled: true,
+    sheetUrl: DEFAULT_SHEET_URL,
+    syncHour: "03:00",
+    lastSyncAt: null,
+    lastSyncStatus: null,
+    lastSyncReport: null,
+  });
+  const [isSyncingPrices, setIsSyncingPrices] = useState(false);
+  const [showNotFoundSkus, setShowNotFoundSkus] = useState(false);
+  const [mexicoClock, setMexicoClock] = useState("");
   const [seoForm, setSeoForm] = useState<SeoSettings>({
     siteUrl: "https://karmax.mx",
     metaTitleDefault: "KARMAX | Soluciones Químicas de Alta Calidad",
@@ -44,6 +67,15 @@ export default function AdminSettingsPage() {
           if (!ignore) {
             setNotificationEmail(data.notificationEmail || "");
             setDefaultEnvEmail(data.defaultEnvEmail || "");
+            if (data.taxSettings) {
+              setTaxSettings({
+                enabled: Boolean(data.taxSettings.enabled),
+                rate: Number(data.taxSettings.rate) || 0,
+              });
+            }
+            if (data.priceSyncSettings) {
+              setPriceSyncSettings(data.priceSyncSettings);
+            }
             if (data.seoSettings) {
               setSeoForm((prev) => ({
                 ...prev,
@@ -62,8 +94,28 @@ export default function AdminSettingsPage() {
     }
 
     loadSettings();
+
+    // Actualizar reloj en vivo de México (America/Mexico_City)
+    const updateClock = () => {
+      try {
+        const timeStr = new Intl.DateTimeFormat("es-MX", {
+          timeZone: "America/Mexico_City",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false,
+        }).format(new Date());
+        setMexicoClock(timeStr);
+      } catch {
+        // ignore
+      }
+    };
+    updateClock();
+    const clockInterval = setInterval(updateClock, 1000);
+
     return () => {
       ignore = true;
+      clearInterval(clockInterval);
     };
   }, []);
 
@@ -107,6 +159,8 @@ export default function AdminSettingsPage() {
         body: JSON.stringify({
           notificationEmail,
           seoSettings: seoForm,
+          taxSettings,
+          priceSyncSettings,
         }),
       });
 
@@ -115,12 +169,44 @@ export default function AdminSettingsPage() {
         throw new Error(data.error || "No se pudo guardar la configuración.");
       }
 
-      showToast("Configuración y SEO guardados exitosamente.");
+      showToast("Configuración general guardada exitosamente.");
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Error al guardar.";
       setErrorMessage(msg);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSyncPricesNow = async () => {
+    setIsSyncingPrices(true);
+    setErrorMessage(null);
+    try {
+      const res = await fetch("/api/admin/general-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "sync_prices_now",
+          priceSyncSettings,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || data.message || "Error al sincronizar precios.");
+      }
+
+      if (data.priceSyncSettings) {
+        setPriceSyncSettings(data.priceSyncSettings);
+      }
+
+      showToast(data.message || "Precios sincronizados con éxito desde Google Sheets.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Error al sincronizar precios.";
+      setErrorMessage(msg);
+      showToast("Error en sincronización de precios.");
+    } finally {
+      setIsSyncingPrices(false);
     }
   };
 
@@ -220,6 +306,485 @@ export default function AdminSettingsPage() {
               <div className="flex items-center gap-2 p-3 text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 <span>{errorMessage}</span>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Card: Configuración de Impuestos (I.V.A.) del Cotizador */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-2xs space-y-6">
+          <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
+            <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center flex-shrink-0">
+              <Percent className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-slate-900">
+                Impuestos y Porcentaje de I.V.A. (Cotizador)
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Configura el porcentaje de I.V.A. a desglosar en el cotizador del sitio web o establece precios exentos / sin I.V.A.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-5">
+            {/* Modo de IVA: Con porcentaje vs Sin IVA */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <button
+                type="button"
+                onClick={() => setTaxSettings((prev) => ({ ...prev, enabled: true }))}
+                className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-3.5 ${
+                  taxSettings.enabled
+                    ? "border-[var(--green-karmax)] bg-emerald-50/40 shadow-xs ring-1 ring-[var(--green-karmax)]/30"
+                    : "border-slate-200 hover:border-slate-300 bg-white"
+                }`}
+              >
+                <div
+                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 flex-shrink-0 ${
+                    taxSettings.enabled
+                      ? "border-[var(--green-karmax)] bg-[var(--green-karmax)]"
+                      : "border-slate-300"
+                  }`}
+                >
+                  {taxSettings.enabled && <div className="w-2 h-2 rounded-full bg-white" />}
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900">Aplicar Porcentaje de I.V.A.</h4>
+                  <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                    Calcula y desglosa el I.V.A. sobre el subtotal según el porcentaje configurado.
+                  </p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTaxSettings((prev) => ({ ...prev, enabled: false }))}
+                className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-3.5 ${
+                  !taxSettings.enabled
+                    ? "border-[var(--green-karmax)] bg-emerald-50/40 shadow-xs ring-1 ring-[var(--green-karmax)]/30"
+                    : "border-slate-200 hover:border-slate-300 bg-white"
+                }`}
+              >
+                <div
+                  className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mt-0.5 flex-shrink-0 ${
+                    !taxSettings.enabled
+                      ? "border-[var(--green-karmax)] bg-[var(--green-karmax)]"
+                      : "border-slate-300"
+                  }`}
+                >
+                  {!taxSettings.enabled && <div className="w-2 h-2 rounded-full bg-white" />}
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900">Sin I.V.A. (Exento / 0%)</h4>
+                  <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                    Muestra &quot;Sin IVA&quot; ($0.00) en el cotizador y calcula el total idéntico al subtotal.
+                  </p>
+                </div>
+              </button>
+            </div>
+
+            {/* Input para especificar porcentaje cuando está activo */}
+            {taxSettings.enabled && (
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-3.5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <label htmlFor="taxRate" className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Porcentaje de I.V.A. a aplicar
+                  </label>
+                  <span className="text-[11px] text-slate-500">
+                    Ingresa un valor entre 0 y 100%
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="relative w-36">
+                    <input
+                      id="taxRate"
+                      type="number"
+                      min={0}
+                      max={100}
+                      step="any"
+                      value={taxSettings.rate}
+                      onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        setTaxSettings((prev) => ({
+                          ...prev,
+                          rate: isNaN(val) ? 0 : Math.max(0, Math.min(100, val)),
+                        }));
+                      }}
+                      className="w-full text-sm font-semibold p-2.5 pr-8 rounded-xl border border-slate-200 bg-white focus:border-[var(--green-karmax)] focus:ring-2 focus:ring-[var(--green-karmax)]/20 outline-none text-slate-800 transition-all font-mono"
+                    />
+                    <span className="absolute right-3 top-2.5 text-sm font-bold text-slate-400 pointer-events-none">
+                      %
+                    </span>
+                  </div>
+
+                  {/* Botones de selección rápida */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setTaxSettings((prev) => ({ ...prev, rate: 16 }))}
+                      className={`text-xs px-3 py-2 rounded-lg font-medium border transition-colors cursor-pointer ${
+                        taxSettings.rate === 16
+                          ? "bg-slate-900 text-white border-slate-900"
+                          : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                      }`}
+                    >
+                      16% (General México)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTaxSettings((prev) => ({ ...prev, rate: 8 }))}
+                      className={`text-xs px-3 py-2 rounded-lg font-medium border transition-colors cursor-pointer ${
+                        taxSettings.rate === 8
+                          ? "bg-slate-900 text-white border-slate-900"
+                          : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                      }`}
+                    >
+                      8% (Zona Fronteriza)
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Simulación en vivo del Cotizador */}
+            <div className="pt-2">
+              <div className="flex items-center gap-2 mb-2">
+                <Calculator className="w-4 h-4 text-slate-400" />
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                  Simulación del Desglose en Cotizaciones (Ejemplo Base: $1,000.00 MXN)
+                </span>
+              </div>
+
+              <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl max-w-md space-y-2 text-xs">
+                <div className="flex justify-between text-slate-600">
+                  <span>Subtotal:</span>
+                  <span className="font-semibold text-slate-800">$1,000.00 MXN</span>
+                </div>
+                <div className="flex justify-between text-slate-600 pt-1.5 border-t border-slate-200">
+                  <span>
+                    {taxSettings.enabled && taxSettings.rate > 0
+                      ? `IVA (${taxSettings.rate}%):`
+                      : "IVA (Sin IVA):"}
+                  </span>
+                  <span className="font-semibold text-slate-800">
+                    ${(taxSettings.enabled ? 1000 * (taxSettings.rate / 100) : 0).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN
+                  </span>
+                </div>
+                <div className="flex justify-between text-slate-900 font-bold text-sm pt-2 border-t border-slate-300">
+                  <span>Total Estimado:</span>
+                  <span className="text-[var(--green-karmax)]">
+                    ${(1000 + (taxSettings.enabled ? 1000 * (taxSettings.rate / 100) : 0)).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MXN
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-slate-400 mt-2">
+                Este cálculo se aplica automáticamente en el cotizador del cliente, carrito lateral, confirmación por email y panel de administración.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Card: Sincronización de Precios desde Google Sheets */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-2xs space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[var(--green-karmax)] flex items-center justify-center flex-shrink-0">
+                <FileSpreadsheet className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">
+                  Sincronización Automática de Precios (Google Sheets)
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Actualiza los precios de productos y presentaciones por SKU a la hora programada en hora de México.
+                </p>
+              </div>
+            </div>
+
+            {mexicoClock && (
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-mono font-medium border border-slate-200 self-start sm:self-auto">
+                <Clock className="w-3.5 h-3.5 text-slate-500" />
+                <span>CDMX: <strong>{mexicoClock}</strong></span>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-6">
+            {/* 1. Toggle Activar / Desactivar Sincronización Automática */}
+            <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+              <div>
+                <h4 className="text-sm font-bold text-slate-900">Sincronización Automática Diaria</h4>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {priceSyncSettings.enabled
+                    ? `El cron del sistema actualizará los precios diariamente a las ${priceSyncSettings.syncHour} (hora de México).`
+                    : "La sincronización automática está pausada. Solo se ejecutarán actualizaciones manuales."}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setPriceSyncSettings((prev) => ({
+                    ...prev,
+                    enabled: !prev.enabled,
+                  }))
+                }
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer focus:outline-none ${
+                  priceSyncSettings.enabled ? "bg-[var(--green-karmax)]" : "bg-slate-300"
+                }`}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    priceSyncSettings.enabled ? "translate-x-6" : "translate-x-1"
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* 2. URL del Google Sheet */}
+            <div className="space-y-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                <label
+                  htmlFor="sheetUrl"
+                  className="block text-xs font-bold text-slate-700 uppercase tracking-wider"
+                >
+                  URL de Google Sheets (Publicada en CSV o Web)
+                </label>
+                <div className="flex items-center gap-3 text-xs">
+                  {priceSyncSettings.sheetUrl && (
+                    <a
+                      href={priceSyncSettings.sheetUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[var(--blue-karmax)] hover:underline inline-flex items-center gap-1"
+                    >
+                      <span>Abrir enlace</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setPriceSyncSettings((prev) => ({
+                        ...prev,
+                        sheetUrl: DEFAULT_SHEET_URL,
+                      }))
+                    }
+                    className="text-slate-500 hover:text-slate-800 underline cursor-pointer"
+                  >
+                    Restaurar URL original
+                  </button>
+                </div>
+              </div>
+
+              <input
+                id="sheetUrl"
+                type="url"
+                required
+                value={priceSyncSettings.sheetUrl}
+                onChange={(e) =>
+                  setPriceSyncSettings((prev) => ({
+                    ...prev,
+                    sheetUrl: e.target.value,
+                  }))
+                }
+                placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?gid=...&output=csv"
+                className="w-full text-xs font-mono p-3 rounded-xl border border-slate-200 bg-white focus:border-[var(--green-karmax)] focus:ring-2 focus:ring-[var(--green-karmax)]/20 outline-none text-slate-800 transition-all shadow-2xs"
+              />
+
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                El sistema lee las columnas <strong>&quot;sku&quot;</strong> y <strong>&quot;Precio Lista Web (sin IVA)&quot;</strong>. Si cambias de pestaña o de archivo, asegúrate de publicarlo en <em>Archivo &gt; Compartir &gt; Publicar en la web &gt; Valores separados por comas (.csv)</em>.
+              </p>
+            </div>
+
+            {/* 3. Selector de Hora de Ejecución (Hora de México) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+              <div>
+                <label
+                  htmlFor="syncHour"
+                  className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2"
+                >
+                  Hora de Ejecución Diaria (Hora de México)
+                </label>
+                <select
+                  id="syncHour"
+                  value={priceSyncSettings.syncHour}
+                  onChange={(e) =>
+                    setPriceSyncSettings((prev) => ({
+                      ...prev,
+                      syncHour: e.target.value,
+                    }))
+                  }
+                  className="w-full text-sm font-semibold p-3 rounded-xl border border-slate-200 bg-white focus:border-[var(--green-karmax)] focus:ring-2 focus:ring-[var(--green-karmax)]/20 outline-none text-slate-800 transition-all cursor-pointer shadow-2xs font-mono"
+                >
+                  {Array.from({ length: 24 }).map((_, i) => {
+                    const h = String(i).padStart(2, "0");
+                    const val = `${h}:00`;
+                    const label = `${val} hrs ${i === 3 ? "(Recomendado de madrugada)" : ""}`;
+                    return (
+                      <option key={val} value={val}>
+                        {label}
+                      </option>
+                    );
+                  })}
+                </select>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Zona horaria configurada: <code>America/Mexico_City</code> (UTC-6).
+                </p>
+              </div>
+
+              {/* Botón de Sincronización Manual */}
+              <div className="flex flex-col justify-end">
+                <button
+                  type="button"
+                  disabled={isSyncingPrices}
+                  onClick={handleSyncPricesNow}
+                  className="w-full inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold p-3 rounded-xl shadow-xs transition-all duration-200 active:scale-98 cursor-pointer disabled:opacity-50 disabled:pointer-events-none"
+                >
+                  <RefreshCw
+                    className={`w-4 h-4 ${isSyncingPrices ? "animate-spin text-emerald-400" : ""}`}
+                  />
+                  <span>
+                    {isSyncingPrices ? "Sincronizando Precios..." : "Sincronizar Precios Ahora"}
+                  </span>
+                </button>
+                <p className="text-[11px] text-slate-400 text-center mt-1">
+                  Prueba inmediata sin esperar a la hora programada.
+                </p>
+              </div>
+            </div>
+
+            {/* 4. Panel de Estado y Último Reporte */}
+            {priceSyncSettings.lastSyncAt && (
+              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                        priceSyncSettings.lastSyncStatus === "success"
+                          ? "bg-emerald-100 text-emerald-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          priceSyncSettings.lastSyncStatus === "success"
+                            ? "bg-emerald-500"
+                            : "bg-red-500"
+                        }`}
+                      />
+                      {priceSyncSettings.lastSyncStatus === "success"
+                        ? "Última Sincronización Exitosa"
+                        : "Error en Última Sincronización"}
+                    </span>
+
+                    <span className="text-xs text-slate-500">
+                      {new Date(priceSyncSettings.lastSyncAt).toLocaleString("es-MX", {
+                        timeZone: "America/Mexico_City",
+                        dateStyle: "medium",
+                        timeStyle: "short",
+                      })}{" "}
+                      (Hora CDMX)
+                    </span>
+                  </div>
+
+                  {priceSyncSettings.lastSyncReport?.durationMs !== undefined && (
+                    <span className="text-[11px] text-slate-400 font-mono">
+                      Tiempo: {priceSyncSettings.lastSyncReport.durationMs}ms
+                    </span>
+                  )}
+                </div>
+
+                {priceSyncSettings.lastSyncReport && (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                    <div className="bg-white p-3 rounded-lg border border-slate-200/70 shadow-2xs">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                        Filas en Excel
+                      </span>
+                      <p className="text-lg font-bold text-slate-900 mt-0.5">
+                        {priceSyncSettings.lastSyncReport.totalRows}
+                      </p>
+                    </div>
+
+                    <div className="bg-white p-3 rounded-lg border border-slate-200/70 shadow-2xs">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                        Productos Web
+                      </span>
+                      <p className="text-lg font-bold text-emerald-600 mt-0.5">
+                        {priceSyncSettings.lastSyncReport.updatedProducts}
+                      </p>
+                    </div>
+
+                    <div className="bg-white p-3 rounded-lg border border-slate-200/70 shadow-2xs">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                        Presentaciones
+                      </span>
+                      <p className="text-lg font-bold text-purple-600 mt-0.5">
+                        {priceSyncSettings.lastSyncReport.updatedAttributes}
+                      </p>
+                    </div>
+
+                    <div className="bg-white p-3 rounded-lg border border-slate-200/70 shadow-2xs">
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                        SKUs No Hallados
+                      </span>
+                      <p className="text-lg font-bold text-amber-600 mt-0.5">
+                        {priceSyncSettings.lastSyncReport.notFoundCount}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* SKUs no encontrados desplegable */}
+                {priceSyncSettings.lastSyncReport &&
+                  priceSyncSettings.lastSyncReport.notFoundCount > 0 &&
+                  priceSyncSettings.lastSyncReport.sampleNotFound && (
+                    <div className="pt-2 border-t border-slate-200/60">
+                      <button
+                        type="button"
+                        onClick={() => setShowNotFoundSkus((prev) => !prev)}
+                        className="text-xs text-amber-700 hover:text-amber-900 font-medium inline-flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <span>
+                          {showNotFoundSkus ? "Ocultar" : "Ver"} SKUs del Excel sin producto asociado en la web ({priceSyncSettings.lastSyncReport.notFoundCount})
+                        </span>
+                        {showNotFoundSkus ? (
+                          <ChevronUp className="w-3.5 h-3.5" />
+                        ) : (
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+
+                      {showNotFoundSkus && (
+                        <div className="mt-2 p-2.5 rounded-lg bg-white border border-amber-200/80 text-xs font-mono text-slate-700 space-y-1">
+                          <p className="text-[11px] text-slate-500 font-sans mb-1">
+                            Estos códigos existen en el Google Sheet pero aún no tienen un producto o presentación dada de alta en el catálogo:
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {priceSyncSettings.lastSyncReport.sampleNotFound.map((s) => (
+                              <span
+                                key={s}
+                                className="px-2 py-0.5 bg-amber-50 text-amber-900 rounded border border-amber-200 text-[11px]"
+                              >
+                                {s}
+                              </span>
+                            ))}
+                            {priceSyncSettings.lastSyncReport.notFoundCount >
+                              priceSyncSettings.lastSyncReport.sampleNotFound.length && (
+                              <span className="px-2 py-0.5 text-slate-400 text-[11px]">
+                                y{" "}
+                                {priceSyncSettings.lastSyncReport.notFoundCount -
+                                  priceSyncSettings.lastSyncReport.sampleNotFound.length}{" "}
+                                más...
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
               </div>
             )}
           </div>

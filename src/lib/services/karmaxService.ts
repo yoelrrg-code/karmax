@@ -21,6 +21,8 @@ import type {
   ProductDocumentItem,
   ProductDetailItem,
   SeoSettings,
+  TaxSettings,
+  PriceSyncSettings,
 } from "@/types";
 import { asc, desc, eq, and, or, like, inArray, sql } from "drizzle-orm";
 
@@ -617,4 +619,100 @@ export async function getSeoSettings(): Promise<SeoSettings> {
     console.warn("Fallback para getSeoSettings:", (error as Error).message);
     return defaults;
   }
+}
+
+/**
+ * Obtiene la configuración de impuestos (IVA) guardada en site_settings ('tax_settings').
+ * Si no existe o la base de datos está offline, provee { enabled: true, rate: 16 } por defecto.
+ */
+export async function getTaxSettings(): Promise<TaxSettings> {
+  const defaults: TaxSettings = {
+    enabled: true,
+    rate: 16,
+  };
+
+  try {
+    const saved = await getSiteSetting<TaxSettings>("tax_settings", defaults);
+    return {
+      enabled: saved?.enabled !== undefined ? Boolean(saved.enabled) : defaults.enabled,
+      rate: saved?.rate !== undefined && !isNaN(Number(saved.rate)) ? Number(saved.rate) : defaults.rate,
+    };
+  } catch (error) {
+    console.warn("Fallback para getTaxSettings:", (error as Error).message);
+    return defaults;
+  }
+}
+
+export const DEFAULT_SHEET_URL =
+  "https://docs.google.com/spreadsheets/d/e/2PACX-1vR-URR428Bn9U3PvAzOkCwwD__GGhwB3HBINmfNSyKM-VE9RO9FWw7NPQ7kXNJjnQ/pub?gid=986321110&single=true&output=csv";
+
+/**
+ * Obtiene la configuración de sincronización de precios desde Google Sheets ('price_sync_settings').
+ */
+export async function getPriceSyncSettings(): Promise<PriceSyncSettings> {
+  const defaults: PriceSyncSettings = {
+    enabled: true,
+    sheetUrl: DEFAULT_SHEET_URL,
+    syncHour: "03:00",
+    lastSyncAt: null,
+    lastSyncStatus: null,
+    lastSyncReport: null,
+  };
+
+  try {
+    const saved = await getSiteSetting<PriceSyncSettings>("price_sync_settings", defaults);
+    return {
+      enabled: saved?.enabled !== undefined ? Boolean(saved.enabled) : defaults.enabled,
+      sheetUrl: saved?.sheetUrl?.trim() || defaults.sheetUrl,
+      syncHour: saved?.syncHour?.trim() || defaults.syncHour,
+      lastSyncAt: saved?.lastSyncAt || null,
+      lastSyncStatus: saved?.lastSyncStatus || null,
+      lastSyncReport: saved?.lastSyncReport || null,
+    };
+  } catch (error) {
+    console.warn("Fallback para getPriceSyncSettings:", (error as Error).message);
+    return defaults;
+  }
+}
+
+/**
+ * Guarda la configuración de sincronización de precios en site_settings ('price_sync_settings').
+ */
+export async function savePriceSyncSettings(
+  settings: Partial<PriceSyncSettings>
+): Promise<PriceSyncSettings> {
+  const current = await getPriceSyncSettings();
+  const updated: PriceSyncSettings = {
+    enabled: settings.enabled !== undefined ? Boolean(settings.enabled) : current.enabled,
+    sheetUrl: settings.sheetUrl !== undefined ? String(settings.sheetUrl).trim() : current.sheetUrl,
+    syncHour: settings.syncHour !== undefined ? String(settings.syncHour).trim() : current.syncHour,
+    lastSyncAt: settings.lastSyncAt !== undefined ? settings.lastSyncAt : current.lastSyncAt,
+    lastSyncStatus: settings.lastSyncStatus !== undefined ? settings.lastSyncStatus : current.lastSyncStatus,
+    lastSyncReport: settings.lastSyncReport !== undefined ? settings.lastSyncReport : current.lastSyncReport,
+  };
+
+  const [existing] = await db
+    .select({ id: siteSettings.id })
+    .from(siteSettings)
+    .where(eq(siteSettings.key, "price_sync_settings"))
+    .limit(1);
+
+  if (existing) {
+    await db
+      .update(siteSettings)
+      .set({
+        value: JSON.stringify(updated),
+        updatedAt: new Date(),
+      })
+      .where(eq(siteSettings.id, existing.id));
+  } else {
+    await db.insert(siteSettings).values({
+      key: "price_sync_settings",
+      section: "sync",
+      label: "Configuración de Sincronización de Precios",
+      value: JSON.stringify(updated),
+    });
+  }
+
+  return updated;
 }

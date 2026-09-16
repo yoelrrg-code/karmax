@@ -317,7 +317,11 @@ export default function AdminQuoteDetailPage() {
                 </span>
               </div>
               <div className="flex items-center justify-between text-slate-600">
-                <span>IVA estimado (16%)</span>
+                <span>
+                  {Number(quote.tax || 0) > 0
+                    ? `IVA estimado (${Number(quote.subtotal || 0) > 0 ? Math.round((Number(quote.tax || 0) / Number(quote.subtotal || 0)) * 100) : 16}%)`
+                    : "IVA (Sin IVA)"}
+                </span>
                 <span className="font-semibold text-slate-900">
                   ${Number(quote.tax || 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
                 </span>

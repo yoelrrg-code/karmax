@@ -2,8 +2,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/auth/adminGuard";
 import { db, siteSettings } from "@/lib/db";
 import { eq } from "drizzle-orm";
-import { getSiteSetting, getSeoSettings } from "@/lib/services/karmaxService";
-import type { SeoSettings } from "@/types";
+import {
+  getSiteSetting,
+  getSeoSettings,
+  getTaxSettings,
+  getPriceSyncSettings,
+  savePriceSyncSettings,
+} from "@/lib/services/karmaxService";
+import { syncPricesFromSheet } from "@/lib/services/sheetSyncService";
+import type { SeoSettings, TaxSettings, PriceSyncSettings } from "@/types";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -12,9 +19,11 @@ export async function GET() {
   if (auth.response) return auth.response;
 
   try {
-    const [settings, seoSettings] = await Promise.all([
+    const [settings, seoSettings, taxSettings, priceSyncSettings] = await Promise.all([
       getSiteSetting<{ notificationEmail?: string }>("general_settings", {}),
       getSeoSettings(),
+      getTaxSettings(),
+      getPriceSyncSettings(),
     ]);
 
     const defaultEmail =
@@ -25,6 +34,8 @@ export async function GET() {
       notificationEmail,
       defaultEnvEmail: defaultEmail,
       seoSettings,
+      taxSettings,
+      priceSyncSettings,
     });
   } catch (error) {
     console.error("Error in GET /api/admin/general-settings:", error);
@@ -41,7 +52,8 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json().catch(() => ({}));
-    const { notificationEmail, seoSettings } = body;
+    const { notificationEmail, seoSettings, taxSettings } = body;
+    const priceSyncSettings = body.priceSyncSettings as Partial<PriceSyncSettings> | undefined;
 
     // 1. Si enviaron actualización de correo de notificaciones
     if (notificationEmail !== undefined) {
@@ -119,16 +131,80 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const refreshedSeo = await getSeoSettings();
+    // 3. Si enviaron actualización de ajustes de IVA (taxSettings)
+    if (taxSettings && typeof taxSettings === "object") {
+      const enabled = Boolean(taxSettings.enabled);
+      const rawRate = Number(taxSettings.rate);
+      const rate = isNaN(rawRate) ? 16 : Math.max(0, Math.min(100, Number(rawRate.toFixed(2))));
+
+      const updatedTax: TaxSettings = {
+        enabled,
+        rate,
+      };
+
+      const [existingTax] = await db
+        .select({ id: siteSettings.id })
+        .from(siteSettings)
+        .where(eq(siteSettings.key, "tax_settings"))
+        .limit(1);
+
+      if (existingTax) {
+        await db
+          .update(siteSettings)
+          .set({
+            value: JSON.stringify(updatedTax),
+            updatedAt: new Date(),
+          })
+          .where(eq(siteSettings.id, existingTax.id));
+      } else {
+        await db.insert(siteSettings).values({
+          key: "tax_settings",
+          section: "tax",
+          label: "Configuración de IVA del Cotizador",
+          value: JSON.stringify(updatedTax),
+        });
+      }
+    }
+
+    // 4. Si enviaron actualización de ajustes de sincronización de precios (priceSyncSettings)
+    if (priceSyncSettings && typeof priceSyncSettings === "object") {
+      await savePriceSyncSettings(priceSyncSettings);
+    }
+
+    // 5. Si solicitaron disparo inmediato de sincronización de precios
+    const { action } = body;
+    if (action === "sync_prices_now") {
+      const syncResult = await syncPricesFromSheet({
+        force: true,
+        customUrl: priceSyncSettings?.sheetUrl,
+      });
+
+      const refreshedSync = await getPriceSyncSettings();
+      return NextResponse.json({
+        success: syncResult.success,
+        message: syncResult.message,
+        report: syncResult.report,
+        priceSyncSettings: refreshedSync,
+      });
+    }
+
+    const [refreshedSeo, refreshedTax, refreshedPriceSync] = await Promise.all([
+      getSeoSettings(),
+      getTaxSettings(),
+      getPriceSyncSettings(),
+    ]);
+
     return NextResponse.json({
       success: true,
       notificationEmail: notificationEmail ? String(notificationEmail).trim().toLowerCase() : undefined,
       seoSettings: refreshedSeo,
+      taxSettings: refreshedTax,
+      priceSyncSettings: refreshedPriceSync,
     });
   } catch (error) {
     console.error("Error in POST /api/admin/general-settings:", error);
     return NextResponse.json(
-      { error: "Error al guardar la configuración general y de SEO" },
+      { error: "Error al guardar la configuración general, IVA o sincronización de precios" },
       { status: 500 }
     );
   }

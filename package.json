@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "cron:prices": "tsx scripts/cron-sync-prices.ts"
   },
   "dependencies": {
     "dotenv": "^17.4.2",

@@ -398,7 +398,11 @@ export default function MisCotizacionesPage() {
                       <span className="font-medium">{formatCurrency(selectedQuote.subtotal)}</span>
                     </div>
                     <div className="flex items-center justify-between text-[var(--text-karmax)] pt-2.5 border-t border-[#D6DADD]">
-                      <span className="font-semibold">IVA 16%</span>
+                      <span className="font-semibold">
+                        {Number(selectedQuote.tax) > 0
+                          ? `IVA ${Number(selectedQuote.subtotal) > 0 ? Math.round((Number(selectedQuote.tax) / Number(selectedQuote.subtotal)) * 100) : 16}%`
+                          : "IVA (Sin IVA)"}
+                      </span>
                       <span className="font-medium">{formatCurrency(selectedQuote.tax)}</span>
                     </div>
                     <div className="flex items-center justify-between text-[var(--text-karmax)] pt-2.5 border-t border-[#9AA1AA] text-sm sm:text-base">

@@ -106,6 +106,11 @@ export async function sendQuoteEmails(data: QuoteEmailData): Promise<{ clientSen
   const safeEmail = escapeHtml(data.email);
   const safeNotes = data.notes ? escapeHtml(data.notes) : "";
 
+  const taxNum = Number(data.tax) || 0;
+  const subtotalNum = Number(data.subtotal) || 0;
+  const taxPercent = (subtotalNum > 0 && taxNum > 0) ? Math.round((taxNum / subtotalNum) * 100) : 0;
+  const taxLabel = taxNum > 0 ? `I.V.A. (${taxPercent}%):` : "I.V.A. (Sin IVA):";
+
   // 1. Email para el Cliente
   const clientHtml = `
     <!DOCTYPE html>
@@ -149,7 +154,7 @@ export async function sendQuoteEmails(data: QuoteEmailData): Promise<{ clientSen
 
           <div style="text-align: right; font-size: 14px; line-height: 1.6; border-top: 1px solid #e2e8f0; padding-top: 12px;">
             <p style="margin: 4px 0; color: #64748b;">Subtotal: <strong>${formatCurrency(data.subtotal)}</strong></p>
-            <p style="margin: 4px 0; color: #64748b;">I.V.A. (16%): <strong>${formatCurrency(data.tax)}</strong></p>
+            <p style="margin: 4px 0; color: #64748b;">${taxLabel} <strong>${formatCurrency(data.tax)}</strong></p>
             <p style="margin: 6px 0; font-size: 18px; color: #00A859;">Total: <strong>${formatCurrency(data.total)}</strong></p>
           </div>
 
@@ -201,7 +206,7 @@ export async function sendQuoteEmails(data: QuoteEmailData): Promise<{ clientSen
 
           <div style="text-align: right; font-size: 14px; line-height: 1.6; border-top: 2px solid #e2e8f0; padding-top: 12px;">
             <p style="margin: 4px 0; color: #64748b;">Subtotal: <strong>${formatCurrency(data.subtotal)}</strong></p>
-            <p style="margin: 4px 0; color: #64748b;">I.V.A. (16%): <strong>${formatCurrency(data.tax)}</strong></p>
+            <p style="margin: 4px 0; color: #64748b;">${taxLabel} <strong>${formatCurrency(data.tax)}</strong></p>
             <p style="margin: 6px 0; font-size: 18px; color: #00A859;">Total Cotizado: <strong>${formatCurrency(data.total)}</strong></p>
           </div>
         </div>

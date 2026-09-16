@@ -22,6 +22,7 @@ export const QuoteDrawer: React.FC = () => {
     removeItem,
     clearQuote,
     subtotal,
+    taxSettings,
     tax,
     total,
     comments,
@@ -408,7 +409,11 @@ export const QuoteDrawer: React.FC = () => {
                     <span className="font-medium">{formatCurrency(subtotal)}</span>
                   </div>
                   <div className="flex items-center justify-between text-[var(--text-karmax)] pt-2.5 border-t border-[#D6DADD]">
-                    <span className="font-semibold">IVA 16%</span>
+                    <span className="font-semibold">
+                      {taxSettings?.enabled && taxSettings.rate > 0
+                        ? `IVA ${taxSettings.rate}%`
+                        : "IVA (Sin IVA)"}
+                    </span>
                     <span className="font-medium">{formatCurrency(tax)}</span>
                   </div>
                   <div className="flex items-center justify-between text-[var(--text-karmax)] pt-2.5 border-t border-[#9AA1AA] text-sm sm:text-base">
