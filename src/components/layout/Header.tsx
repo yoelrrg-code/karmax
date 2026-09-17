@@ -10,9 +10,21 @@ import { useAuth } from "@/context/AuthContext";
 
 const emptySubscribe = () => () => {};
 
-export const Header: React.FC = () => {
+export interface FooterProps {
+  data?: {
+    description?: string;
+    phone?: string;
+    email?: string;
+    schedule?: string;
+    address?: string;
+    facebookUrl?: string;
+    instagramUrl?: string;
+  };
+}
+
+export const Header: React.FC<FooterProps> = ({data}) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "+528186590941";
+  const whatsappNumber = data?.phone || "+528119052920";
 
   const [isScrolled, setIsScrolled] = useState(false);
   const { totalItemsCount, openDrawer, notification, dismissNotification } = useQuote();
