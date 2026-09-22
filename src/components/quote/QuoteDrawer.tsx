@@ -210,7 +210,7 @@ export const QuoteDrawer: React.FC = () => {
         aria-hidden="true"
       />
 
-      <div className="fixed inset-y-0 right-0 max-w-full flex pl-6 sm:pl-16 pointer-events-none">
+      <div className="fixed inset-y-0 right-0 max-w-full flex pl-0 sm:pl-16 pointer-events-none">
         <div
           className={`w-screen max-w-4xl bg-white shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out pointer-events-auto ${
             isDrawerOpen ? "translate-x-0" : "translate-x-full"
@@ -220,7 +220,7 @@ export const QuoteDrawer: React.FC = () => {
           <InvisibleCaptcha ref={captchaRef} />
 
           {/* 1. Header */}
-          <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+          <div className="px-4 md:px-6 py-5 border-b border-slate-100 flex items-center justify-between">
             <div>
               <h3
                 suppressHydrationWarning
@@ -240,7 +240,6 @@ export const QuoteDrawer: React.FC = () => {
               onClick={closeDrawer}
               className="flex items-center gap-1.5 !text-[14px] text-[var(--light-text-karmax)] hover:text-[var(--green-hover-karmax)] p-2 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
             >
-              <span>Cerrar</span>
               <X className="w-6 h-6" />
             </button>
           </div>
@@ -272,7 +271,7 @@ export const QuoteDrawer: React.FC = () => {
           )}
 
           {/* 2. Items Content / Table */}
-          <div className="flex flex-col overflow-y-auto px-6 py-4 mb-8">
+          <div className="flex flex-col overflow-y-auto px-4 md:px-6 py-4 mb-0 md:mb-8">
             {items.length === 0 ? (
               <div className="h-64 flex flex-col items-center justify-center text-center text-slate-400">
                 <p className="text-base font-medium">Tu cotizador está vacío.</p>
@@ -285,11 +284,11 @@ export const QuoteDrawer: React.FC = () => {
                 <table className="w-full text-left border-collapse text-xs sm:text-sm">
                   <thead>
                     <tr className="border-b border-[#9AA1AA] text-[12px] font-semibold text-[var(--text-karmax)] uppercase tracking-wider">
-                      <th className="pb-2 min-w-[160px] font-semibold text-[12px]" colSpan={2}>Producto</th>
-                      <th className="pb-2 text-center min-w-[90px] font-semibold text-[12px]">Presentación</th>
-                      <th className="pb-2 text-center min-w-[90px] font-semibold text-[12px]">Cantidad</th>
-                      <th className="pb-2 text-right min-w-[120px] font-semibold text-[12px]">Precio Unitario</th>
-                      <th className="pb-2 text-right min-w-[80px] font-semibold text-[12px]">Total</th>
+                      <th className="pb-2 min-w-[240px] font-semibold text-[10px] md:text-[12px]" colSpan={2}>Producto</th>
+                      <th className="pb-2 text-center min-w-[90px] font-semibold text-[10px] md:text-[12px]">Presentación</th>
+                      <th className="pb-2 text-center min-w-[90px] font-semibold text-[10px] md:text-[12px]">Cantidad</th>
+                      <th className="pb-2 text-right min-w-[80px] font-semibold text-[10px] md:text-[12px]">Precio</th>
+                      <th className="pb-2 text-right min-w-[80px] font-semibold text-[10px] md:text-[12px]">Total</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -298,21 +297,21 @@ export const QuoteDrawer: React.FC = () => {
                       return (
                         <tr key={`${item.productId}-${item.presentation}`} className="group hover:bg-slate-50/60 transition-colors">
                           {/* Trash Icon */}
-                          <td className="py-3.5 pr-2 align-middle">
+                          <td className="py-3.5 pr-1.5 align-middle">
                             <button
                               type="button"
                               onClick={() => removeItem(item.productId, item.presentation)}
                               title="Eliminar producto"
-                              className="w-7 h-7 rounded-full text-[var(--green-karmax)] opacity-50 hover:opacity-100 hover:text-[var(--green-hover-karmax)] flex items-center justify-center transition-all cursor-pointer"
+                              className="w-7 h-7 rounded-full text-[var(--green-hover-karmax)] opacity:100 md:opacity-50 hover:opacity-100 hover:text-[var(--green-hover-karmax)] flex items-center justify-center transition-all cursor-pointer"
                             >
                               <Trash2 className="w-5 h-5" />
                             </button>
                           </td>
 
                           {/* Product Image & Info */}
-                          <td className="py-3.5 pr-3 align-middle">
+                          <td className="py-3.5 pr-1.5 align-middle">
                             <div className="flex items-center gap-3">
-                              <div className="relative w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 p-1 flex items-center justify-center">
+                              <div className="relative w-12 h-12 sm:w-12 sm:h-12 flex-shrink-0 p-1 flex items-center justify-center">
                                 <Image
                                   src={item.imageUrl || "/images/products/placeholder.jpg"}
                                   alt={item.name}
@@ -322,10 +321,10 @@ export const QuoteDrawer: React.FC = () => {
                                 />
                               </div>
                               <div className="min-w-0">
-                                <p className="!font-[600] text-[var(--text-karmax)] line-clamp-1 leading-tight !text-[14px]">
+                                <p className="!font-[600] text-[var(--text-karmax)] line-clamp-2 leading-tight !text-[12px] md:!text-[14px]">
                                   {item.name}
                                 </p>
-                                <p className="text-[14px] text-[var(--light-text-karmax)] mt-0 !leading-tight">
+                                <p className="text-[12px] text-[var(--light-text-karmax)] mt-0 !leading-tight md:text-[14px]">
                                   SKU: {item.sku || "N/A"}
                                 </p>
                               </div>
@@ -333,12 +332,12 @@ export const QuoteDrawer: React.FC = () => {
                           </td>
 
                           {/* Presentación */}
-                          <td className="py-3.5 px-2 text-center align-middle text-slate-600 font-medium">
+                          <td className="py-3.5 px-1.5 text-center align-middle text-[var(--text-karmax)] font-medium">
                             {item.presentation || "-"}
                           </td>
 
                           {/* Cantidad Input / Stepper */}
-                          <td className="py-3.5 px-2 align-middle">
+                          <td className="py-3.5 px-1.5 align-middle">
                             <div className="flex items-center justify-center gap-1">
                               <input
                                 type="number"
@@ -387,9 +386,9 @@ export const QuoteDrawer: React.FC = () => {
 
             {/* 3. Bottom Section: Comentarios + Resumen Financiero */}
             {items.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mt-8 pt-6 border-t border-slate-200">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6 mt-0 md:mt-8 pt-6 border-t border-slate-200">
                 {/* Comentarios */}
-                <div className="md:col-span-7 flex flex-col">
+                <div className="md:col-span-7 flex flex-col order-2 md:order-1">
                   <label className="text-[12px] font-semibold uppercase text-[var(--text-karmax)] tracking-wider mb-2">
                     Comentarios
                   </label>
@@ -403,7 +402,7 @@ export const QuoteDrawer: React.FC = () => {
                 </div>
 
                 {/* Subtotal, IVA 16%, Total */}
-                <div className="md:col-span-5 flex flex-col justify-between space-y-2 text-xs sm:text-sm">
+                <div className="md:col-span-5 flex flex-col justify-between space-y-2 text-xs sm:text-sm order-1 md:order-2 mb-4 md:mb-0">
                   <div className="flex items-center justify-between text-[var(--text-karmax)]">
                     <span className="font-semibold">Subtotal</span>
                     <span className="font-medium">{formatCurrency(subtotal)}</span>
@@ -428,12 +427,12 @@ export const QuoteDrawer: React.FC = () => {
           {/* 4. Action Buttons & Disclaimer Footer */}
           {items.length > 0 && (
             <div className="max-w-3xl mx-auto p-6 space-y-4">
-              <div className="flex flex-col sm:flex-row items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-center gap-3 mb-10 md:mb-0">
                 <button
                   type="button"
                   disabled={isSubmitting}
                   onClick={() => handleAction("save")}
-                  className="sm:flex-1 btn-primary inline-flex items-center justify-center border border-[var(--green-karmax)] bg-transparent hover:bg-[var(--green-hover-karmax)] hover:border-[var(--green-hover-karmax)] text-[var(--green-karmax)] hover:text-white px-8 py-4 rounded-full text-base shadow-xs hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                  className="order-2 md:order-1 sm:flex-1 btn-primary inline-flex items-center justify-center border border-[var(--green-karmax)] bg-transparent hover:bg-[var(--green-hover-karmax)] hover:border-[var(--green-hover-karmax)] text-[var(--green-karmax)] hover:text-white px-8 py-4 rounded-full text-base shadow-xs hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
                 >
                   {isSubmitting ? "Guardando..." : "Guardar cotización"}
                 </button>
@@ -441,13 +440,13 @@ export const QuoteDrawer: React.FC = () => {
                   type="button"
                   disabled={isSubmitting}
                   onClick={() => handleAction("send")}
-                  className="sm:flex-1 btn-primary gap-2 inline-flex items-center justify-center border border-[var(--green-karmax)] bg-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] hover:border-[var(--green-hover-karmax)] text-white px-8 py-4 rounded-full text-base shadow-xs hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                  className="order-1 md:order-2 sm:flex-1 btn-primary gap-2 inline-flex items-center justify-center border border-[var(--green-karmax)] bg-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] hover:border-[var(--green-hover-karmax)] text-white px-8 py-4 rounded-full text-base shadow-xs hover:shadow-md transition-all duration-300 transform hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
                 >
                   {isSubmitting ? "Enviando..." : "Enviar cotización a Karmax"}
                 </button>
               </div>
 
-              <p className="!text-[14px] text-[var(--text-karmax)] font-semibold text-center leading-relaxed">
+              <p className="!text-[12px] md:!text-[14px] !leading-[18px] text-[var(--text-karmax)] font-normal text-center">
                 <strong>Importante:</strong> esta solicitud no representa una orden de compra. Un asesor se comunicará
                 contigo para confirmar precios, existencias, costos de envío y condiciones, así como para
                 coordinar la entrega.

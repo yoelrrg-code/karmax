@@ -323,4 +323,10 @@ p, li{
   #categories {
     padding: 30px 0 25px;
   }
+
+  .hero-right-col{
+    margin-left: -16px;
+    margin-right: -16px;
+    width: auto;
+  }
 }

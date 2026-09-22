@@ -320,7 +320,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ data }) => {
           </div>
 
           {/* Right Column: Visible only on mobile/tablet */}
-          <div className="lg:hidden relative w-full aspect-[16/9] sm:aspect-[2/1] overflow-hidden rounded-2xl mb-8 shadow-md">
+          <div className="hero-right-col lg:hidden relative w-full aspect-[16/9] sm:aspect-[2/1] overflow-hidden rounded-0 md:rounded-2xl mb-0 md:mb-8 shadow-md">
             <HeroProductGrid />
           </div>
         </div>
