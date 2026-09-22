@@ -22,7 +22,7 @@ export const QuoteSteps: React.FC<QuoteStepsProps> = ({
   return (
     <section id="cotizacion">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-3xl mx-auto mb-16">
+        <div className="text-center max-w-3xl mx-auto mb-10 md:mb-16">
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">
             Cotiza y recibe tu pedido en 3 pasos
           </h2>
@@ -48,6 +48,7 @@ export const QuoteSteps: React.FC<QuoteStepsProps> = ({
                       alt={step.title}
                       width={88}
                       height={88}
+                      className="md:w-[88px] md:h-[88px] w-[70px] h-[70px]"
                     />
                   </div>
 

@@ -44,20 +44,20 @@ export const Footer: React.FC<FooterProps> = ({ data, socialLinks }) => {
 
   return (
     <footer id="contacto" className="bg-[var(--light-bg-karmax)] text-[var(--light-text-karmax)]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 md:pt-16 pb-8">
         {/* Main Footer Content */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-10 lg:gap-8 items-start pb-12">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-8 items-start pb-12 text-center md:text-start">
           {/* 1. Brand & Value Proposition */}
           <div className="md:col-span-5 lg:col-span-4 space-y-5">
             <Logo size={{ w: 160, h: 40 }} />
-            <p className="text-[15px] sm:text-[16px] text-[var(--light-text-karmax)] leading-relaxed max-w-xs whitespace-pre-line">
+            <p className="text-[15px] sm:text-[16px] text-[var(--light-text-karmax)] leading-relaxed max-w-xs mx-auto md:mx-0 whitespace-pre-line">
               {description}
             </p>
           </div>
 
           {/* 2. Navigation Links */}
           <div className="md:col-span-3 lg:col-span-3 md:justify-self-center">
-            <nav className="flex flex-col space-y-5">
+            <nav className="flex flex-col space-y-5 items-center md:items-start">
               <Link
                 href="/"
                 className="text-[16px] font-medium text-[var(--blue-karmax)] hover:text-[var(--green-karmax)] transition-colors w-fit"
@@ -65,7 +65,7 @@ export const Footer: React.FC<FooterProps> = ({ data, socialLinks }) => {
                 Home
               </Link>
               <Link
-                href="#categories"
+                href="/productos"
                 className="text-[16px] font-medium text-[var(--blue-karmax)] hover:text-[var(--green-karmax)] transition-colors w-fit"
               >
                 Productos
@@ -86,16 +86,16 @@ export const Footer: React.FC<FooterProps> = ({ data, socialLinks }) => {
           </div>
 
           {/* 3. Contact Details & Social Networks */}
-          <div className="md:col-span-4 lg:col-span-5 flex flex-col space-y-4 lg:pl-10">
+          <div className="md:col-span-4 lg:col-span-5 flex flex-col space-y-4 lg:pl-10 items-center md:items-start">
             {/* Address */}
-            <div className="flex items-start gap-3 text-[var(--text-karmax)] text-[15px] leading-snug">
+            <div className="flex items-start gap-0.5 md:gap-3 text-[var(--text-karmax)] text-[15px] leading-snug">
               <Icon
                 name="map-pin"
                 size={22}
                 className="text-[var(--green-karmax)] flex-shrink-0 mt-0.5"
               />
               <div className="whitespace-pre-line">
-                <p>{address}</p>
+                <p className="!text-[14px] md:!text-[16px] !leading-5">{address}</p>
               </div>
             </div>
 
@@ -108,7 +108,7 @@ export const Footer: React.FC<FooterProps> = ({ data, socialLinks }) => {
               />
               <a
                 href={`tel:${phoneClean}`}
-                className="hover:text-[var(--green-karmax)] transition-colors"
+                className="hover:text-[var(--green-karmax)] transition-colors text-[14px] md:text-[16px]"
               >
                 {phone}
               </a>
@@ -123,14 +123,14 @@ export const Footer: React.FC<FooterProps> = ({ data, socialLinks }) => {
               />
               <a
                 href={`mailto:${email}`}
-                className="hover:text-[var(--green-karmax)] transition-colors"
+                className="hover:text-[var(--green-karmax)] transition-colors text-[14px] md:text-[16px]"
               >
                 {email}
               </a>
             </div>
 
             {/* Social Icons */}
-            <div className="flex items-center gap-3 pt-4">
+            <div className="flex items-center gap-6 md:gap-3 pt-4 mt-4 md:mt-2">
               {facebookUrl && (
                 <a
                   href={facebookUrl}
@@ -207,14 +207,14 @@ export const Footer: React.FC<FooterProps> = ({ data, socialLinks }) => {
           <div className="flex items-center gap-2">
             <Link
               href="#privacidad"
-              className="text-[14px] sm:text-[14px] text-[var(--light-text-karmax)] hover:text-[var(--green-hover-karmax)] transition-colors"
+              className="text-[12px] sm:text-[14px] text-[var(--light-text-karmax)] hover:text-[var(--green-hover-karmax)] transition-colors"
             >
               Política de privacidad
             </Link>
             <span className="text-slate-400">|</span>
             <Link
               href="#terminos"
-              className="text-[14px] sm:text-[14px] text-[var(--light-text-karmax)] hover:text-[var(--green-hover-karmax)] transition-colors"
+              className="text-[12px] sm:text-[14px] text-[var(--light-text-karmax)] hover:text-[var(--green-hover-karmax)] transition-colors"
             >
               Términos y condiciones
             </Link>

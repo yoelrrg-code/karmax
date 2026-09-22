@@ -19,6 +19,7 @@ export const Logo: React.FC<LogoProps> = ({
         width={size.w}
         height={size.h}
         priority
+        className={`md:w-[${size.w}px] md:h-[${size.h}px] w-[158px] h-[40px]`}
       />
     </Link>
   );

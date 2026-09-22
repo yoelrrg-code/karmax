@@ -15,7 +15,7 @@ export const BrandsShowcase: React.FC<BrandsShowcaseProps> = ({ brands }) => {
   const items = brands && brands.length > 0 ? brands : BRANDS_DATA;
 
   return (
-    <section className="pt-12 pb-16 sm:pt-14 sm:pb-25  bg-white border-b border-slate-200/80">
+    <section className="pt-6 md:pt-12 pb-10 md:pb-16 sm:pt-14 sm:pb-25  bg-white border-b border-slate-200/80">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-center tracking-tight mb-10">
           Las mejores marcas en un solo lugar

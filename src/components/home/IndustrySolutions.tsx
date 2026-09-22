@@ -14,21 +14,21 @@ export const IndustrySolutions: React.FC<IndustrySolutionsProps> = ({
   industries = [],
 }) => {
   return (
-    <section id="industries" className="py-16 sm:py-24 bg-[var(--light-bg-karmax)]">
+    <section id="industries" className="bg-[var(--light-bg-karmax)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.15 }}
           transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-          className="text-center max-w-3xl mx-auto mb-14"
+          className="text-center max-w-3xl mx-auto mb-10 md:mb-14"
         >
           <h2 className="tracking-tight">
             Soluciones para cada industria
           </h2>
         </motion.div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 md:gap-6">
           {industries.map((ind, idx) => (
             <motion.div
               key={ind.id}
@@ -40,17 +40,17 @@ export const IndustrySolutions: React.FC<IndustrySolutionsProps> = ({
                 delay: (idx % 4) * 0.16,
                 ease: [0.16, 1, 0.3, 1],
               }}
-              className="bg-white rounded-[20px] p-6 transition-all duration-300 flex flex-col justify-between group text-center h-full"
+              className="bg-white rounded-[20px] p-3.5 md:p-6 transition-all duration-300 flex flex-col justify-between group text-center h-full"
             >
               <div className="flex flex-col items-center">
                 {/* Icon Circle */}
-                <div className="w-28 h-28 flex items-center justify-center mb-5">
+                <div className="w-auto h-auto flex items-center justify-center mb-3 md:mb-5">
                   <Image
                     src={ind.iconUrl}
                     alt={ind.name}
                     width={100}
                     height={100}
-                    className="object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+                    className="object-contain group-hover:scale-105 transition-transform duration-500 ease-out w-[50px] h-[50px] md:w-[100px] md:h-[100px]"
                   />
                 </div>
 
@@ -60,7 +60,7 @@ export const IndustrySolutions: React.FC<IndustrySolutionsProps> = ({
                 </h3>
 
                 {/* Description */}
-                <p className="leading-relaxed mb-6 text-[var(--text-karmax)]">
+                <p className="leading-relaxed mb-3 md:mb-6 text-[var(--text-karmax)]">
                   {ind.description}
                 </p>
               </div>
@@ -69,7 +69,7 @@ export const IndustrySolutions: React.FC<IndustrySolutionsProps> = ({
               <div className="pt-2">
                 <Link
                   href={`${ind.catLink}`}
-                  className="btn-secondary inline-flex items-center justify-center py-3 px-5 rounded-full border border-[var(--green-karmax)] text-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] hover:text-white transition-all duration-200"
+                  className="btn-secondary inline-flex items-center justify-center py-2 px-4 md:py-3 md:px-5 rounded-full border border-[var(--green-karmax)] text-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] hover:text-white transition-all duration-200"
                 >
                   Ver productos
                 </Link>

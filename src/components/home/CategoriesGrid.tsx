@@ -24,7 +24,7 @@ export const CategoriesGrid = ({
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.15 }}
           transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-          className="text-center mx-auto mb-15"
+          className="text-center mx-auto mb-8 md:mb-15"
         >
           <h2 className="tracking-tight">
             Productos para cada espacio y necesidad
@@ -100,7 +100,7 @@ export const CategoriesGrid = ({
                 >
                   <Link
                     href={`/category/${cat.slug}`}
-                    className="inline-block px-4 sm:px-4 py-2 sm:py-2.5 rounded-lg text-[12px] md:text-[17px] sm:text-base font-semibold text-[var(--blue-karmax)] bg-[var(--light-bg-karmax)] hover:text-[var(--green-hover-karmax)] transition-all duration-200 shadow-2xs"
+                    className="block md:inline-block w-[250px] text-center md:w-auto my-0.5 px-4 sm:px-4 py-2 sm:py-2.5 rounded-lg text-[12px] md:text-[17px] font-semibold text-[var(--blue-karmax)] bg-[var(--light-bg-karmax)] hover:text-[var(--green-hover-karmax)] transition-all duration-200 shadow-2xs"
                   >
                     {cat.name}
                   </Link>

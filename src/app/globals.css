@@ -268,7 +268,7 @@ p, li{
   }
 
   h2{
-    font-size: 26x;
+    font-size: 26px;
     line-height: 34px;
   }
 
@@ -281,6 +281,11 @@ p, li{
     font-size: 16px;
     line-height: 16px;
   }
+
+  /* .btn-secondary{
+    font-size: 13px;
+    line-height: 13px;
+  } */
 
   #trust-badges span{
     font-size: 14px;
@@ -299,5 +304,23 @@ p, li{
 
   #contacto .copy{
     font-size: 12px;
+  }
+
+  #industries{
+    padding: 30px 0 50px;
+  }
+
+  #industries .btn-secondary{
+    font-size: 13px;
+    line-height: 13px;
+  }
+
+  #industries .btn-secondary{
+    font-size: 13px;
+    line-height: 13px;
+  }
+
+  #categories {
+    padding: 30px 0 25px;
   }
 }
