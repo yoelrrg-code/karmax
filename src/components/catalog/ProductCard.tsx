@@ -74,7 +74,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       {/* Info: Nombre y Precio */}
       <div className="w-full flex-1 flex flex-col justify-between items-center">
         <Link href={`/productos/${product.slug}`} className="cursor-pointer">
-          <h3 className="text-[16px] sm:text-[18px] font-semibold text-[var(--blue-karmax)] group-hover:text-[var(--green-hover-karmax)] transition-colors line-clamp-2 min-h-[44px] mb-2 leading-snug">
+          <h3 className="!text-[16px] sm:!text-[18px] font-semibold text-[var(--blue-karmax)] group-hover:text-[var(--green-hover-karmax)] transition-colors line-clamp-2 min-h-[22px] md:min-h-[44px] mb-2 leading-snug">
             {product.name}
           </h3>
         </Link>
@@ -94,7 +94,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
                   maximumFractionDigits: 2,
                 })}
               </span>
-              <span className="text-[16px] sm:text-[20px] font-bold text-[var(--green-karmax)]">
+              <span className="text-[18px] sm:text-[20px] font-bold text-[var(--green-karmax)]">
                 ${pricing.finalPrice?.toLocaleString("es-MX", {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
@@ -107,7 +107,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               )}
             </>
           ) : (
-            <span className="text-[16px] sm:text-[20px] font-semibold text-[var(--green-karmax)]">
+            <span className="text-[18px] sm:text-[20px] font-semibold text-[var(--green-karmax)]">
               {displayPrice}
             </span>
           )}
@@ -122,7 +122,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
               e.stopPropagation();
               addItem(product);
             }}
-            className="inline-flex items-center justify-center bg-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] text-white text-[14px] sm:text-[16px] font-semibold py-2 px-6 rounded-full transition-all duration-200 shadow-2xs hover:shadow-sm active:scale-95 cursor-pointer w-full max-w-[160px]"
+            className="mb-2 inline-flex items-center justify-center bg-[var(--green-karmax)] hover:bg-[var(--green-hover-karmax)] text-white text-[16px] sm:text-[16px] font-semibold py-2 px-6 rounded-full transition-all duration-200 shadow-2xs hover:shadow-sm active:scale-95 cursor-pointer w-full max-w-[160px]"
           >
             + Agregar
           </button>

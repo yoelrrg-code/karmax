@@ -293,7 +293,10 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   // Slider de productos relacionados
   const scrollSlider = (direction: "left" | "right") => {
     if (sliderRef.current) {
-      const scrollAmount = sliderRef.current.clientWidth * 0.8;
+      const isMobile = window.innerWidth <= 768;
+      const scrollAmount = isMobile
+        ? sliderRef.current.clientWidth
+        : sliderRef.current.clientWidth * 0.8;
       sliderRef.current.scrollBy({
         left: direction === "left" ? -scrollAmount : scrollAmount,
         behavior: "smooth",
@@ -316,14 +319,14 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
         onSearchSubmit={handleSearchSubmit}
       />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 md:pt-10 pb-2 md:pb-16">
         {/* 2. Breadcrumb con animación suave */}
         <motion.nav
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           aria-label="Breadcrumb"
-          className="flex items-center gap-2 text-xs sm:text-[16px] text-[var(--blue-karmax)] mb-10 flex-wrap"
+          className="flex items-center gap-2 !text-[14px] sm:!text-[16px] text-[var(--blue-karmax)] mb-5 md:mb-10 flex-wrap"
         >
           <Link
             href="/productos"
@@ -345,7 +348,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
         </motion.nav>
 
         {/* 3. Contenedor de Detalle de Producto (2 Columnas) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start mb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start mb-5 md:mb-12">
           {/* Columna Izquierda: Galería de imágenes (6 cols en lg) */}
           <div className="lg:col-span-6 flex flex-col items-center">
             {/* Imagen Principal con escala y fade-in de entrada */}
@@ -441,7 +444,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.75, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-              className="text-[14px] font-normal text-[var(--light-text-karmax)] tracking-wide mb-5"
+              className="!text-[14px] font-normal text-[var(--light-text-karmax)] tracking-wide mb-5"
             >
               Marca: <span className="uppercase">{product.brand || "KARMAX"}</span>
             </motion.p>
@@ -493,7 +496,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                   )}
                 </>
               ) : (
-                <span className="text-[32px] font-semibold text-[var(--green-karmax)]">
+                <span className="text-[24px] md:text-[32px] font-semibold text-[var(--green-karmax)]">
                   {displayPrice}
                 </span>
               )}
@@ -507,7 +510,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
             >
               {Object.entries(availableAttributes).map(([attrName, values]) => (
                 <div key={attrName} className="mb-5">
-                  <label className="block text-[18px] font-semibold text-[var(--text-karmax)] mb-1">
+                  <label className="block text-[16px] md:text-[18px] font-semibold text-[var(--text-karmax)] mb-1">
                     {attrName}
                   </label>
                   <div className="flex flex-wrap gap-2 mb-3">
@@ -631,7 +634,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
               {product.description ? (
                 <div
                   dangerouslySetInnerHTML={{ __html: product.description }}
-                  className="prose prose-lg max-w-none prose-slate"
+                  className="prose prose-lg max-w-none prose-slate text-[14px] md:text-[16px]"
                 />
               ) : product.shortDescription ? (
                 <p>{product.shortDescription}</p>
@@ -695,21 +698,20 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                   whileHover={{ y: -3, scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
                   transition={{ duration: 0.2 }}
-                  className="bg-white border border-[#D6DADD] hover:border-[var(--green-hover-karmax)] rounded-2xl pt-3 pb-4.5 pl-4 pr-5 flex items-center gap-3 transition-colors duration-200 shadow-2xs group cursor-pointer"
+                  className="bg-white border border-[#D6DADD] hover:border-[var(--green-hover-karmax)] rounded-xl pt-1 md:pt-3 pb-2 md:pb-4.5 pl-2 md:pl-4 pr-3 md:pr-5 flex items-center gap-1.5 md:gap-3 transition-colors duration-200 shadow-2xs group cursor-pointer"
                 >
                   <Image
                     src="/icons/pdf.svg"
                     alt="PDF"
                     width={30}
                     height={32}
-                    style={{ width: "auto", height: "auto" }}
-                    className="mt-2"
+                    className="mt-1.5 md:mt-2 w-5 h-5 md:w-auto md:h-auto"
                   />
                   <div className="flex flex-col gap-2 justify-between align-center">
-                    <p className="text-[14px] leading-0 font-medium text-[var(--blue-karmax)] group-hover:text-[var(--green-hover-karmax)] truncate transition-colors">
+                    <p className="!text-[10px] md:!text-[14px] leading-0 font-medium text-[var(--blue-karmax)] group-hover:text-[var(--green-hover-karmax)] truncate transition-colors">
                       {doc.title}
                     </p>
-                    <span className="text-[14px] leading-0 text-[#9AA1AA] uppercase font-normal">
+                    <span className="!text-[10px] md:!text-[14px] leading-0 text-[#9AA1AA] uppercase font-normal">
                       {doc.fileSize || "PDF"}
                     </span>
                   </div>
@@ -784,7 +786,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
             {/* Contenedor deslizante de productos con animación escalonada */}
             <div
               ref={sliderRef}
-              className="flex items-stretch gap-5 overflow-x-auto pb-4 scroll-smooth scrollbar-none"
+              className="flex items-stretch gap-4 md:gap-5 overflow-x-auto pb-4 scroll-smooth scrollbar-none"
               style={{ scrollSnapType: "x mandatory" }}
             >
               {relatedProducts.map((relProduct, idx) => (
@@ -798,7 +800,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                     delay: (idx % 4) * 0.12,
                     ease: [0.16, 1, 0.3, 1],
                   }}
-                  className="flex-shrink-0 w-64 sm:w-72"
+                  className="flex-shrink-0 w-full min-[575px]:w-[calc((100%-16px)/2)] md:w-64 lg:w-72"
                   style={{ scrollSnapAlign: "start" }}
                 >
                   <ProductCard product={relProduct} />

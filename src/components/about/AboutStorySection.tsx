@@ -79,7 +79,7 @@ export const AboutStorySection: React.FC<AboutStorySectionProps> = ({ data }) =>
     : DEFAULT_MOSAIC;
 
   return (
-    <section id="quienes-somos" className="w-full bg-white py-14 sm:py-24">
+    <section id="quienes-somos" className="w-full bg-white py-8 sm:py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
           {/* Columna Izquierda: Historia, Misión y Visión */}

@@ -329,4 +329,15 @@ p, li{
     margin-right: -16px;
     width: auto;
   }
+
+  #product-details h2{
+    font-size: 24px;
+    line-height: 30px;
+  }
+
+  #quienes-somos p, #quienes-somos li,
+  #contact p, #contact li{
+    font-size: 14px;
+    line-height: 20px;
+  }
 }

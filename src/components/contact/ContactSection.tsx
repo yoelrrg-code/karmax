@@ -143,7 +143,7 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
   };
 
   return (
-    <section id="contact" className="w-full bg-[var(--light-bg-karmax)] pt-12 pb-22 sm:pb-32 sm:pt-16">
+    <section id="contact" className="w-full bg-[var(--light-bg-karmax)] pt-8 md:pt-12 pb-12 sm:pb-32 sm:pt-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-2xl sm:text-3xl font-bold text-[var(--dark-blue-karmax)] tracking-tight mb-3">
           {formTitle}

@@ -31,13 +31,13 @@ export const CatalogHeroBar: React.FC<CatalogHeroBarProps> = ({
         background: "linear-gradient(90deg, var(--blue-karmax) 0%, var(--light-blue-karmax) 100%)",
       }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex flex-col sm:flex-row items-start justify-between gap-4">
         {/* Title */}
         <motion.h1
           initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-          className="tracking-tight text-white text-center sm:text-left"
+          className="tracking-tight text-white text-left"
         >
           Productos
         </motion.h1>

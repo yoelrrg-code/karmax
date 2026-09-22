@@ -46,7 +46,7 @@ export const CatalogFiltersSidebar: React.FC<CatalogFiltersSidebarProps> = ({
   const isAllActive = !selectedCategorySlug && !selectedIndustrySlug;
 
   return (
-    <aside className="w-full lg:w-64 flex-shrink-0">
+    <aside className="hidden lg:block w-full lg:w-64 flex-shrink-0">
       {/* Botón para resetear todos los filtros si hay alguno activo */}
       {!isAllActive && (
         <motion.button

@@ -279,12 +279,124 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
 
           {/* Columna Derecha: Grid de productos */}
           <div className="flex-1 w-full">
-            {/* Barra de control: Contador dinámico y Ordenar por */}
+            {/* Controles para Mobile / Tablet (< 1024px) */}
+            <div className="lg:hidden w-full mb-6 space-y-4">
+              {/* Fila 1: Filtros de Categorías e Industrias en 2 columnas */}
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                {/* Selector Categorías */}
+                <div className="relative">
+                  <select
+                    id="mobile-filter-category"
+                    aria-label="Filtrar por categoría"
+                    value={categorySlug || ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (!val) {
+                        setCategorySlug(undefined);
+                      } else {
+                        setIndustrySlug(undefined);
+                        setCategorySlug(val);
+                      }
+                      setPage(1);
+                    }}
+                    className="w-full appearance-none bg-white border border-slate-300 rounded-lg h-[40px] pl-4 pr-10 text-[14px] font-semibold text-[var(--text-karmax)] focus:outline-none focus:ring-1 focus:ring-[var(--green-karmax)] cursor-pointer truncate"
+                  >
+                    <option value="" className="font-bold">
+                      Categorías
+                    </option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.slug} className="font-normal text-slate-800">
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-600">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                      <path d="M2.5 4.5L6 8.5L9.5 4.5H2.5Z" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Selector Industrias */}
+                <div className="relative">
+                  <select
+                    id="mobile-filter-industry"
+                    aria-label="Filtrar por industria"
+                    value={industrySlug || ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (!val) {
+                        setIndustrySlug(undefined);
+                      } else {
+                        setCategorySlug(undefined);
+                        setIndustrySlug(val);
+                      }
+                      setPage(1);
+                    }}
+                    className="w-full appearance-none bg-white border border-slate-300 rounded-lg h-[40px] pl-4 pr-10 text-[14px] font-semibold text-[var(--text-karmax)] focus:outline-none focus:ring-1 focus:ring-[var(--green-karmax)] cursor-pointer truncate"
+                  >
+                    <option value="" className="font-bold">
+                      Industrias
+                    </option>
+                    {industries.map((ind) => (
+                      <option key={ind.id} value={ind.slug} className="font-normal text-slate-800">
+                        {ind.name}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-600">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                      <path d="M2.5 4.5L6 8.5L9.5 4.5H2.5Z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              {/* Fila 2: Contador dinámico */}
+              <div className="pt-1">
+                <p className="!text-[14px] text-[var(--text-karmax)] tracking-tight leading-snug text-center">
+                  {getCounterText()}
+                </p>
+              </div>
+
+              {/* Fila 3: Ordenar por alineado a la derecha */}
+              <div className="flex items-center justify-center gap-3 pt-1">
+                <label
+                  htmlFor="mobile-sort-by"
+                  className="text-[14px] font-normal text-[var(--text-karmax)] whitespace-nowrap"
+                >
+                  Ordenar por:
+                </label>
+                <div className="relative">
+                  <select
+                    id="mobile-sort-by"
+                    value={sortBy === "name" ? "name_asc" : sortBy}
+                    onChange={(e) => {
+                      setSortBy(e.target.value as CatalogSortOption);
+                      setPage(1);
+                    }}
+                    className="appearance-none bg-white border border-slate-300 rounded-lg h-[34px] pl-4 pr-10 text-[14px] font-semibold text-[var(--text-karmax)] focus:outline-none focus:ring-1 focus:ring-[var(--green-karmax)] cursor-pointer truncate"
+                  >
+                    <option value="name_asc">Nombre</option>
+                    <option value="name_desc">Nombre (Z-A)</option>
+                    <option value="price_asc">Precio más bajo</option>
+                    <option value="price_desc">Precio más alto</option>
+                  </select>
+                  <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-600">
+                    <svg width="11" height="11" viewBox="0 0 12 12" fill="currentColor">
+                      <path d="M2.5 4.5L6 8.5L9.5 4.5H2.5Z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Barra de control Desktop (>= 1024px): Contador dinámico y Ordenar por */}
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 mb-6"
+              className="hidden lg:flex items-center justify-between gap-4 pb-6 mb-6"
             >
               {/* Contador de productos dinámico */}
               <p className="text-[14px] sm:text-[15px] font-medium text-[var(--text-karmax)]">
@@ -292,7 +404,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
               </p>
 
               {/* Selector de Ordenar por */}
-              <div className="flex items-center gap-2 self-end sm:self-auto">
+              <div className="flex items-center gap-2">
                 <label htmlFor="sort-by" className="text-xs sm:text-sm font-medium text-slate-500 whitespace-nowrap">
                   Ordenar por:
                 </label>
@@ -302,7 +414,7 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                   onChange={(e) => setSortBy(e.target.value as CatalogSortOption)}
                   className="bg-white border border-slate-200 text-slate-700 text-xs sm:text-sm rounded-lg py-1.5 px-3 focus:outline-none focus:ring-1 focus:ring-[var(--blue-karmax)] cursor-pointer shadow-2xs font-medium"
                 >
-                  <option value="name_asc">De la A a la Z</option>
+                  <option value="name_asc">Nombre</option>
                   <option value="name_desc">De la Z a la A</option>
                   <option value="price_asc">Precio más bajo</option>
                   <option value="price_desc">Precio más alto</option>

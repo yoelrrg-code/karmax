@@ -143,7 +143,7 @@ export const AboutValuesSection: React.FC<AboutValuesSectionProps> = ({ data }) 
   const values = data?.values && data.values.length > 0 ? data.values : DEFAULT_VALUES;
 
   return (
-    <section className="w-full bg-[var(--light-bg-karmax)] pt-14 sm:pt-20 pb-20 sm:pb-30">
+    <section className="w-full bg-[var(--light-bg-karmax)] pt-10 sm:pt-20 pb-12 md:pb-20 sm:pb-30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Título de la Sección */}
         <h2 className="!text-[32px] font-semibold text-[var(--dark-blue-karmax)] tracking-tight text-center mb-10 sm:mb-14">
