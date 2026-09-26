@@ -187,23 +187,71 @@ p, li{
   margin-bottom: 10px;
 }
 
-#product-details #product-description p, 
-#product-details #product-description li{
-  margin-bottom: 20px;
+#product-details #product-description p,
+.rich-text-content p {
+  margin-bottom: 16px;
 }
 
-#product-details #delivery-info ul{
+#product-details #product-description p:last-child,
+.rich-text-content p:last-child {
+  margin-bottom: 0;
+}
+
+#product-details #product-description ul,
+.rich-text-content ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-top: 8px;
+  margin-bottom: 16px;
+}
+
+#product-details #product-description ol,
+.rich-text-content ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-top: 8px;
+  margin-bottom: 16px;
+}
+
+#product-details #product-description li,
+.rich-text-content li {
+  margin-bottom: 8px;
+}
+
+#product-details #product-description a,
+.rich-text-content a {
+  color: var(--light-blue-karmax);
+  text-decoration: underline;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+#product-details #product-description a:hover,
+.rich-text-content a:hover {
+  color: var(--blue-karmax);
+}
+
+#product-details #product-description strong,
+#product-details #product-description b,
+.rich-text-content strong,
+.rich-text-content b {
+  font-weight: 600;
+  color: var(--dark-blue-karmax);
+}
+
+/* Delivery info container */
+#product-details #delivery-info ul {
   margin-top: 10px;
 }
 
-#product-details #delivery-info li{
+#product-details #delivery-info li {
   list-style: none;
   position: relative;
   padding-left: 25px;
-  margin-bottom: 5px;
+  margin-bottom: 6px;
 }
 
-#product-details #delivery-info li::before{
+#product-details #delivery-info li::before {
   content: "";
   position: absolute;
   left: 0px;
@@ -213,6 +261,91 @@ p, li{
   height: 18px;
   background: url('/icons/check-mark.svg') center center no-repeat;
   background-size: contain;
+}
+
+#product-details #delivery-info .rich-text-delivery p {
+  margin-bottom: 8px;
+}
+
+#product-details #delivery-info .rich-text-delivery p:last-child {
+  margin-bottom: 0;
+}
+
+#product-details #delivery-info .rich-text-delivery strong,
+#product-details #delivery-info .rich-text-delivery b {
+  font-weight: 600;
+  color: var(--dark-blue-karmax);
+}
+
+#product-details #delivery-info .rich-text-delivery a {
+  color: var(--blue-karmax);
+  text-decoration: underline;
+}
+
+#product-details #delivery-info .rich-text-delivery h2,
+#product-details #delivery-info .rich-text-delivery h3 {
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 600;
+  color: var(--text-karmax);
+  margin-bottom: 8px;
+}
+
+/* Rich Text Editor inside Admin */
+.rich-text-editor-content ul {
+  list-style-type: disc;
+  padding-left: 1.25rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.rich-text-editor-content ol {
+  list-style-type: decimal;
+  padding-left: 1.25rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.rich-text-editor-content li {
+  margin-bottom: 0.25rem;
+}
+
+.rich-text-editor-content p {
+  margin-bottom: 0.65rem;
+}
+
+.rich-text-editor-content p:last-child {
+  margin-bottom: 0;
+}
+
+.rich-text-editor-content h2 {
+  font-size: 1.35rem;
+  line-height: 1.75rem;
+  font-weight: 700;
+  color: var(--dark-blue-karmax);
+  margin-top: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.rich-text-editor-content h3 {
+  font-size: 1.15rem;
+  line-height: 1.5rem;
+  font-weight: 600;
+  color: var(--dark-blue-karmax);
+  margin-top: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.rich-text-editor-content a {
+  color: var(--light-blue-karmax);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.rich-text-editor-content strong,
+.rich-text-editor-content b {
+  font-weight: 600;
+  color: var(--dark-blue-karmax);
 }
 
 #contact h2, #quienes-somos h2{

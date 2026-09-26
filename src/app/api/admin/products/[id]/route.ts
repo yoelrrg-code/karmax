@@ -8,6 +8,7 @@ import {
   productImages,
   productAttributes,
   productDocuments,
+  quoteItems,
 } from "@/lib/db";
 import { eq, asc } from "drizzle-orm";
 
@@ -143,7 +144,7 @@ export async function PUT(
         name: name.trim(),
         slug: finalSlug,
         sku: sku?.trim() || null,
-        brand: brand?.trim() || "KARMAX",
+        brand: brand !== undefined ? (brand?.trim() || null) : undefined,
         unit: unit?.trim() || "Pieza",
         categoryId: categoryId ? Number(categoryId) : undefined,
         regularPrice: regularPrice !== undefined ? (regularPrice ? String(regularPrice) : null) : undefined,
@@ -261,25 +262,43 @@ export async function DELETE(
       return NextResponse.json({ error: "ID inválido" }, { status: 400 });
     }
 
-    // Soft delete / deactivate by default or complete delete
     const searchParams = request.nextUrl.searchParams;
-    const permanent = searchParams.get("permanent") === "true";
+    const isDeactivateOnly = searchParams.get("deactivate") === "true";
 
-    if (permanent) {
-      await db.delete(productCategories).where(eq(productCategories.productId, productId));
-      await db.delete(productIndustries).where(eq(productIndustries.productId, productId));
-      await db.delete(productImages).where(eq(productImages.productId, productId));
-      await db.delete(productAttributes).where(eq(productAttributes.productId, productId));
-      await db.delete(productDocuments).where(eq(productDocuments.productId, productId));
-      await db.delete(products).where(eq(products.id, productId));
-      return NextResponse.json({ success: true, message: "Producto eliminado permanentemente" });
-    } else {
+    if (isDeactivateOnly) {
       await db
         .update(products)
         .set({ isActive: false })
         .where(eq(products.id, productId));
       return NextResponse.json({ success: true, message: "Producto desactivado con éxito" });
     }
+
+    // 1. Validar si el producto está vinculado a alguna cotización
+    const [existingQuoteItem] = await db
+      .select({ id: quoteItems.id })
+      .from(quoteItems)
+      .where(eq(quoteItems.productId, productId))
+      .limit(1);
+
+    if (existingQuoteItem) {
+      return NextResponse.json(
+        {
+          error: "El producto está en una cotización y no puede ser eliminado",
+          inQuote: true,
+        },
+        { status: 409 }
+      );
+    }
+
+    // 2. Eliminación completa de relaciones y producto
+    await db.delete(productCategories).where(eq(productCategories.productId, productId));
+    await db.delete(productIndustries).where(eq(productIndustries.productId, productId));
+    await db.delete(productImages).where(eq(productImages.productId, productId));
+    await db.delete(productAttributes).where(eq(productAttributes.productId, productId));
+    await db.delete(productDocuments).where(eq(productDocuments.productId, productId));
+    await db.delete(products).where(eq(products.id, productId));
+
+    return NextResponse.json({ success: true, message: "Producto eliminado permanentemente" });
   } catch (error) {
     console.error("Error in DELETE /api/admin/products/[id]:", error);
     return NextResponse.json({ error: "Error al eliminar producto" }, { status: 500 });

@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { Icon } from "@/components/icons";
 import type { AboutUsPageData } from "@/types";
+import { sileo } from "sileo";
 
 export default function AdminSectionsPage() {
   const [activeTab, setActiveTab] = useState<
@@ -31,7 +32,6 @@ export default function AdminSectionsPage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Sections State
   const [heroData, setHeroData] = useState({
@@ -174,8 +174,11 @@ export default function AdminSectionsPage() {
   }, []);
 
   const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+    if (msg.toLowerCase().includes("error")) {
+      sileo.error({ title: "Error", description: msg });
+    } else {
+      sileo.success({ title: "Guardado", description: msg });
+    }
   };
 
   const handleSaveSection = async (key: string, value: unknown, label: string) => {
@@ -224,7 +227,7 @@ export default function AdminSectionsPage() {
       showToast("Logo subido correctamente");
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : "Error al subir la imagen";
-      alert(msg);
+      sileo.error({ title: "Error al subir", description: msg });
     } finally {
       setUploadingBrandIdx(null);
     }
@@ -259,7 +262,7 @@ export default function AdminSectionsPage() {
       showToast("Imagen del mosaico subida correctamente");
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : "Error al subir la imagen";
-      alert(msg);
+      sileo.error({ title: "Error al subir", description: msg });
     } finally {
       setUploadingMosaicIdx(null);
     }
@@ -283,13 +286,6 @@ export default function AdminSectionsPage() {
 
   return (
     <div className="space-y-6 pb-16">
-      {/* Toast */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs font-semibold py-2.5 px-4 rounded-xl shadow-lg flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

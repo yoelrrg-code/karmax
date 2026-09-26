@@ -10,9 +10,10 @@ import {
   Building,
   Mail,
   MessageCircle,
-  CheckCircle2,
   Save,
+  FileSpreadsheet,
 } from "lucide-react";
+import { sileo } from "sileo";
 
 interface QuoteItem {
   id: number;
@@ -52,7 +53,7 @@ export default function AdminQuoteDetailPage() {
   const [adminNotes, setAdminNotes] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     let ignore = false;
@@ -117,9 +118,39 @@ export default function AdminQuoteDetailPage() {
     }
   };
 
+  const handleExportExcel = async () => {
+    setIsExporting(true);
+    try {
+      const res = await fetch(`/api/admin/quotes/${id}/export`);
+      if (!res.ok) {
+        throw new Error("No se pudo generar el archivo");
+      }
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const quoteNum = quote?.quoteNumber
+        ? quote.quoteNumber.replace(/[^a-zA-Z0-9_-]/g, "_")
+        : id;
+      a.download = `Cotizacion-${quoteNum}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      showToast("Archivo Excel descargado con éxito");
+    } catch {
+      showToast("Error al exportar a Excel");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+    if (msg.toLowerCase().includes("error")) {
+      sileo.error({ title: "Error", description: msg });
+    } else {
+      sileo.success({ title: "Cotización", description: msg });
+    }
   };
 
   if (isLoading) {
@@ -164,13 +195,6 @@ export default function AdminQuoteDetailPage() {
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Toast */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs font-semibold py-2.5 px-4 rounded-xl shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
 
       {/* Top Breadcrumb & Status Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -229,8 +253,17 @@ export default function AdminQuoteDetailPage() {
           </p>
         </div>
 
-        {/* Action Buttons for communication */}
+        {/* Action Buttons for communication & export */}
         <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            type="button"
+            onClick={handleExportExcel}
+            disabled={isExporting || items.length === 0}
+            className="inline-flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-semibold py-2 px-3.5 rounded-xl shadow-2xs transition-all cursor-pointer disabled:opacity-50"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            <span>{isExporting ? "Exportando..." : "Exportar a Excel"}</span>
+          </button>
           {waUrl && (
             <a
               href={waUrl}
@@ -340,13 +373,24 @@ export default function AdminQuoteDetailPage() {
 
       {/* Items Table */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
-        <div className="p-5 border-b border-slate-100">
-          <h3 className="text-base font-semibold text-slate-900">
-            Productos Solicitados ({items.length})
-          </h3>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Detalle de los artículos, presentaciones y SKUs de variación seleccionados
-          </p>
+        <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-base font-semibold text-slate-900">
+              Productos Solicitados ({items.length})
+            </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Detalle de los artículos, presentaciones y SKUs de variación seleccionados
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleExportExcel}
+            disabled={isExporting || items.length === 0}
+            className="inline-flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold py-1.5 px-3 rounded-xl shadow-2xs transition-all cursor-pointer disabled:opacity-50 self-start sm:self-auto"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            <span>{isExporting ? "Exportando..." : "Descargar Excel"}</span>
+          </button>
         </div>
 
         <div className="overflow-x-auto">

@@ -7,10 +7,10 @@ import {
   Plus,
   Edit2,
   Trash2,
-  CheckCircle2,
   X,
   Upload,
 } from "lucide-react";
+import { sileo } from "sileo";
 
 interface IndustryData {
   id: number;
@@ -32,7 +32,6 @@ export default function AdminIndustriesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingIndustry, setEditingIndustry] = useState<IndustryData | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -82,8 +81,11 @@ export default function AdminIndustriesPage() {
   }, []);
 
   const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+    if (msg.toLowerCase().includes("error") || msg.toLowerCase().includes("falló")) {
+      sileo.error({ title: "Error", description: msg });
+    } else {
+      sileo.success({ title: "Industria", description: msg });
+    }
   };
 
   const handleOpenCreateModal = () => {
@@ -194,37 +196,37 @@ export default function AdminIndustriesPage() {
     }
   };
 
-  const handleDelete = async (ind: IndustryData) => {
-    if (
-      !confirm(
-        `¿Estás seguro de eliminar la industria "${ind.name}"? Si contiene productos asociados, será desactivada.`
-      )
-    ) {
-      return;
-    }
-
-    try {
-      const res = await fetch(`/api/admin/industries/${ind.id}`, {
-        method: "DELETE",
-      });
-      if (res.ok) {
-        showToast("Industria eliminada / desactivada");
-        loadIndustries();
-      }
-    } catch {
-      showToast("Error al eliminar industria");
-    }
+  const handleDelete = (ind: IndustryData) => {
+    sileo.action({
+      title: "¿Eliminar industria?",
+      description: `¿Estás seguro de eliminar "${ind.name}"? Si contiene productos asociados, será desactivada.`,
+      duration: 6000,
+      button: {
+        title: "Eliminar",
+        onClick: async () => {
+          try {
+            const res = await fetch(`/api/admin/industries/${ind.id}`, {
+              method: "DELETE",
+            });
+            if (res.ok) {
+              sileo.success({
+                title: "Industria eliminada",
+                description: `"${ind.name}" fue eliminada / desactivada`,
+              });
+              loadIndustries();
+            } else {
+              sileo.error({ title: "Error", description: "Error al eliminar industria" });
+            }
+          } catch {
+            sileo.error({ title: "Error", description: "Error al eliminar industria" });
+          }
+        },
+      },
+    });
   };
 
   return (
     <div className="space-y-6">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs font-semibold py-2.5 px-4 rounded-xl shadow-lg flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

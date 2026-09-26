@@ -49,12 +49,18 @@ export async function GET(request: NextRequest) {
 
     if (search && search.trim()) {
       const term = `%${search.trim()}%`;
+      const matchingVariationProductIds = db
+        .select({ productId: productAttributes.productId })
+        .from(productAttributes)
+        .where(like(productAttributes.sku, term));
+
       conditions.push(
         or(
           like(products.name, term),
           like(products.sku, term),
           like(products.brand, term),
-          like(products.description, term)
+          like(products.description, term),
+          inArray(products.id, matchingVariationProductIds)
         )!
       );
     }
@@ -138,7 +144,7 @@ export async function POST(request: NextRequest) {
       name,
       slug: customSlug,
       sku,
-      brand = "KARMAX",
+      brand,
       unit = "Pieza",
       categoryId,
       regularPrice,
@@ -185,7 +191,7 @@ export async function POST(request: NextRequest) {
       name: name.trim(),
       slug: finalSlug,
       sku: sku?.trim() || null,
-      brand: brand?.trim() || "KARMAX",
+      brand: brand?.trim() || null,
       unit: unit?.trim() || "Pieza",
       categoryId: Number(categoryId),
       regularPrice: regularPrice ? String(regularPrice) : null,

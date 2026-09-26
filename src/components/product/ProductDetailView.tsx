@@ -256,24 +256,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
   const documents =
     product.documents && product.documents.length > 0
       ? product.documents
-      : [
-          {
-            id: 1,
-            productId: product.id,
-            title: "Ficha Técnica",
-            fileUrl: "#ficha-tecnica",
-            fileType: "pdf",
-            fileSize: "PDF",
-          },
-          {
-            id: 2,
-            productId: product.id,
-            title: "Hoja de seguridad / SDS",
-            fileUrl: "#hoja-de-seguridad",
-            fileType: "pdf",
-            fileSize: "PDF",
-          },
-        ];
+      : [];
 
   const handleSearchSubmit = (term: string) => {
     if (term.trim()) {
@@ -439,15 +422,29 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
 
           {/* Columna Derecha: Datos y compra con coreografía escalonada */}
           <div className="lg:col-span-6 flex flex-col">
-            {/* Meta: Marca */}
-            <motion.p
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.75, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
-              className="!text-[14px] font-normal text-[var(--light-text-karmax)] tracking-wide mb-5"
-            >
-              Marca: <span className="uppercase">{product.brand || "KARMAX"}</span>
-            </motion.p>
+            {/* Meta: Marca y SKU */}
+            {(Boolean(product.brand?.trim()) || Boolean(activeSku)) && (
+              <motion.div
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.75, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                className="flex items-center flex-wrap gap-x-3 gap-y-1 !text-[14px] font-normal text-[var(--light-text-karmax)] tracking-wide mb-5"
+              >
+                {Boolean(product.brand?.trim()) && (
+                  <span>
+                    Marca: <span className="uppercase">{product.brand}</span>
+                  </span>
+                )}
+                {Boolean(product.brand?.trim()) && Boolean(activeSku) && (
+                  <span className="text-slate-300 select-none">•</span>
+                )}
+                {Boolean(activeSku) && (
+                  <span>
+                    SKU: <span className="uppercase">{activeSku}</span>
+                  </span>
+                )}
+              </motion.div>
+            )}
 
             {/* Título */}
             <motion.h2
@@ -634,7 +631,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
               {product.description ? (
                 <div
                   dangerouslySetInnerHTML={{ __html: product.description }}
-                  className="prose prose-lg max-w-none prose-slate text-[14px] md:text-[16px]"
+                  className="rich-text-content max-w-none text-[14px] md:text-[16px]"
                 />
               ) : product.shortDescription ? (
                 <p>{product.shortDescription}</p>
@@ -654,7 +651,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
               {product.deliveryInfo ? (
                 <div
                   dangerouslySetInnerHTML={{ __html: product.deliveryInfo }}
-                  className="prose prose-lg max-w-none prose-slate"
+                  className="rich-text-delivery max-w-none text-xs sm:text-sm text-slate-700"
                 />
               ) : (
                 <>

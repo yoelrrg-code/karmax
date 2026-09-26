@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import ExcelJS from "exceljs";
 import { getKarmaxNotificationEmail } from "@/lib/services/karmaxService";
 
 export interface EmailQuoteItem {
@@ -62,14 +63,137 @@ function getTransporter() {
   });
 }
 
+/**
+ * Genera un archivo Excel (.xlsx) con los datos y el desglose de productos de la cotización.
+ */
+export async function generateQuoteExcelBuffer(data: QuoteEmailData): Promise<Buffer> {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = "Karmax México";
+  workbook.created = new Date();
+
+  const worksheet = workbook.addWorksheet(`Cotización ${data.quoteNumber}`, {
+    views: [{ showGridLines: true }],
+  });
+
+  const greenHeaderFill: ExcelJS.Fill = {
+    type: "pattern",
+    pattern: "solid",
+    fgColor: { argb: "FF00A859" },
+  };
+
+  const whiteBoldFont: Partial<ExcelJS.Font> = {
+    name: "Calibri",
+    size: 11,
+    bold: true,
+    color: { argb: "FFFFFFFF" },
+  };
+
+  // 1. Encabezado de la cotización
+  worksheet.addRow(["COTIZACIÓN KARMAX", `#${data.quoteNumber}`]);
+  worksheet.getCell("A1").font = { name: "Calibri", size: 14, bold: true, color: { argb: "FF1A2B49" } };
+  worksheet.getCell("B1").font = { name: "Calibri", size: 14, bold: true, color: { argb: "FF00A859" } };
+
+  worksheet.addRow(["Fecha:", new Date().toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" })]);
+  worksheet.addRow(["Cliente:", data.customerName]);
+  worksheet.addRow(["Empresa:", data.companyName || "No especificada"]);
+  worksheet.addRow(["Correo:", data.email]);
+  worksheet.addRow(["Teléfono:", data.phone]);
+  if (data.notes) {
+    worksheet.addRow(["Notas:", data.notes]);
+  }
+  worksheet.addRow([]); // Fila en blanco
+
+  // 2. Tabla de productos
+  const tableHeader = worksheet.addRow([
+    "SKU",
+    "Producto",
+    "Presentación",
+    "Cantidad",
+    "Precio Unitario (MXN)",
+    "Total (MXN)",
+  ]);
+
+  tableHeader.eachCell((cell) => {
+    cell.fill = greenHeaderFill;
+    cell.font = whiteBoldFont;
+    cell.alignment = { vertical: "middle", horizontal: "center" };
+  });
+  tableHeader.getCell(1).alignment = { vertical: "middle", horizontal: "left" };
+  tableHeader.getCell(2).alignment = { vertical: "middle", horizontal: "left" };
+  tableHeader.getCell(5).alignment = { vertical: "middle", horizontal: "right" };
+  tableHeader.getCell(6).alignment = { vertical: "middle", horizontal: "right" };
+
+  // 3. Filas de productos
+  data.items.forEach((item) => {
+    const qty = typeof item.quantity === "number" ? item.quantity : parseFloat(String(item.quantity)) || 0;
+    const unitPrice = typeof item.unitPrice === "number" ? item.unitPrice : parseFloat(String(item.unitPrice)) || 0;
+    const totalPrice = typeof item.totalPrice === "number" ? item.totalPrice : parseFloat(String(item.totalPrice)) || 0;
+
+    const row = worksheet.addRow([
+      item.sku || "—",
+      item.productName,
+      item.presentation || "Estándar",
+      qty,
+      unitPrice,
+      totalPrice,
+    ]);
+
+    row.getCell(1).alignment = { horizontal: "left" };
+    row.getCell(2).alignment = { horizontal: "left" };
+    row.getCell(3).alignment = { horizontal: "center" };
+    row.getCell(4).alignment = { horizontal: "center" };
+    row.getCell(5).numFmt = '"$"#,##0.00';
+    row.getCell(5).alignment = { horizontal: "right" };
+    row.getCell(6).numFmt = '"$"#,##0.00';
+    row.getCell(6).alignment = { horizontal: "right" };
+  });
+
+  worksheet.addRow([]); // Fila en blanco
+
+  // 4. Totales
+  const subtotalNum = typeof data.subtotal === "number" ? data.subtotal : parseFloat(String(data.subtotal)) || 0;
+  const taxNum = typeof data.tax === "number" ? data.tax : parseFloat(String(data.tax)) || 0;
+  const totalNum = typeof data.total === "number" ? data.total : parseFloat(String(data.total)) || 0;
+
+  const subtotalRow = worksheet.addRow(["", "", "", "", "Subtotal:", subtotalNum]);
+  subtotalRow.getCell(5).font = { bold: true };
+  subtotalRow.getCell(6).numFmt = '"$"#,##0.00';
+  subtotalRow.getCell(6).font = { bold: true };
+
+  const taxRow = worksheet.addRow(["", "", "", "", "I.V.A.:", taxNum]);
+  taxRow.getCell(5).font = { bold: true };
+  taxRow.getCell(6).numFmt = '"$"#,##0.00';
+  taxRow.getCell(6).font = { bold: true };
+
+  const totalRow = worksheet.addRow(["", "", "", "", "Total Cotizado:", totalNum]);
+  totalRow.getCell(5).font = { bold: true, color: { argb: "FF00A859" } };
+  totalRow.getCell(6).numFmt = '"$"#,##0.00';
+  totalRow.getCell(6).font = { bold: true, color: { argb: "FF00A859" } };
+
+  // Anchos de columna
+  worksheet.columns = [
+    { width: 18 }, // SKU
+    { width: 38 }, // Producto
+    { width: 22 }, // Presentación
+    { width: 12 }, // Cantidad
+    { width: 22 }, // Precio Unitario
+    { width: 20 }, // Total
+  ];
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  return Buffer.from(buffer);
+}
+
 function buildItemsHtml(items: EmailQuoteItem[]): string {
   return items
     .map(
       (item) => `
       <tr style="border-bottom: 1px solid #e2e8f0;">
+        <td style="padding: 12px 8px; font-size: 13px; font-family: monospace, Courier, sans-serif; color: #475569; white-space: nowrap;">
+          ${escapeHtml(item.sku || "—")}
+        </td>
         <td style="padding: 12px 8px; font-size: 14px; color: #1e293b;">
           <strong>${escapeHtml(item.productName)}</strong>
-          ${item.sku ? `<br><span style="font-size: 12px; color: #64748b;">SKU: ${escapeHtml(item.sku)}</span>` : ""}
         </td>
         <td style="padding: 12px 8px; font-size: 14px; color: #475569; text-align: center;">
           ${escapeHtml(item.presentation || "Estándar")}
@@ -77,10 +201,10 @@ function buildItemsHtml(items: EmailQuoteItem[]): string {
         <td style="padding: 12px 8px; font-size: 14px; color: #475569; text-align: center;">
           ${escapeHtml(item.quantity)}
         </td>
-        <td style="padding: 12px 8px; font-size: 14px; color: #475569; text-align: right;">
+        <td style="padding: 12px 8px; font-size: 14px; color: #475569; text-align: right; white-space: nowrap;">
           ${formatCurrency(item.unitPrice)}
         </td>
-        <td style="padding: 12px 8px; font-size: 14px; color: #0f172a; font-weight: 600; text-align: right;">
+        <td style="padding: 12px 8px; font-size: 14px; color: #0f172a; font-weight: 600; text-align: right; white-space: nowrap;">
           ${formatCurrency(item.totalPrice)}
         </td>
       </tr>
@@ -140,6 +264,7 @@ export async function sendQuoteEmails(data: QuoteEmailData): Promise<{ clientSen
           <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
             <thead>
               <tr style="background-color: #f8fafc; border-bottom: 2px solid #cbd5e1; font-size: 12px; color: #64748b; text-transform: uppercase;">
+                <th style="padding: 8px; text-align: left;">SKU</th>
                 <th style="padding: 8px; text-align: left;">Producto</th>
                 <th style="padding: 8px; text-align: center;">Pres.</th>
                 <th style="padding: 8px; text-align: center;">Cant.</th>
@@ -192,6 +317,7 @@ export async function sendQuoteEmails(data: QuoteEmailData): Promise<{ clientSen
           <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
             <thead>
               <tr style="background-color: #f1f5f9; border-bottom: 2px solid #cbd5e1; font-size: 12px; color: #475569; text-transform: uppercase;">
+                <th style="padding: 8px; text-align: left;">SKU</th>
                 <th style="padding: 8px; text-align: left;">Producto</th>
                 <th style="padding: 8px; text-align: center;">Presentación</th>
                 <th style="padding: 8px; text-align: center;">Cant.</th>
@@ -209,6 +335,10 @@ export async function sendQuoteEmails(data: QuoteEmailData): Promise<{ clientSen
             <p style="margin: 4px 0; color: #64748b;">${taxLabel} <strong>${formatCurrency(data.tax)}</strong></p>
             <p style="margin: 6px 0; font-size: 18px; color: #00A859;">Total Cotizado: <strong>${formatCurrency(data.total)}</strong></p>
           </div>
+
+          <p style="margin: 16px 0 0 0; font-size: 13px; color: #00A859; font-weight: 500;">
+            📎 Se adjunta el archivo Excel con el listado completo de los productos de esta cotización.
+          </p>
         </div>
       </div>
     </body>
@@ -234,11 +364,25 @@ export async function sendQuoteEmails(data: QuoteEmailData): Promise<{ clientSen
   }
 
   try {
+    const adminAttachments = [];
+    try {
+      const excelBuffer = await generateQuoteExcelBuffer(data);
+      const cleanQuoteNumber = data.quoteNumber.replace(/[^a-zA-Z0-9_-]/g, "_");
+      adminAttachments.push({
+        filename: `Cotizacion-${cleanQuoteNumber}.xlsx`,
+        content: excelBuffer,
+        contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+    } catch (excelErr) {
+      console.error("[Mailer] Error generando archivo Excel adjunto:", excelErr);
+    }
+
     await transporter.sendMail({
       from: fromAddress,
       to: karmaxAdminEmail,
       subject: `Nueva Cotización #${data.quoteNumber} recibida - ${data.customerName}`,
       html: adminHtml,
+      attachments: adminAttachments,
     });
     adminSent = true;
     console.log(`[Mailer] Notificación enviada a Karmax: ${karmaxAdminEmail}`);

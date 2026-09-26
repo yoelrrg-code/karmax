@@ -23,6 +23,7 @@ import {
   ChevronUp,
 } from "lucide-react";
 import { SeoSettings, TaxSettings, PriceSyncSettings, DEFAULT_SHEET_URL } from "@/types";
+import { sileo } from "sileo";
 
 export default function AdminSettingsPage() {
   const [notificationEmail, setNotificationEmail] = useState("");
@@ -54,7 +55,6 @@ export default function AdminSettingsPage() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -120,8 +120,11 @@ export default function AdminSettingsPage() {
   }, []);
 
   const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
+    if (msg.toLowerCase().includes("error") || msg.toLowerCase().includes("falló")) {
+      sileo.error({ title: "Error", description: msg });
+    } else {
+      sileo.success({ title: "Ajustes", description: msg });
+    }
   };
 
   const handleOgImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -221,13 +224,6 @@ export default function AdminSettingsPage() {
 
   return (
     <div className="space-y-6 pb-16 max-w-4xl">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs font-semibold py-2.5 px-4 rounded-xl shadow-lg flex items-center gap-2 animate-in fade-in slide-in-from-bottom-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
 
       {/* Header */}
       <div>

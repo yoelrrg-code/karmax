@@ -9,10 +9,10 @@ import {
   Search,
   Edit2,
   Trash2,
-  CheckCircle2,
   Layers,
   ExternalLink,
 } from "lucide-react";
+import { sileo } from "sileo";
 
 interface ProductRow {
   id: number;
@@ -46,7 +46,6 @@ export default function AdminProductsPage() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Load categories for filter
   useEffect(() => {
@@ -98,11 +97,6 @@ export default function AdminProductsPage() {
     };
   }, [search, categoryFilter, activeFilter, page]);
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
-  };
-
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -110,39 +104,45 @@ export default function AdminProductsPage() {
     setSearch(searchInput);
   };
 
-  const handleDeleteProduct = async (prod: ProductRow) => {
-    if (
-      !confirm(
-        `¿Deseas desactivar el producto "${prod.name}"? Ya no será visible en la tienda pública.`
-      )
-    ) {
-      return;
-    }
-
-    try {
-      const res = await fetch(`/api/admin/products/${prod.id}`, {
-        method: "DELETE",
-      });
-      if (res.ok) {
-        showToast("Producto desactivado correctamente");
-        setProducts((prev) =>
-          prev.map((p) => (p.id === prod.id ? { ...p, isActive: false } : p))
-        );
-      }
-    } catch {
-      showToast("Error al desactivar producto");
-    }
+  const handleDeleteProduct = (prod: ProductRow) => {
+    sileo.action({
+      title: "¿Eliminar producto?",
+      description: `¿Estás seguro de que deseas eliminar permanentemente "${prod.name}"?`,
+      duration: 7000,
+      button: {
+        title: "Eliminar",
+        onClick: async () => {
+          try {
+            const res = await fetch(`/api/admin/products/${prod.id}`, {
+              method: "DELETE",
+            });
+            const data = await res.json().catch(() => ({}));
+            if (res.ok) {
+              sileo.success({
+                title: "Producto eliminado",
+                description: `"${prod.name}" fue eliminado permanentemente del catálogo.`,
+              });
+              setProducts((prev) => prev.filter((p) => p.id !== prod.id));
+              setTotal((prev) => Math.max(0, prev - 1));
+            } else {
+              sileo.error({
+                title: "No se puede eliminar",
+                description: data.error || "Ocurrió un error al eliminar el producto",
+              });
+            }
+          } catch {
+            sileo.error({
+              title: "Error de conexión",
+              description: "Ocurrió un error de red al intentar eliminar el producto",
+            });
+          }
+        },
+      },
+    });
   };
 
   return (
     <div className="space-y-6">
-      {/* Toast */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs font-semibold py-2.5 px-4 rounded-xl shadow-lg flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -329,7 +329,7 @@ export default function AdminProductsPage() {
                           <button
                             type="button"
                             onClick={() => handleDeleteProduct(prod)}
-                            title="Desactivar producto"
+                            title="Eliminar producto permanentemente"
                             className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                           >
                             <Trash2 className="w-4 h-4" />

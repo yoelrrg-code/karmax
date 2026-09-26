@@ -127,7 +127,9 @@ export function buildProductSchema(product: ProductDetailItem, siteUrl: string) 
     "@type": "Product",
     name: product.name,
     image: [imageUrl],
-    description: product.shortDescription || product.description || product.name,
+    description:
+      product.shortDescription ||
+      (product.description ? product.description.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim() : product.name),
     sku: product.sku || `KMX-${product.id}`,
     brand: {
       "@type": "Brand",

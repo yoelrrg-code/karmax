@@ -43,7 +43,7 @@ export async function generateMetadata({
   const description =
     product.metaDescription ||
     product.shortDescription ||
-    (product.description ? product.description.slice(0, 160) : "") ||
+    (product.description ? product.description.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim().slice(0, 160) : "") ||
     `Conoce más sobre ${product.name} en KARMAX. Químicos y productos de limpieza industrial de la más alta calidad.`;
 
   const canonical = `${baseUrl}/productos/${product.slug}`;

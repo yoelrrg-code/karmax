@@ -123,16 +123,22 @@ export async function getProductsCatalog(
   try {
     const conditions = [eq(products.isActive, true)];
 
-    // Búsqueda de texto libre en nombre, descripción, marca o sku
+    // Búsqueda de texto libre en nombre, descripción, marca o sku (principal y de variaciones)
     if (search && search.trim()) {
       const term = `%${search.trim()}%`;
+      const matchingVariationProductIds = db
+        .select({ productId: productAttributes.productId })
+        .from(productAttributes)
+        .where(like(productAttributes.sku, term));
+
       conditions.push(
         or(
           like(products.name, term),
           like(products.description, term),
           like(products.shortDescription, term),
           like(products.sku, term),
-          like(products.brand, term)
+          like(products.brand, term),
+          inArray(products.id, matchingVariationProductIds)
         )!
       );
     }
@@ -420,7 +426,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
       name: row.name,
       slug: row.slug,
       sku: row.sku || `KMX-${row.id.toString().padStart(4, "0")}`,
-      brand: row.brand || "KARMAX",
+      brand: row.brand || "",
       imageUrl: row.imageUrl || "/images/products/placeholder.jpg",
       regularPrice: row.regularPrice ? String(row.regularPrice) : null,
       salePrice: row.salePrice && Number(row.salePrice) > 0 ? String(row.salePrice) : null,

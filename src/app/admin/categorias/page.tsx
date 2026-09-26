@@ -7,11 +7,11 @@ import {
   Plus,
   Edit2,
   Trash2,
-  CheckCircle2,
   X,
   Upload,
   Layers,
 } from "lucide-react";
+import { sileo } from "sileo";
 
 interface CategoryData {
   id: number;
@@ -33,7 +33,6 @@ export default function AdminCategoriesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<CategoryData | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -84,8 +83,11 @@ export default function AdminCategoriesPage() {
   }, []);
 
   const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3000);
+    if (msg.toLowerCase().includes("error") || msg.toLowerCase().includes("falló")) {
+      sileo.error({ title: "Error", description: msg });
+    } else {
+      sileo.success({ title: "Categoría", description: msg });
+    }
   };
 
   const handleOpenCreateModal = () => {
@@ -196,37 +198,37 @@ export default function AdminCategoriesPage() {
     }
   };
 
-  const handleDelete = async (cat: CategoryData) => {
-    if (
-      !confirm(
-        `¿Estás seguro de eliminar la categoría "${cat.name}"? Si contiene productos, será desactivada.`
-      )
-    ) {
-      return;
-    }
-
-    try {
-      const res = await fetch(`/api/admin/categories/${cat.id}`, {
-        method: "DELETE",
-      });
-      if (res.ok) {
-        showToast("Categoría eliminada / desactivada");
-        loadCategories();
-      }
-    } catch {
-      showToast("Error al eliminar categoría");
-    }
+  const handleDelete = (cat: CategoryData) => {
+    sileo.action({
+      title: "¿Eliminar categoría?",
+      description: `¿Estás seguro de eliminar "${cat.name}"? Si contiene productos, será desactivada.`,
+      duration: 6000,
+      button: {
+        title: "Eliminar",
+        onClick: async () => {
+          try {
+            const res = await fetch(`/api/admin/categories/${cat.id}`, {
+              method: "DELETE",
+            });
+            if (res.ok) {
+              sileo.success({
+                title: "Categoría eliminada",
+                description: `"${cat.name}" fue eliminada / desactivada`,
+              });
+              loadCategories();
+            } else {
+              sileo.error({ title: "Error", description: "Error al eliminar categoría" });
+            }
+          } catch {
+            sileo.error({ title: "Error", description: "Error al eliminar categoría" });
+          }
+        },
+      },
+    });
   };
 
   return (
     <div className="space-y-6">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs font-semibold py-2.5 px-4 rounded-xl shadow-lg flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">

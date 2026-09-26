@@ -15,21 +15,22 @@ import {
   AlertCircle,
 } from "lucide-react";
 import type { AdminCustomerItem } from "@/types";
+import { sileo } from "sileo";
 
 export default function AdminCustomersPage() {
   const [customers, setCustomers] = useState<AdminCustomerItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-
-  // Modal de asignación de descuento
   const [selectedCustomer, setSelectedCustomer] = useState<AdminCustomerItem | null>(null);
   const [discountInput, setDiscountInput] = useState<string>("0");
   const [isSaving, setIsSaving] = useState(false);
 
   const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
+    if (msg.toLowerCase().includes("error") || msg.toLowerCase().includes("válido") || msg.toLowerCase().includes("falló")) {
+      sileo.error({ title: "Atención", description: msg });
+    } else {
+      sileo.success({ title: "Clientes", description: msg });
+    }
   };
 
   useEffect(() => {
@@ -117,13 +118,6 @@ export default function AdminCustomersPage() {
 
   return (
     <div className="space-y-8">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs font-semibold py-2.5 px-4 rounded-xl shadow-lg flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-5">

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { AdminSidebar } from "./AdminSidebar";
 import { AdminHeader } from "./AdminHeader";
 import type { AdminSessionUser } from "@/lib/auth/adminGuard";
+import { Toaster } from "sileo";
 
 interface AdminLayoutClientProps {
   user: AdminSessionUser;
@@ -18,6 +19,7 @@ export const AdminLayoutClient: React.FC<AdminLayoutClientProps> = ({
 
   return (
     <div id="admin-layout" className="min-h-screen bg-slate-50 flex">
+      <Toaster position="top-center" theme="light" />
       {/* Sidebar Navigation */}
       <AdminSidebar
         isOpen={isMobileSidebarOpen}

@@ -9,11 +9,12 @@ import {
   Upload,
   Trash2,
   Save,
-  CheckCircle2,
   Star,
   FileText,
   Globe,
 } from "lucide-react";
+import { sileo } from "sileo";
+import { RichTextEditor } from "@/components/admin/RichTextEditor";
 
 interface CategoryOption {
   id: number;
@@ -59,13 +60,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({ initialProductId }) =>
   const [industries, setIndustries] = useState<IndustryOption[]>([]);
   const [isLoading, setIsLoading] = useState(isEditing);
   const [isSaving, setIsSaving] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Form State
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [sku, setSku] = useState("");
-  const [brand, setBrand] = useState("KARMAX");
+  const [brand, setBrand] = useState("");
   const [unit, setUnit] = useState("Pieza");
   const [categoryId, setCategoryId] = useState<number | "">("");
   const [regularPrice, setRegularPrice] = useState("");
@@ -125,7 +125,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ initialProductId }) =>
             setName(p.name || "");
             setSlug(p.slug || "");
             setSku(p.sku || "");
-            setBrand(p.brand || "KARMAX");
+            setBrand(p.brand || "");
             setUnit(p.unit || "Pieza");
             setCategoryId(p.categoryId || "");
             setRegularPrice(p.regularPrice ? String(p.regularPrice) : "");
@@ -182,10 +182,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({ initialProductId }) =>
     };
   }, [initialProductId]);
 
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
-  };
 
   const handleToggleCategory = (catId: number, isChecked: boolean) => {
     if (isChecked) {
@@ -240,10 +236,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({ initialProductId }) =>
           ...prev,
           { url: data.url, alt: name, isPrimary: prev.length === 0 },
         ]);
-        showToast("Imagen subida exitosamente");
+        sileo.success({ title: "Imagen subida", description: "Imagen subida exitosamente" });
       }
     } catch {
-      showToast("Error al subir imagen");
+      sileo.error({ title: "Error", description: "Error al subir imagen" });
     }
   };
 
@@ -338,10 +334,10 @@ export const ProductForm: React.FC<ProductFormProps> = ({ initialProductId }) =>
       if (res.ok) {
         const data = await res.json();
         handleUpdateDocument(index, "fileUrl", data.url);
-        showToast("Documento subido con éxito");
+        sileo.success({ title: "Documento subido", description: "Documento subido con éxito" });
       }
     } catch {
-      showToast("Error al subir archivo");
+      sileo.error({ title: "Error", description: "Error al subir archivo" });
     }
   };
 
@@ -349,15 +345,15 @@ export const ProductForm: React.FC<ProductFormProps> = ({ initialProductId }) =>
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      showToast("El nombre del producto es obligatorio");
+      sileo.warning({ title: "Campo requerido", description: "El nombre del producto es obligatorio" });
       return;
     }
     if (selectedCategoryIds.length === 0) {
-      showToast("Selecciona al menos una categoría para el producto");
+      sileo.warning({ title: "Categoría requerida", description: "Selecciona al menos una categoría para el producto" });
       return;
     }
     if (!categoryId || !selectedCategoryIds.includes(Number(categoryId))) {
-      showToast("Selecciona la categoría principal entre las seleccionadas");
+      sileo.warning({ title: "Categoría inválida", description: "Selecciona la categoría principal entre las seleccionadas" });
       return;
     }
 
@@ -369,7 +365,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ initialProductId }) =>
         name,
         slug,
         sku,
-        brand,
+        brand: brand.trim() || null,
         unit,
         categoryId: Number(categoryId),
         regularPrice: regularPrice || null,
@@ -404,11 +400,12 @@ export const ProductForm: React.FC<ProductFormProps> = ({ initialProductId }) =>
 
       if (res.ok) {
         const data = await res.json().catch(() => null);
-        showToast(
-          isEditing
-            ? "Cambios guardados exitosamente"
-            : "Producto creado exitosamente"
-        );
+        sileo.success({
+          title: isEditing ? "Cambios guardados" : "Producto creado",
+          description: isEditing
+            ? "Los cambios se guardaron exitosamente"
+            : "El producto se ha creado correctamente",
+        });
         router.refresh();
 
         // Si se acaba de crear un nuevo producto, redirigir a su formulario de edición
@@ -418,11 +415,17 @@ export const ProductForm: React.FC<ProductFormProps> = ({ initialProductId }) =>
           }, 800);
         }
       } else {
-        const errData = await res.json();
-        showToast(errData.error || "Error al procesar el producto");
+        const errData = await res.json().catch(() => ({}));
+        sileo.error({
+          title: "Error al guardar",
+          description: errData.error || "No se pudo procesar el producto",
+        });
       }
     } catch {
-      showToast("Error de conexión al guardar producto");
+      sileo.error({
+        title: "Error de conexión",
+        description: "Ocurrió un problema de red al guardar el producto",
+      });
     } finally {
       setIsSaving(false);
     }
@@ -434,13 +437,6 @@ export const ProductForm: React.FC<ProductFormProps> = ({ initialProductId }) =>
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8 pb-16">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white text-xs font-semibold py-2.5 px-4 rounded-xl shadow-lg flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-          <span>{toastMessage}</span>
-        </div>
-      )}
 
       {/* Header Actions Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200/80 pb-5">
@@ -538,7 +534,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ initialProductId }) =>
                   type="text"
                   value={brand}
                   onChange={(e) => setBrand(e.target.value)}
-                  placeholder="KARMAX"
+                  placeholder="Ej: KARMAX (opcional)"
                   className="w-full text-[var(--blue-karmax)] text-xs p-2.5 rounded-xl border border-slate-200 uppercase focus:outline-none focus:border-[var(--green-karmax)]"
                 />
               </div>
@@ -558,28 +554,24 @@ export const ProductForm: React.FC<ProductFormProps> = ({ initialProductId }) =>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Descripción Detallada (Soporta HTML)
-              </label>
-              <textarea
-                rows={5}
+              <RichTextEditor
+                label="Descripción Detallada (Rich Text)"
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="<p>Limpiador multiusos para uso industrial...</p>"
-                className="w-full text-[var(--blue-karmax)] text-xs p-2.5 rounded-xl border border-slate-200 font-mono focus:outline-none focus:border-[var(--green-karmax)]"
+                onChange={setDescription}
+                placeholder="Escribe la descripción completa del producto, especificaciones, modo de empleo..."
+                minHeight="220px"
+                helperText="Formato enriquecido: negrita, viñetas, títulos y enlaces compatibles con el frontend."
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Información de Entrega y Logística
-              </label>
-              <textarea
-                rows={2}
+              <RichTextEditor
+                label="Información de Entrega y Logística (Rich Text)"
                 value={deliveryInfo}
-                onChange={(e) => setDeliveryInfo(e.target.value)}
-                placeholder="Entregas en Cancún y Riviera Maya en 24-48 hrs..."
-                className="w-full text-[var(--blue-karmax)] text-xs p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-[var(--green-karmax)]"
+                onChange={setDeliveryInfo}
+                placeholder="Escribe la información de envíos, tiempos de entrega, cobertura (ej. lista con viñetas)..."
+                minHeight="140px"
+                helperText="Usa listas con viñetas para que se muestren automáticamente con iconos de verificación en el frontend."
               />
             </div>
           </div>

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { WhatsappIcon } from "@/components/icons";
 import type { ContactMessageItem } from "@/types";
+import { sileo } from "sileo";
 
 export default function AdminMessagesPage() {
   const [messages, setMessages] = useState<ContactMessageItem[]>([]);
@@ -104,28 +105,38 @@ export default function AdminMessagesPage() {
     }
   };
 
-  const handleDelete = async (messageId: number) => {
-    if (!confirm("¿Estás seguro de que deseas eliminar este mensaje? Esta acción no se puede deshacer.")) {
-      return;
-    }
+  const handleDelete = (messageId: number) => {
+    sileo.action({
+      title: "¿Eliminar mensaje?",
+      description: "Esta acción no se puede deshacer.",
+      duration: 6000,
+      button: {
+        title: "Eliminar",
+        onClick: async () => {
+          setDeletingId(messageId);
+          try {
+            const res = await fetch(`/api/admin/contact-messages/${messageId}`, {
+              method: "DELETE",
+            });
 
-    setDeletingId(messageId);
-    try {
-      const res = await fetch(`/api/admin/contact-messages/${messageId}`, {
-        method: "DELETE",
-      });
-
-      if (res.ok) {
-        if (selectedMessage?.id === messageId) {
-          setSelectedMessage(null);
-        }
-        setRefreshIndex((k) => k + 1);
-      }
-    } catch (err) {
-      console.error("Error al eliminar mensaje:", err);
-    } finally {
-      setDeletingId(null);
-    }
+            if (res.ok) {
+              sileo.success({ title: "Mensaje eliminado", description: "El mensaje ha sido eliminado" });
+              if (selectedMessage?.id === messageId) {
+                setSelectedMessage(null);
+              }
+              setRefreshIndex((k) => k + 1);
+            } else {
+              sileo.error({ title: "Error", description: "No se pudo eliminar el mensaje" });
+            }
+          } catch (err) {
+            console.error("Error al eliminar mensaje:", err);
+            sileo.error({ title: "Error", description: "Error al eliminar el mensaje" });
+          } finally {
+            setDeletingId(null);
+          }
+        },
+      },
+    });
   };
 
   const openDetailModal = (msg: ContactMessageItem) => {
