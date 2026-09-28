@@ -11,6 +11,7 @@ import {
   Trash2,
   Layers,
   ExternalLink,
+  Eraser,
 } from "lucide-react";
 import { sileo } from "sileo";
 
@@ -139,6 +140,51 @@ export default function AdminProductsPage() {
         },
       },
     });
+  };
+
+  const handleClearBrand = async (prod: ProductRow) => {
+    if (!prod.brand) return;
+
+    const previousBrand = prod.brand;
+
+    // Optimistic UI update
+    setProducts((prev) =>
+      prev.map((p) => (p.id === prod.id ? { ...p, brand: null } : p))
+    );
+
+    try {
+      const res = await fetch(`/api/admin/products/${prod.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brand: null }),
+      });
+
+      if (res.ok) {
+        sileo.success({
+          title: "Marca eliminada",
+          description: `Se limpió la marca del producto "${prod.name}"`,
+        });
+      } else {
+        const data = await res.json().catch(() => ({}));
+        // Revert in case of failure
+        setProducts((prev) =>
+          prev.map((p) => (p.id === prod.id ? { ...p, brand: previousBrand } : p))
+        );
+        sileo.error({
+          title: "Error al limpiar marca",
+          description: data.error || "No se pudo actualizar la marca del producto",
+        });
+      }
+    } catch {
+      // Revert in case of network error
+      setProducts((prev) =>
+        prev.map((p) => (p.id === prod.id ? { ...p, brand: previousBrand } : p))
+      );
+      sileo.error({
+        title: "Error de conexión",
+        description: "No se pudo comunicar con el servidor para limpiar la marca",
+      });
+    }
   };
 
   return (
@@ -277,7 +323,11 @@ export default function AdminProductsPage() {
                         <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400 font-mono">
                           <span>SKU: {prod.sku || "—"}</span>
                           <span>•</span>
-                          <span className="uppercase">{prod.brand || "KARMAX"}</span>
+                          {prod.brand ? (
+                            <span className="uppercase text-slate-600 font-semibold">{prod.brand}</span>
+                          ) : (
+                            <span className="text-slate-400 italic">Sin marca</span>
+                          )}
                         </div>
                       </td>
                       <td className="px-5 py-3.5 text-xs font-medium text-slate-700">
@@ -326,6 +376,23 @@ export default function AdminProductsPage() {
                           >
                             <Edit2 className="w-4 h-4" />
                           </Link>
+                          <button
+                            type="button"
+                            onClick={() => handleClearBrand(prod)}
+                            disabled={!prod.brand}
+                            title={
+                              prod.brand
+                                ? `Limpiar marca (${prod.brand})`
+                                : "El producto no tiene marca asignada"
+                            }
+                            className={`p-1.5 rounded-lg transition-colors ${
+                              prod.brand
+                                ? "text-amber-600 hover:text-amber-700 hover:bg-amber-50 cursor-pointer"
+                                : "text-slate-200 cursor-not-allowed"
+                            }`}
+                          >
+                            <Eraser className="w-4 h-4" />
+                          </button>
                           <button
                             type="button"
                             onClick={() => handleDeleteProduct(prod)}

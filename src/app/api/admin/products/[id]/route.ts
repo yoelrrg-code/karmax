@@ -304,3 +304,55 @@ export async function DELETE(
     return NextResponse.json({ error: "Error al eliminar producto" }, { status: 500 });
   }
 }
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const auth = await requireAdminApi();
+  if (auth.response) return auth.response;
+
+  try {
+    const { id } = await params;
+    const productId = Number(id);
+
+    if (isNaN(productId)) {
+      return NextResponse.json({ error: "ID inválido" }, { status: 400 });
+    }
+
+    const body = await request.json();
+    const updateData: Record<string, unknown> = {};
+
+    if ("brand" in body) {
+      updateData.brand = body.brand && String(body.brand).trim() ? String(body.brand).trim() : null;
+    }
+    if ("isActive" in body) {
+      updateData.isActive = Boolean(body.isActive);
+    }
+    if ("isFeatured" in body) {
+      updateData.isFeatured = Boolean(body.isFeatured);
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json(
+        { error: "No se proporcionaron campos válidos para actualizar" },
+        { status: 400 }
+      );
+    }
+
+    await db
+      .update(products)
+      .set(updateData)
+      .where(eq(products.id, productId));
+
+    return NextResponse.json({
+      success: true,
+      message: "Producto actualizado con éxito",
+      data: updateData,
+    });
+  } catch (error) {
+    console.error("Error in PATCH /api/admin/products/[id]:", error);
+    return NextResponse.json({ error: "Error al actualizar producto" }, { status: 500 });
+  }
+}
+
