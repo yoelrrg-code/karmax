@@ -1009,7 +1009,7 @@ export const ProductForm: React.FC<ProductFormProps> = ({ initialProductId }) =>
                 <select
                   value={stockStatus}
                   onChange={(e) => setStockStatus(e.target.value)}
-                  className="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white"
+                  className="w-full text-xs text-[var(--text-karmax)] p-2.5 rounded-xl border border-slate-200 bg-white"
                 >
                   <option value="instock">Disponible (En Stock)</option>
                   <option value="outofstock">Agotado (Sin Stock)</option>

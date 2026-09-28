@@ -344,7 +344,7 @@ export default function AdminSectionsPage() {
           </div>
 
           <div className="space-y-4">
-            <div>
+            <div className="hidden">
               <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Distintivo Superior (Badge)
               </label>
