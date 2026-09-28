@@ -1,4 +1,4 @@
-import { db, products, productAttributes } from "@/lib/db";
+import { db, products, productAttributes, productVariants } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import {
   getPriceSyncSettings,
@@ -200,8 +200,8 @@ export async function syncPricesFromSheet(
       );
     }
 
-    // 3. Consultar productos y atributos existentes en la base de datos
-    const [existingProducts, existingAttributes] = await Promise.all([
+    // 3. Consultar productos, atributos y variantes existentes en la base de datos
+    const [existingProducts, existingAttributes, existingVariants] = await Promise.all([
       db
         .select({
           id: products.id,
@@ -217,6 +217,14 @@ export async function syncPricesFromSheet(
           attrPrice: productAttributes.attrPrice,
         })
         .from(productAttributes),
+      db
+        .select({
+          id: productVariants.id,
+          productId: productVariants.productId,
+          sku: productVariants.sku,
+          price: productVariants.price,
+        })
+        .from(productVariants),
     ]);
 
     // Mapeos indexados por SKU en mayúsculas
@@ -234,10 +242,18 @@ export async function syncPricesFromSheet(
       }
     }
 
+    const variantBySku = new Map<string, typeof existingVariants[0]>();
+    for (const v of existingVariants) {
+      if (v.sku?.trim()) {
+        variantBySku.set(v.sku.trim().toUpperCase(), v);
+      }
+    }
+
     // 4. Procesar filas del CSV y actualizar precios
     let totalRows = 0;
     let updatedProducts = 0;
     let updatedAttributes = 0;
+    let updatedVariants = 0;
     const notFoundSkus: string[] = [];
 
     for (let i = headerIndex + 1; i < lines.length; i++) {
@@ -282,6 +298,21 @@ export async function syncPricesFromSheet(
         }
       }
 
+      // Actualizar en variantes multidimensionales si coincide el SKU
+      const matchedVariant = variantBySku.get(upperSku);
+      if (matchedVariant) {
+        matchedAny = true;
+        const formattedPrice = price.toFixed(2);
+        if (matchedVariant.price !== formattedPrice) {
+          await db
+            .update(productVariants)
+            .set({ price: formattedPrice })
+            .where(eq(productVariants.id, matchedVariant.id));
+          matchedVariant.price = formattedPrice;
+          updatedVariants++;
+        }
+      }
+
       if (!matchedAny) {
         notFoundSkus.push(rawSku);
       }
@@ -295,7 +326,7 @@ export async function syncPricesFromSheet(
       notFoundCount: notFoundSkus.length,
       sampleNotFound: notFoundSkus.slice(0, 10),
       durationMs,
-      message: `Sincronización completada en ${durationMs}ms. Se leyeron ${totalRows} filas. ${updatedProducts} productos y ${updatedAttributes} presentaciones actualizadas.`,
+      message: `Sincronización completada en ${durationMs}ms. Se leyeron ${totalRows} filas. ${updatedProducts} productos, ${updatedAttributes} presentaciones y ${updatedVariants} variantes actualizadas.`,
     };
 
     // Guardar el reporte en site_settings

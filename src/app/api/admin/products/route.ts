@@ -8,6 +8,7 @@ import {
   productIndustries,
   productImages,
   productAttributes,
+  productVariants,
   productDocuments,
 } from "@/lib/db";
 import { desc, eq, like, or, and, sql, inArray } from "drizzle-orm";
@@ -49,10 +50,15 @@ export async function GET(request: NextRequest) {
 
     if (search && search.trim()) {
       const term = `%${search.trim()}%`;
-      const matchingVariationProductIds = db
+      const matchingAttrProductIds = db
         .select({ productId: productAttributes.productId })
         .from(productAttributes)
         .where(like(productAttributes.sku, term));
+
+      const matchingVariantProductIds = db
+        .select({ productId: productVariants.productId })
+        .from(productVariants)
+        .where(like(productVariants.sku, term));
 
       conditions.push(
         or(
@@ -60,7 +66,8 @@ export async function GET(request: NextRequest) {
           like(products.sku, term),
           like(products.brand, term),
           like(products.description, term),
-          inArray(products.id, matchingVariationProductIds)
+          inArray(products.id, matchingAttrProductIds),
+          inArray(products.id, matchingVariantProductIds)
         )!
       );
     }
@@ -97,28 +104,43 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .offset(offset);
 
-    // Variation counts for returned products
+    // Variation counts for returned products (prioritizing product_variants)
     const productIds = rows.map((r) => r.id);
-    const attrCountMap: Record<number, number> = {};
+    const varCountMap: Record<number, number> = {};
 
     if (productIds.length > 0) {
-      const attrCounts = await db
-        .select({
-          productId: productAttributes.productId,
-          count: sql<number>`count(*)`,
-        })
-        .from(productAttributes)
-        .where(inArray(productAttributes.productId, productIds))
-        .groupBy(productAttributes.productId);
+      const [variantCounts, attrCounts] = await Promise.all([
+        db
+          .select({
+            productId: productVariants.productId,
+            count: sql<number>`count(*)`,
+          })
+          .from(productVariants)
+          .where(inArray(productVariants.productId, productIds))
+          .groupBy(productVariants.productId),
+        db
+          .select({
+            productId: productAttributes.productId,
+            count: sql<number>`count(*)`,
+          })
+          .from(productAttributes)
+          .where(inArray(productAttributes.productId, productIds))
+          .groupBy(productAttributes.productId),
+      ]);
 
       for (const a of attrCounts) {
-        attrCountMap[a.productId] = Number(a.count);
+        varCountMap[a.productId] = Number(a.count);
+      }
+      for (const v of variantCounts) {
+        if (Number(v.count) > 0) {
+          varCountMap[v.productId] = Number(v.count);
+        }
       }
     }
 
     const productsWithStats = rows.map((r) => ({
       ...r,
-      variationCount: attrCountMap[r.id] || 0,
+      variationCount: varCountMap[r.id] || 0,
     }));
 
     return NextResponse.json({
@@ -163,6 +185,7 @@ export async function POST(request: NextRequest) {
       industryIds = [],
       images = [],
       attributes = [],
+      variants = [],
       documents = [],
     } = body;
 
@@ -260,6 +283,22 @@ export async function POST(request: NextRequest) {
           value: attr.value?.trim() || "",
           sku: attr.sku?.trim() || null,
           attrPrice: attr.attrPrice ? String(attr.attrPrice) : null,
+          orderIndex: i,
+        });
+      }
+    }
+
+    // Sync variants (product_variants)
+    if (Array.isArray(variants) && variants.length > 0) {
+      for (let i = 0; i < variants.length; i++) {
+        const v = variants[i];
+        if (!v.sku?.trim()) continue;
+        await db.insert(productVariants).values({
+          productId,
+          sku: v.sku.trim(),
+          price: v.price ? String(v.price) : null,
+          stockStatus: v.stockStatus || "instock",
+          attributes: typeof v.attributes === "string" ? JSON.parse(v.attributes) : (v.attributes || {}),
           orderIndex: i,
         });
       }

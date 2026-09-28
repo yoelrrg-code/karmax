@@ -8,6 +8,7 @@ import {
   boolean,
   timestamp,
   decimal,
+  json,
 } from "drizzle-orm/mysql-core";
 import { relations } from "drizzle-orm";
 
@@ -94,6 +95,17 @@ export const productAttributes = mysqlTable("product_attributes", {
   value: varchar("value", { length: 255 }).notNull(),
   sku: varchar("sku", { length: 100 }),
   attrPrice: decimal("attr_price", { precision: 10, scale: 2 }),
+  orderIndex: int("order_index").default(0).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const productVariants = mysqlTable("product_variants", {
+  id: serial("id").primaryKey(),
+  productId: bigint("product_id", { mode: "number", unsigned: true }).notNull(),
+  sku: varchar("sku", { length: 100 }).notNull().unique(),
+  price: decimal("price", { precision: 10, scale: 2 }),
+  stockStatus: varchar("stock_status", { length: 50 }).default("instock").notNull(),
+  attributes: json("attributes").$type<Record<string, string>>().notNull(),
   orderIndex: int("order_index").default(0).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -213,7 +225,15 @@ export const productsRelations = relations(products, ({ one, many }) => ({
   productIndustries: many(productIndustries),
   images: many(productImages),
   attributes: many(productAttributes),
+  variants: many(productVariants),
   documents: many(productDocuments),
+}));
+
+export const productVariantsRelations = relations(productVariants, ({ one }) => ({
+  product: one(products, {
+    fields: [productVariants.productId],
+    references: [products.id],
+  }),
 }));
 
 export const productAttributesRelations = relations(productAttributes, ({ one }) => ({
@@ -284,6 +304,7 @@ export type Industry = typeof industries.$inferSelect;
 export type ProductCategory = typeof productCategories.$inferSelect;
 export type ProductIndustry = typeof productIndustries.$inferSelect;
 export type ProductAttribute = typeof productAttributes.$inferSelect;
+export type ProductVariant = typeof productVariants.$inferSelect;
 export type ProductDocument = typeof productDocuments.$inferSelect;
 export type Role = typeof roles.$inferSelect;
 export type User = typeof users.$inferSelect;

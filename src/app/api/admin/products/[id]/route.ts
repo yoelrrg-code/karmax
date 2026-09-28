@@ -7,6 +7,7 @@ import {
   productIndustries,
   productImages,
   productAttributes,
+  productVariants,
   productDocuments,
   quoteItems,
 } from "@/lib/db";
@@ -49,7 +50,7 @@ export async function GET(
       return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
     }
 
-    const [catRows, indRows, images, attributes, documents] = await Promise.all([
+    const [catRows, indRows, images, attributes, variants, documents] = await Promise.all([
       db
         .select({ categoryId: productCategories.categoryId })
         .from(productCategories)
@@ -70,6 +71,11 @@ export async function GET(
         .orderBy(asc(productAttributes.orderIndex), asc(productAttributes.id)),
       db
         .select()
+        .from(productVariants)
+        .where(eq(productVariants.productId, productId))
+        .orderBy(asc(productVariants.orderIndex), asc(productVariants.id)),
+      db
+        .select()
         .from(productDocuments)
         .where(eq(productDocuments.productId, productId))
         .orderBy(asc(productDocuments.orderIndex)),
@@ -81,6 +87,10 @@ export async function GET(
       industryIds: indRows.map((i) => i.industryId),
       images,
       attributes,
+      variants: variants.map((v) => ({
+        ...v,
+        attributes: typeof v.attributes === "string" ? JSON.parse(v.attributes) : v.attributes,
+      })),
       documents,
     });
   } catch (error) {
@@ -128,6 +138,7 @@ export async function PUT(
       industryIds = [],
       images = [],
       attributes = [],
+      variants,
       documents = [],
     } = body;
 
@@ -221,6 +232,23 @@ export async function PUT(
       }
     }
 
+    // 5b. Sync product_variants
+    if (Array.isArray(variants)) {
+      await db.delete(productVariants).where(eq(productVariants.productId, productId));
+      for (let i = 0; i < variants.length; i++) {
+        const v = variants[i];
+        if (!v.sku?.trim()) continue;
+        await db.insert(productVariants).values({
+          productId,
+          sku: v.sku.trim(),
+          price: v.price ? String(v.price) : null,
+          stockStatus: v.stockStatus || "instock",
+          attributes: typeof v.attributes === "string" ? JSON.parse(v.attributes) : (v.attributes || {}),
+          orderIndex: i,
+        });
+      }
+    }
+
     // 6. Sync product_documents
     await db.delete(productDocuments).where(eq(productDocuments.productId, productId));
     if (Array.isArray(documents) && documents.length > 0) {
@@ -295,6 +323,7 @@ export async function DELETE(
     await db.delete(productIndustries).where(eq(productIndustries.productId, productId));
     await db.delete(productImages).where(eq(productImages.productId, productId));
     await db.delete(productAttributes).where(eq(productAttributes.productId, productId));
+    await db.delete(productVariants).where(eq(productVariants.productId, productId));
     await db.delete(productDocuments).where(eq(productDocuments.productId, productId));
     await db.delete(products).where(eq(products.id, productId));
 

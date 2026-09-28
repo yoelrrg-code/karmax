@@ -6,6 +6,7 @@ import {
   productCategories,
   productIndustries,
   productAttributes,
+  productVariants,
   productDocuments,
   productImages,
   siteSettings,
@@ -18,6 +19,7 @@ import type {
   CatalogQueryOptions,
   CatalogResponse,
   ProductAttributeItem,
+  ProductVariantItem,
   ProductDocumentItem,
   ProductDetailItem,
   SeoSettings,
@@ -126,10 +128,15 @@ export async function getProductsCatalog(
     // Búsqueda de texto libre en nombre, descripción, marca o sku (principal y de variaciones)
     if (search && search.trim()) {
       const term = `%${search.trim()}%`;
-      const matchingVariationProductIds = db
+      const matchingAttrProductIds = db
         .select({ productId: productAttributes.productId })
         .from(productAttributes)
         .where(like(productAttributes.sku, term));
+
+      const matchingVariantProductIds = db
+        .select({ productId: productVariants.productId })
+        .from(productVariants)
+        .where(like(productVariants.sku, term));
 
       conditions.push(
         or(
@@ -138,7 +145,8 @@ export async function getProductsCatalog(
           like(products.shortDescription, term),
           like(products.sku, term),
           like(products.brand, term),
-          inArray(products.id, matchingVariationProductIds)
+          inArray(products.id, matchingAttrProductIds),
+          inArray(products.id, matchingVariantProductIds)
         )!
       );
     }
@@ -306,6 +314,35 @@ export async function getProductsCatalog(
 }
 
 /**
+ * Obtiene las variantes asignadas a un producto (combinaciones multidimensionales con SKU y precio).
+ */
+export async function getProductVariants(productId: number): Promise<ProductVariantItem[]> {
+  try {
+    const rows = await db
+      .select({
+        id: productVariants.id,
+        productId: productVariants.productId,
+        sku: productVariants.sku,
+        price: productVariants.price,
+        stockStatus: productVariants.stockStatus,
+        attributes: productVariants.attributes,
+        orderIndex: productVariants.orderIndex,
+      })
+      .from(productVariants)
+      .where(eq(productVariants.productId, productId))
+      .orderBy(asc(productVariants.orderIndex), asc(productVariants.id));
+
+    return rows.map((r) => ({
+      ...r,
+      attributes: typeof r.attributes === "string" ? JSON.parse(r.attributes) : r.attributes,
+    }));
+  } catch (error) {
+    console.error(`Error al obtener variantes del producto ${productId}:`, error);
+    return [];
+  }
+}
+
+/**
  * Obtiene los atributos asignados a un producto.
  */
 export async function getProductAttributes(productId: number): Promise<ProductAttributeItem[]> {
@@ -359,7 +396,7 @@ export async function getProductDocuments(productId: number): Promise<ProductDoc
 
 /**
  * Obtiene el detalle completo de un producto por su slug, incluyendo
- * información de entrega, atributos y documentos PDF asociados.
+ * información de entrega, variantes, atributos y documentos PDF asociados.
  */
 export async function getProductBySlug(slug: string): Promise<ProductDetailItem | null> {
   try {
@@ -393,7 +430,8 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
 
     if (!row) return null;
 
-    const [rawAttrs, docs, galleryRows] = await Promise.all([
+    const [variants, rawAttrs, docs, galleryRows] = await Promise.all([
+      getProductVariants(row.id),
       getProductAttributes(row.id),
       getProductDocuments(row.id),
       db
@@ -405,13 +443,30 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
         .orderBy(desc(productImages.isPrimary), asc(productImages.orderIndex)),
     ]);
 
-    // Agrupar atributos por nombre (ej. { "Presentación": ["1L", "5L"], "Color": ["Azul"] })
+    // Agrupar atributos por nombre (ej. { "Aroma": ["Lavanda", "Mar fresco"], "Presentación": ["1L", "GAL"] })
     const attributes: Record<string, string[]> = {};
-    for (const attr of rawAttrs) {
-      if (!attributes[attr.name]) {
-        attributes[attr.name] = [];
+    if (variants.length > 0) {
+      for (const v of variants) {
+        if (v.attributes && typeof v.attributes === "object") {
+          for (const [key, val] of Object.entries(v.attributes)) {
+            if (!attributes[key]) {
+              attributes[key] = [];
+            }
+            if (!attributes[key].includes(val)) {
+              attributes[key].push(val);
+            }
+          }
+        }
       }
-      attributes[attr.name].push(attr.value);
+    } else {
+      for (const attr of rawAttrs) {
+        if (!attributes[attr.name]) {
+          attributes[attr.name] = [];
+        }
+        if (!attributes[attr.name].includes(attr.value)) {
+          attributes[attr.name].push(attr.value);
+        }
+      }
     }
 
     const galleryImages: string[] = galleryRows
@@ -432,7 +487,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
       salePrice: row.salePrice && Number(row.salePrice) > 0 ? String(row.salePrice) : null,
       unit: row.unit,
       isFeatured: row.isFeatured,
-      hasMultipleVariations: rawAttrs.length > 1,
+      hasMultipleVariations: variants.length > 1 || rawAttrs.length > 1,
       shortDescription: row.shortDescription,
       description: row.description,
       deliveryInfo: row.deliveryInfo,
@@ -443,6 +498,7 @@ export async function getProductBySlug(slug: string): Promise<ProductDetailItem 
       galleryImages: galleryImages.length > 0 ? galleryImages : [row.imageUrl || "/images/products/placeholder.jpg"],
       attributes,
       rawAttributes: rawAttrs,
+      variants,
       documents: docs,
     };
   } catch (error) {

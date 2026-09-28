@@ -116,8 +116,48 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
       ? 0
       : totalProductQty;
 
-  // Buscar si el atributo seleccionado actual tiene un precio diferenciado (attr_price)
+  // Buscar la variante activa que coincide con los atributos seleccionados
+  const activeVariant = useMemo(() => {
+    if (!product.variants || product.variants.length === 0) return null;
+
+    const effectiveAttrs: Record<string, string> = {};
+    for (const [attrName, values] of Object.entries(availableAttributes)) {
+      if (selectedAttributes[attrName]) {
+        effectiveAttrs[attrName] = selectedAttributes[attrName];
+      } else if (attrName === presentationAttrName && selectedPresentation) {
+        effectiveAttrs[attrName] = selectedPresentation;
+      } else if (attrName === aromaAttrName && selectedAroma) {
+        effectiveAttrs[attrName] = selectedAroma;
+      } else if (values.length > 0) {
+        effectiveAttrs[attrName] = values[0];
+      }
+    }
+
+    return (
+      product.variants.find((v) => {
+        if (!v.attributes || typeof v.attributes !== "object") return false;
+        return Object.entries(effectiveAttrs).every(
+          ([key, val]) => v.attributes[key] === val
+        );
+      }) || product.variants[0]
+    );
+  }, [
+    product.variants,
+    availableAttributes,
+    selectedAttributes,
+    presentationAttrName,
+    selectedPresentation,
+    aromaAttrName,
+    selectedAroma,
+  ]);
+
+  // Buscar si la variante o atributo seleccionado actual tiene un precio diferenciado
   const activePriceNumber = useMemo(() => {
+    if (activeVariant && activeVariant.price !== null && activeVariant.price !== undefined) {
+      const p = Number(activeVariant.price);
+      if (!isNaN(p) && p > 0) return p;
+    }
+
     if (!product.rawAttributes || product.rawAttributes.length === 0) return null;
 
     // Prioridad 1: Presentación seleccionada
@@ -161,10 +201,14 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
     }
 
     return null;
-  }, [product.rawAttributes, presentationAttrName, selectedPresentation, selectedAttributes]);
+  }, [activeVariant, product.rawAttributes, presentationAttrName, selectedPresentation, selectedAttributes]);
 
   // Calcular el SKU correspondiente a la variación activa
   const activeSku = useMemo(() => {
+    if (activeVariant?.sku) {
+      return activeVariant.sku;
+    }
+
     if (!product.rawAttributes || product.rawAttributes.length === 0) {
       return product.sku || null;
     }
@@ -185,7 +229,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
         )
       : null;
 
-    // Si el producto tiene variación tanto de presentación como de aroma (ej. Limpiador multiusos, Jabón líquido)
+    // Si el producto tiene variación tanto de presentación como de aroma (fallback legado)
     if (presAttr?.sku && aromaAttr?.sku) {
       const presParts = presAttr.sku.split("-");
       const aromaParts = aromaAttr.sku.split("-");
@@ -216,6 +260,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
 
     return product.sku || null;
   }, [
+    activeVariant,
     product.rawAttributes,
     presentationAttrName,
     selectedPresentation,

@@ -84,6 +84,16 @@ export interface ProductAttributeItem {
   orderIndex?: number;
 }
 
+export interface ProductVariantItem {
+  id: number;
+  productId: number;
+  sku: string;
+  price?: string | number | null;
+  stockStatus?: string;
+  attributes: Record<string, string>;
+  orderIndex?: number;
+}
+
 export interface ProductDocumentItem {
   id: number;
   productId: number;
@@ -108,6 +118,7 @@ export interface ProductDetailItem extends CatalogProductItem {
   galleryImages?: string[];
   attributes: Record<string, string[]>;
   rawAttributes?: ProductAttributeItem[];
+  variants?: ProductVariantItem[];
   documents: ProductDocumentItem[];
 }
 
