@@ -5,7 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import { Logo } from "@/components/common/Logo";
 import { Icon } from "@/components/icons";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ShieldCheck, BookText } from "lucide-react";
 import { useQuote } from "@/context/QuoteContext";
 import { useAuth } from "@/context/AuthContext";
 
@@ -167,12 +167,23 @@ export const Header: React.FC<FooterProps> = ({data}) => {
                     <p className="text-xs font-bold text-slate-800 truncate">{user.name}</p>
                     <p className="text-[11px] text-slate-400 truncate">{user.email}</p>
                   </div>
+                  {user.roleName === "admin" && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className="flex items-center gap-2 px-4 py-2.5 text-xs text-[var(--blue-karmax)] hover:bg-slate-50 transition-colors font-semibold border-b border-slate-100"
+                    >
+                      <ShieldCheck className="w-4 h-4 text-[var(--green-karmax)]" />
+                      <span>Panel Admin</span>
+                    </Link>
+                  )}
                   <Link
                     href="/mis-cotizaciones"
                     onClick={() => setIsUserMenuOpen(false)}
                     className="flex items-center gap-2 px-4 py-2.5 text-xs text-slate-700 hover:bg-slate-50 transition-colors font-medium border-b border-slate-100"
                   >
-                    <span>📋 Mis cotizaciones</span>
+                    <BookText className="w-4 h-4 text-[var(--green-karmax)]" />
+                    <span>Mis cotizaciones</span>
                   </Link>
                   <button
                     type="button"
@@ -318,6 +329,22 @@ export const Header: React.FC<FooterProps> = ({data}) => {
                   Contacto
                 </Link>
               </motion.div>
+              {user?.roleName === "admin" && (
+                <motion.div
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.18, duration: 0.25, ease: "easeOut" }}
+                >
+                  <Link
+                    href="/admin"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-2 py-2 text-[24px] font-semibold text-[var(--blue-karmax)] hover:text-[var(--green-karmax)] transition-colors"
+                  >
+                    <ShieldCheck className="w-6 h-6 text-[var(--green-karmax)]" />
+                    <span>Panel Admin</span>
+                  </Link>
+                </motion.div>
+              )}
               <motion.div
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}

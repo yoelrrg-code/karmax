@@ -15,6 +15,7 @@ export const AuthModal: React.FC = () => {
   const [phone, setPhone] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const captchaRef = useRef<InvisibleCaptchaRef>(null);
@@ -47,6 +48,11 @@ export const AuthModal: React.FC = () => {
         }
         if (password.length < 8) {
           setErrorMsg("La contraseña debe tener al menos 8 caracteres.");
+          setIsSubmitting(false);
+          return;
+        }
+        if (password !== confirmPassword) {
+          setErrorMsg("Las contraseñas no coinciden.");
           setIsSubmitting(false);
           return;
         }
@@ -106,6 +112,7 @@ export const AuthModal: React.FC = () => {
             onClick={() => {
               setActiveTab("register");
               setErrorMsg("");
+              setConfirmPassword("");
             }}
             className={`flex-1 py-2 text-sm font-semibold rounded-full transition-all cursor-pointer ${
               activeTab === "register"
@@ -120,6 +127,7 @@ export const AuthModal: React.FC = () => {
             onClick={() => {
               setActiveTab("login");
               setErrorMsg("");
+              setConfirmPassword("");
             }}
             className={`flex-1 py-2 text-sm font-semibold rounded-full transition-all cursor-pointer ${
               activeTab === "login"
@@ -213,6 +221,22 @@ export const AuthModal: React.FC = () => {
               className="text-[var(--text-karmax)] w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-[var(--green-karmax)] focus:ring-2 focus:ring-[var(--green-karmax)]/20 outline-none text-sm transition-all"
             />
           </div>
+
+          {activeTab === "register" && (
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Confirmar contraseña *
+              </label>
+              <input
+                type="password"
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                className="text-[var(--text-karmax)] w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-[var(--green-karmax)] focus:ring-2 focus:ring-[var(--green-karmax)]/20 outline-none text-sm transition-all"
+              />
+            </div>
+          )}
 
           <button
             type="submit"

@@ -152,6 +152,27 @@ export interface AdminCustomerItem {
   createdAt: string;
 }
 
+export interface AdminRoleItem {
+  id: number;
+  name: string;
+  description: string | null;
+}
+
+export interface AdminUserItem {
+  id: number;
+  name: string;
+  email: string;
+  phone: string | null;
+  companyName: string | null;
+  roleId: number;
+  roleName: string;
+  isActive: boolean;
+  discountPercentage: number;
+  quotesCount: number;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface QuoteCartItem {
   productId: number;
   slug: string;

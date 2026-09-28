@@ -8,6 +8,7 @@ import {
   FileText,
   Mail,
   Users,
+  UserCog,
   Package,
   FolderTree,
   Factory,
@@ -38,6 +39,11 @@ const NAV_ITEMS = [
     label: "Mensajes",
     href: "/admin/mensajes",
     icon: Mail,
+  },
+  {
+    label: "Usuarios",
+    href: "/admin/usuarios",
+    icon: UserCog,
   },
   {
     label: "Clientes",
