@@ -27,6 +27,7 @@ import type {
   PriceSyncSettings,
 } from "@/types";
 import { asc, desc, eq, and, or, like, inArray, sql } from "drizzle-orm";
+import { escapeLikePattern } from "@/lib/security/sql";
 
 export async function getCategories(featured?: boolean): Promise<CategoryItem[]> {
   try {
@@ -127,7 +128,7 @@ export async function getProductsCatalog(
 
     // Búsqueda de texto libre en nombre, descripción, marca o sku (principal y de variaciones)
     if (search && search.trim()) {
-      const term = `%${search.trim()}%`;
+      const term = `%${escapeLikePattern(search.trim())}%`;
       const matchingAttrProductIds = db
         .select({ productId: productAttributes.productId })
         .from(productAttributes)

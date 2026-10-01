@@ -5,6 +5,8 @@ import { hashPassword } from "@/lib/auth/password";
 import { eq, desc, sql, like, or } from "drizzle-orm";
 import type { AdminUserItem, AdminRoleItem } from "@/types";
 
+import { escapeLikePattern } from "@/lib/security/sql";
+
 export const dynamic = "force-dynamic";
 
 export async function GET(request: NextRequest) {
@@ -13,15 +15,16 @@ export async function GET(request: NextRequest) {
 
   try {
     const searchParams = request.nextUrl.searchParams;
-    const query = searchParams.get("q")?.trim() || "";
+    const rawQuery = searchParams.get("q")?.trim() || "";
+    const safeQuery = escapeLikePattern(rawQuery);
     const roleIdParam = searchParams.get("roleId");
 
-    const whereConditions = query
+    const whereConditions = safeQuery
       ? or(
-          like(users.name, `%${query}%`),
-          like(users.email, `%${query}%`),
-          like(users.companyName, `%${query}%`),
-          like(users.phone, `%${query}%`)
+          like(users.name, `%${safeQuery}%`),
+          like(users.email, `%${safeQuery}%`),
+          like(users.companyName, `%${safeQuery}%`),
+          like(users.phone, `%${safeQuery}%`)
         )
       : undefined;
 

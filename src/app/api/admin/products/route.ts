@@ -12,6 +12,7 @@ import {
   productDocuments,
 } from "@/lib/db";
 import { desc, eq, like, or, and, sql, inArray } from "drizzle-orm";
+import { escapeLikePattern } from "@/lib/security/sql";
 
 export const dynamic = "force-dynamic";
 
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (search && search.trim()) {
-      const term = `%${search.trim()}%`;
+      const term = `%${escapeLikePattern(search.trim())}%`;
       const matchingAttrProductIds = db
         .select({ productId: productAttributes.productId })
         .from(productAttributes)

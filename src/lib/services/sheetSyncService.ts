@@ -107,46 +107,58 @@ export interface SyncPricesResult {
   error?: string;
 }
 
+let isSyncInProgress = false;
+
 /**
  * Descarga y sincroniza los precios desde la hoja de cálculo de Google Sheets.
  */
 export async function syncPricesFromSheet(
   options: SyncPricesOptions = {}
 ): Promise<SyncPricesResult> {
+  if (isSyncInProgress) {
+    return {
+      success: false,
+      message: "Ya hay una sincronización de precios en curso. Por favor espera a que termine.",
+      error: "SYNC_IN_PROGRESS",
+    };
+  }
+
+  isSyncInProgress = true;
   const startTime = Date.now();
-  const settings = await getPriceSyncSettings();
-
-  if (!options.force && !settings.enabled) {
-    return {
-      success: false,
-      message: "La sincronización automática de precios está deshabilitada en los ajustes.",
-    };
-  }
-
-  const targetUrl = (options.customUrl || settings.sheetUrl || DEFAULT_SHEET_URL).trim();
-
-  if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
-    const errorMsg = "La URL de Google Sheets no tiene un formato web válido (debe iniciar con https://).";
-    await savePriceSyncSettings({
-      lastSyncAt: new Date().toISOString(),
-      lastSyncStatus: "error",
-      lastSyncReport: {
-        totalRows: 0,
-        updatedProducts: 0,
-        updatedAttributes: 0,
-        notFoundCount: 0,
-        message: errorMsg,
-        durationMs: Date.now() - startTime,
-      },
-    });
-    return {
-      success: false,
-      message: errorMsg,
-      error: errorMsg,
-    };
-  }
 
   try {
+    const settings = await getPriceSyncSettings();
+
+    if (!options.force && !settings.enabled) {
+      return {
+        success: false,
+        message: "La sincronización automática de precios está deshabilitada en los ajustes.",
+      };
+    }
+
+    const targetUrl = (options.customUrl || settings.sheetUrl || DEFAULT_SHEET_URL).trim();
+
+    if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
+      const errorMsg = "La URL de Google Sheets no tiene un formato web válido (debe iniciar con https://).";
+      await savePriceSyncSettings({
+        lastSyncAt: new Date().toISOString(),
+        lastSyncStatus: "error",
+        lastSyncReport: {
+          totalRows: 0,
+          updatedProducts: 0,
+          updatedAttributes: 0,
+          notFoundCount: 0,
+          message: errorMsg,
+          durationMs: Date.now() - startTime,
+        },
+      });
+      return {
+        success: false,
+        message: errorMsg,
+        error: errorMsg,
+      };
+    }
+
     // 1. Descargar el contenido CSV desde la URL pública
     const response = await fetch(targetUrl, {
       method: "GET",
@@ -249,12 +261,12 @@ export async function syncPricesFromSheet(
       }
     }
 
-    // 4. Procesar filas del CSV y actualizar precios
+    // 4. Procesar filas del CSV y recopilar actualizaciones para batch execution
     let totalRows = 0;
-    let updatedProducts = 0;
-    let updatedAttributes = 0;
-    let updatedVariants = 0;
     const notFoundSkus: string[] = [];
+    const pendingProductUpdates: { id: number; price: string }[] = [];
+    const pendingAttrUpdates: { id: number; price: string }[] = [];
+    const pendingVariantUpdates: { id: number; price: string }[] = [];
 
     for (let i = headerIndex + 1; i < lines.length; i++) {
       const cols = parseCsvLine(lines[i]);
@@ -274,12 +286,8 @@ export async function syncPricesFromSheet(
         matchedAny = true;
         const formattedPrice = price.toFixed(2);
         if (matchedProd.regularPrice !== formattedPrice) {
-          await db
-            .update(products)
-            .set({ regularPrice: formattedPrice })
-            .where(eq(products.id, matchedProd.id));
+          pendingProductUpdates.push({ id: matchedProd.id, price: formattedPrice });
           matchedProd.regularPrice = formattedPrice;
-          updatedProducts++;
         }
       }
 
@@ -289,12 +297,8 @@ export async function syncPricesFromSheet(
         matchedAny = true;
         const formattedPrice = price.toFixed(2);
         if (matchedAttr.attrPrice !== formattedPrice) {
-          await db
-            .update(productAttributes)
-            .set({ attrPrice: formattedPrice })
-            .where(eq(productAttributes.id, matchedAttr.id));
+          pendingAttrUpdates.push({ id: matchedAttr.id, price: formattedPrice });
           matchedAttr.attrPrice = formattedPrice;
-          updatedAttributes++;
         }
       }
 
@@ -304,12 +308,8 @@ export async function syncPricesFromSheet(
         matchedAny = true;
         const formattedPrice = price.toFixed(2);
         if (matchedVariant.price !== formattedPrice) {
-          await db
-            .update(productVariants)
-            .set({ price: formattedPrice })
-            .where(eq(productVariants.id, matchedVariant.id));
+          pendingVariantUpdates.push({ id: matchedVariant.id, price: formattedPrice });
           matchedVariant.price = formattedPrice;
-          updatedVariants++;
         }
       }
 
@@ -317,6 +317,38 @@ export async function syncPricesFromSheet(
         notFoundSkus.push(rawSku);
       }
     }
+
+    // Ejecutar todas las actualizaciones dentro de una sola transacción de BD
+    if (
+      pendingProductUpdates.length > 0 ||
+      pendingAttrUpdates.length > 0 ||
+      pendingVariantUpdates.length > 0
+    ) {
+      await db.transaction(async (tx) => {
+        for (const p of pendingProductUpdates) {
+          await tx
+            .update(products)
+            .set({ regularPrice: p.price })
+            .where(eq(products.id, p.id));
+        }
+        for (const a of pendingAttrUpdates) {
+          await tx
+            .update(productAttributes)
+            .set({ attrPrice: a.price })
+            .where(eq(productAttributes.id, a.id));
+        }
+        for (const v of pendingVariantUpdates) {
+          await tx
+            .update(productVariants)
+            .set({ price: v.price })
+            .where(eq(productVariants.id, v.id));
+        }
+      });
+    }
+
+    const updatedProducts = pendingProductUpdates.length;
+    const updatedAttributes = pendingAttrUpdates.length;
+    const updatedVariants = pendingVariantUpdates.length;
 
     const durationMs = Date.now() - startTime;
     const report: PriceSyncReport = {
@@ -363,5 +395,7 @@ export async function syncPricesFromSheet(
       message: errorMsg,
       error: errorMsg,
     };
+  } finally {
+    isSyncInProgress = false;
   }
 }

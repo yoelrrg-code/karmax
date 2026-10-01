@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db, contactMessages } from "@/lib/db";
 import { requireAdminApi } from "@/lib/auth/adminGuard";
 import { desc, eq, and, or, like, sql } from "drizzle-orm";
+import { escapeLikePattern } from "@/lib/security/sql";
 
 export async function GET(request: NextRequest) {
   const auth = await requireAdminApi();
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (search && search.trim()) {
-      const term = `%${search.trim()}%`;
+      const term = `%${escapeLikePattern(search.trim())}%`;
       conditions.push(
         or(
           like(contactMessages.fullName, term),

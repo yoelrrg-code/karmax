@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/auth/adminGuard";
 import { db, quoteRequests, quoteItems } from "@/lib/db";
 import { desc, eq, like, or, and, sql, inArray } from "drizzle-orm";
+import { escapeLikePattern } from "@/lib/security/sql";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (search && search.trim()) {
-      const term = `%${search.trim()}%`;
+      const term = `%${escapeLikePattern(search.trim())}%`;
       conditions.push(
         or(
           like(quoteRequests.quoteNumber, term),

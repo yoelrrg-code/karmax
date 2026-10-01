@@ -8,6 +8,19 @@ import { getPriceSyncSettings } from "@/lib/services/karmaxService";
 
 export const dynamic = "force-dynamic";
 
+import crypto from "node:crypto";
+
+function safeCompare(a: string, b: string): boolean {
+  try {
+    const bufA = Buffer.from(a);
+    const bufB = Buffer.from(b);
+    if (bufA.length !== bufB.length) return false;
+    return crypto.timingSafeEqual(bufA, bufB);
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Verifica si la solicitud tiene autorización válida para ejecutar el cron.
  * Acepta:
@@ -15,10 +28,7 @@ export const dynamic = "force-dynamic";
  * 2. Sesión activa de usuario administrador de KARMAX.
  */
 async function isAuthorized(request: NextRequest): Promise<boolean> {
-  const secretKey =
-    process.env.CRON_SECRET ||
-    process.env.INTERNAL_CRON_KEY ||
-    "karmax_secure_cron_price_sync_key";
+  const secretKey = process.env.CRON_SECRET || process.env.INTERNAL_CRON_KEY;
 
   const url = new URL(request.url);
   const queryToken = url.searchParams.get("token") || url.searchParams.get("key");
@@ -28,11 +38,13 @@ async function isAuthorized(request: NextRequest): Promise<boolean> {
     ? authHeader.slice(7).trim()
     : null;
 
-  if (
-    (queryToken && queryToken === secretKey) ||
-    (bearerToken && bearerToken === secretKey)
-  ) {
-    return true;
+  if (secretKey) {
+    if (
+      (queryToken && safeCompare(queryToken, secretKey)) ||
+      (bearerToken && safeCompare(bearerToken, secretKey))
+    ) {
+      return true;
+    }
   }
 
   // Verificar sesión de administrador

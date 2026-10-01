@@ -15,6 +15,7 @@ function createConnectionPool(): mysql.Pool {
   const user = process.env.DB_USER || "root";
   const password = process.env.DB_PASSWORD || "";
   const database = process.env.DB_NAME || "karmax_catalog";
+  const connectionLimit = Number(process.env.DB_CONNECTION_LIMIT) || 20;
 
   return mysql.createPool({
     host,
@@ -23,10 +24,10 @@ function createConnectionPool(): mysql.Pool {
     password,
     database,
     waitForConnections: true,
-    connectionLimit: 10,
+    connectionLimit,
     maxIdle: 10,
     idleTimeout: 60000,
-    queueLimit: 0,
+    queueLimit: 100,
     enableKeepAlive: true,
     keepAliveInitialDelay: 10000,
     // DreamHost MySQL a veces requiere SSL o certificados según configuración
@@ -35,15 +36,9 @@ function createConnectionPool(): mysql.Pool {
 }
 
 export const pool = globalForDb.__karmax_mysql_pool ?? createConnectionPool();
-
-if (process.env.NODE_ENV !== "production") {
-  globalForDb.__karmax_mysql_pool = pool;
-}
+globalForDb.__karmax_mysql_pool = pool;
 
 export const db = globalForDb.__karmax_drizzle_db ?? drizzle(pool, { schema, mode: "default" });
-
-if (process.env.NODE_ENV !== "production") {
-  globalForDb.__karmax_drizzle_db = db;
-}
+globalForDb.__karmax_drizzle_db = db;
 
 export * from "./schema";
