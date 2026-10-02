@@ -249,7 +249,7 @@ export default function AdminMessagesPage() {
               placeholder="Buscar por cliente, empresa..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-xs sm:text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--blue-karmax)] bg-slate-50/50"
+              className="w-full pl-9 pr-4 py-2 text-xs text-[var(--text-karmax)] sm:text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-[var(--blue-karmax)] bg-slate-50/50"
             />
           </form>
         </div>

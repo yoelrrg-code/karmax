@@ -181,7 +181,7 @@ export default function AdminQuotesPage() {
               placeholder="Buscar por folio, cliente o correo..."
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 rounded-xl text-xs border border-slate-200 focus:outline-none focus:border-[var(--green-karmax)] focus:ring-2 focus:ring-[var(--green-karmax)]/20"
+              className="w-full pl-9 pr-4 py-2 rounded-xl text-xs text-[var(--text-karmax)] border border-slate-200 focus:outline-none focus:border-[var(--green-karmax)] focus:ring-2 focus:ring-[var(--green-karmax)]/20"
             />
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
           </form>
