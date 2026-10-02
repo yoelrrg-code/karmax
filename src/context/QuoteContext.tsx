@@ -172,7 +172,7 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           userDiscountPercentage: userDiscount,
         });
         unitPrice = pricing.finalPrice !== null ? pricing.finalPrice : 49.0;
-        regularPrice = pricing.hasDiscount ? pricing.regularPrice : null;
+        regularPrice = pricing.regularPrice ?? regPriceNum ?? null;
       }
 
       setItems((prev) => {
@@ -313,12 +313,16 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       const mappedItems: QuoteCartItem[] = quote.items.map((it) => {
         const itemObj = it as Record<string, unknown>;
         const rawUnitPrice = Number(it.unitPrice) || 0;
-        const baseRegular = (itemObj.regularPrice !== undefined && itemObj.regularPrice !== null)
-          ? Number(itemObj.regularPrice)
-          : rawUnitPrice;
-        const finalPrice = userDiscount > 0
-          ? Number((baseRegular * (1 - userDiscount / 100)).toFixed(2))
-          : rawUnitPrice;
+        let baseRegular: number | null = null;
+
+        if (itemObj.regularPrice !== undefined && itemObj.regularPrice !== null && Number(itemObj.regularPrice) > 0) {
+          baseRegular = Number(itemObj.regularPrice);
+        } else if (userDiscount > 0 && rawUnitPrice > 0) {
+          // Si el item viene de BD sin regularPrice, el unitPrice ya viene con descuento aplicado.
+          // Reconstruimos el precio regular base para mostrar el tachado sin descontar de nuevo.
+          baseRegular = Number((rawUnitPrice / (1 - userDiscount / 100)).toFixed(2));
+        }
+
         return {
           productId: it.productId || 0,
           slug: "",
@@ -326,8 +330,8 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           sku: it.sku || null,
           imageUrl: it.imageUrl || null,
           presentation: it.presentation || "Estándar",
-          unitPrice: finalPrice,
-          regularPrice: userDiscount > 0 || (baseRegular > finalPrice) ? baseRegular : null,
+          unitPrice: rawUnitPrice,
+          regularPrice: baseRegular && baseRegular > rawUnitPrice ? baseRegular : null,
           quantity: Number(it.quantity) || 1,
         };
       });
@@ -364,7 +368,15 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setItems((prev) => {
         if (!prev || prev.length === 0) return prev;
         return prev.map((it) => {
-          const baseRegular = it.regularPrice ?? it.unitPrice;
+          let baseRegular = it.regularPrice;
+          if (!baseRegular || baseRegular <= it.unitPrice) {
+            if (previousDiscount && previousDiscount > 0) {
+              baseRegular = Number((it.unitPrice / (1 - previousDiscount / 100)).toFixed(2));
+            } else {
+              baseRegular = it.unitPrice;
+            }
+          }
+
           if (currentDiscount > 0) {
             const discountedPrice = Number((baseRegular * (1 - currentDiscount / 100)).toFixed(2));
             return {

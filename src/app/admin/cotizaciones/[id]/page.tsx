@@ -12,6 +12,7 @@ import {
   MessageCircle,
   Save,
   FileSpreadsheet,
+  Percent,
 } from "lucide-react";
 import { sileo } from "sileo";
 
@@ -43,11 +44,22 @@ interface QuoteDetail {
   createdAt: string;
 }
 
+interface UserDetail {
+  id: number;
+  name: string;
+  email: string;
+  phone: string | null;
+  companyName: string | null;
+  discountPercentage: string | number | null;
+  createdAt: string;
+}
+
 export default function AdminQuoteDetailPage() {
   const params = useParams();
   const id = params?.id as string;
 
   const [quote, setQuote] = useState<QuoteDetail | null>(null);
+  const [user, setUser] = useState<UserDetail | null>(null);
   const [items, setItems] = useState<QuoteItem[]>([]);
   const [status, setStatus] = useState<string>("pending");
   const [adminNotes, setAdminNotes] = useState<string>("");
@@ -64,6 +76,7 @@ export default function AdminQuoteDetailPage() {
           const data = await res.json();
           if (!ignore) {
             setQuote(data.quote);
+            setUser(data.user || null);
             setItems(data.items || []);
             setStatus(data.quote.status || "pending");
             setAdminNotes(data.quote.notes || "");
@@ -175,10 +188,12 @@ export default function AdminQuoteDetailPage() {
     );
   }
 
+  const discountPercentage = Number(user?.discountPercentage || 0);
+
   // Sanitize phone for WhatsApp
   const cleanPhone = quote.phone?.replace(/[^0-9]/g, "") || "";
   const waUrl = cleanPhone
-    ? `https://wa.me/${cleanPhone.startsWith("52") ? cleanPhone : `52${cleanPhone}`}?text=${encodeURIComponent(
+    ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
         `Hola ${quote.customerName}, te escribimos de KARMAX en relación a tu cotización ${quote.quoteNumber || ""}.`
       )}`
     : null;
@@ -241,10 +256,22 @@ export default function AdminQuoteDetailPage() {
                   ? "bg-emerald-100 text-emerald-800"
                   : status === "contacted"
                   ? "bg-blue-100 text-blue-800"
+                  : status === "rejected"
+                  ? "bg-rose-100 text-rose-800"
                   : "bg-slate-100 text-slate-700"
               }`}
             >
-              {status}
+              {status === "pending"
+                ? "Pendiente"
+                : status === "approved"
+                ? "Aprobado"
+                : status === "contacted"
+                ? "Contactado"
+                : status === "rejected"
+                ? "Rechazado"
+                : status === "saved"
+                ? "Borrador"
+                : status}
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1 flex items-center gap-1.5">
@@ -332,6 +359,23 @@ export default function AdminQuoteDetailPage() {
                 {quote.phone || "No especificado"}
               </a>
             </div>
+
+            <div>
+              <p className="text-slate-400 font-medium">Descuento de Cliente</p>
+              {discountPercentage > 0 ? (
+                <div className="mt-1 flex items-center gap-1.5">
+                  <span className="inline-flex items-center gap-1 font-bold text-xs px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    <Percent className="w-3 h-3" />
+                    {discountPercentage}% OFF
+                  </span>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    (Aplicado a esta cotización)
+                  </span>
+                </div>
+              ) : (
+                <p className="text-slate-500 font-medium text-xs mt-1">Sin descuento especial (0%)</p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -343,12 +387,38 @@ export default function AdminQuoteDetailPage() {
             </h3>
 
             <div className="space-y-2.5 mt-4 text-xs">
-              <div className="flex items-center justify-between text-slate-600">
-                <span>Subtotal estimado</span>
-                <span className="font-semibold text-slate-900">
-                  ${Number(quote.subtotal || 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
-                </span>
-              </div>
+              {discountPercentage > 0 ? (
+                <>
+                  <div className="flex items-center justify-between text-slate-500">
+                    <span>Subtotal regular (sin desc.)</span>
+                    <span className="font-medium text-slate-700 line-through">
+                      ${(Number(quote.subtotal || 0) / (1 - discountPercentage / 100)).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-emerald-700 font-medium">
+                    <span className="flex items-center gap-1">
+                      <Percent className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      <span>Descuento de cliente ({discountPercentage}%)</span>
+                    </span>
+                    <span className="font-bold">
+                      -${((Number(quote.subtotal || 0) / (1 - discountPercentage / 100)) - Number(quote.subtotal || 0)).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-slate-700 pt-1.5 border-t border-slate-100">
+                    <span className="font-semibold">Subtotal con descuento</span>
+                    <span className="font-bold text-slate-900">
+                      ${Number(quote.subtotal || 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-between text-slate-600">
+                  <span>Subtotal estimado</span>
+                  <span className="font-semibold text-slate-900">
+                    ${Number(quote.subtotal || 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+              )}
               <div className="flex items-center justify-between text-slate-600">
                 <span>
                   {Number(quote.tax || 0) > 0
@@ -441,7 +511,21 @@ export default function AdminQuoteDetailPage() {
                       {it.quantity}
                     </td>
                     <td className="px-5 py-4 text-right text-xs text-slate-700">
-                      ${Number(it.unitPrice || 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                      {discountPercentage > 0 ? (
+                        <div>
+                          <span className="line-through text-slate-400 text-[11px] block">
+                            ${(Number(it.unitPrice || 0) / (1 - discountPercentage / 100)).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                          <span className="font-semibold text-slate-900">
+                            ${Number(it.unitPrice || 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                          </span>
+                          <span className="inline-block ml-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1 rounded">
+                            -{discountPercentage}%
+                          </span>
+                        </div>
+                      ) : (
+                        <span>${Number(it.unitPrice || 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}</span>
+                      )}
                     </td>
                     <td className="px-5 py-4 text-right font-semibold text-slate-900">
                       ${Number(it.totalPrice || (Number(it.unitPrice || 0) * it.quantity)).toLocaleString("es-MX", {
@@ -471,7 +555,7 @@ export default function AdminQuoteDetailPage() {
             value={adminNotes}
             onChange={(e) => setAdminNotes(e.target.value)}
             placeholder="Añade observaciones, condiciones pactadas o historial de contacto con el cliente..."
-            className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:outline-none focus:border-[var(--green-karmax)] focus:ring-2 focus:ring-[var(--green-karmax)]/20"
+            className="w-full text-[var(--text-karmax)] text-xs p-3 rounded-xl border border-slate-200 focus:outline-none focus:border-[var(--green-karmax)] focus:ring-2 focus:ring-[var(--green-karmax)]/20"
           />
         </div>
 

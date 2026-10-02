@@ -33,6 +33,7 @@ interface QuoteRequestItem {
   createdAt: string;
   itemsCount: number;
   items: QuoteItem[];
+  discountPercentage?: number | string | null;
 }
 
 export default function AdminQuotesPage() {
@@ -236,7 +237,14 @@ export default function AdminQuotesPage() {
                         <p className="text-[11px] text-slate-400 mt-0.5">{dateStr}</p>
                       </td>
                       <td className="px-5 py-4">
-                        <p className="font-semibold text-slate-900">{q.customerName}</p>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <p className="font-semibold text-slate-900">{q.customerName}</p>
+                          {Number(q.discountPercentage || 0) > 0 && (
+                            <span className="inline-block px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+                              {q.discountPercentage}% OFF
+                            </span>
+                          )}
+                        </div>
                         {q.companyName && (
                           <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
                             <Building className="w-3 h-3 text-slate-400" />

@@ -130,6 +130,7 @@ export async function POST(request: Request) {
     let companyName = "";
     let email = "cliente@karmax.com";
     let phone = "N/A";
+    let userDiscountPercentage = 0;
 
     if (userId) {
       const [userRecord] = await db
@@ -143,6 +144,7 @@ export async function POST(request: Request) {
         companyName = userRecord.companyName || "";
         email = userRecord.email;
         phone = userRecord.phone || "";
+        userDiscountPercentage = Number(userRecord.discountPercentage || 0);
       }
     }
 
@@ -214,6 +216,7 @@ export async function POST(request: Request) {
 
       let unitPrice = 0;
       let name = String(rawItem.productName || "Producto").trim().slice(0, 255);
+      let isDiscountAlreadyApplied = false;
 
       if (prodId && productMap.has(prodId)) {
         const prod = productMap.get(prodId)!;
@@ -229,14 +232,24 @@ export async function POST(request: Request) {
             unitPrice = Number(prod.salePrice);
           } else if (prod.regularPrice && Number(prod.regularPrice) > 0) {
             unitPrice = Number(prod.regularPrice);
+          } else if (rawItem.regularPrice && Number(rawItem.regularPrice) > 0) {
+            unitPrice = Number(rawItem.regularPrice);
           } else {
             const clientPrice = Number(rawItem.unitPrice);
             unitPrice = isNaN(clientPrice) || clientPrice < 0 ? 0 : Number(clientPrice.toFixed(2));
+            isDiscountAlreadyApplied = true;
           }
         }
+      } else if (rawItem.regularPrice && Number(rawItem.regularPrice) > 0) {
+        unitPrice = Number(rawItem.regularPrice);
       } else {
         const clientPrice = Number(rawItem.unitPrice);
         unitPrice = isNaN(clientPrice) || clientPrice < 0 ? 0 : Number(clientPrice.toFixed(2));
+        isDiscountAlreadyApplied = true;
+      }
+
+      if (!isDiscountAlreadyApplied && userDiscountPercentage > 0 && unitPrice > 0) {
+        unitPrice = Number((unitPrice * (1 - userDiscountPercentage / 100)).toFixed(2));
       }
 
       const totalPrice = Number((quantity * unitPrice).toFixed(2));
@@ -408,6 +421,7 @@ export async function POST(request: Request) {
             unitPrice: it.unitPrice,
             totalPrice: it.totalPrice,
           })),
+          discountPercentage: userDiscountPercentage,
         });
       } catch (err) {
         console.error("Error dispatching quote emails:", err);

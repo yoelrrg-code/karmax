@@ -7,7 +7,7 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { useAuth } from "@/context/AuthContext";
 import { useQuote, SavedQuotePayload } from "@/context/QuoteContext";
-import { FileText, ChevronRight, Clock, CheckCircle2, ArrowRight, Eye, X } from "lucide-react";
+import { FileText, ChevronRight, Clock, CheckCircle2, ArrowRight, Eye, X, XCircle } from "lucide-react";
 
 interface QuoteItemData {
   id: number;
@@ -32,9 +32,50 @@ interface QuoteData {
   subtotal: string | number;
   tax: string | number;
   total: string | number;
-  status: "saved" | "pending" | "processed" | string;
+  status: "saved" | "pending" | "processed" | "rejected" | "approved" | "contacted" | string;
   createdAt: string;
   items: QuoteItemData[];
+}
+
+function getQuoteStatusConfig(status: string) {
+  switch (status) {
+    case "rejected":
+      return {
+        label: "Rechazada",
+        badgeClass: "bg-rose-100 text-rose-800 border border-rose-200/60",
+        iconContainerClass: "bg-rose-50 text-rose-600",
+        icon: <XCircle className="w-6 h-6" />,
+      };
+    case "approved":
+      return {
+        label: "Aprobada",
+        badgeClass: "bg-emerald-100 text-emerald-800 border border-emerald-200/60",
+        iconContainerClass: "bg-emerald-50 text-[var(--green-karmax)]",
+        icon: <CheckCircle2 className="w-6 h-6" />,
+      };
+    case "contacted":
+      return {
+        label: "Contactado",
+        badgeClass: "bg-blue-100 text-blue-800 border border-blue-200/60",
+        iconContainerClass: "bg-blue-50 text-blue-600",
+        icon: <Clock className="w-6 h-6" />,
+      };
+    case "saved":
+      return {
+        label: "Borrador guardado",
+        badgeClass: "bg-amber-100 text-amber-800 border border-amber-200/60",
+        iconContainerClass: "bg-amber-50 text-amber-600",
+        icon: <Clock className="w-6 h-6" />,
+      };
+    case "pending":
+    default:
+      return {
+        label: "Enviada a Karmax",
+        badgeClass: "bg-emerald-100 text-emerald-800 border border-emerald-200/60",
+        iconContainerClass: "bg-emerald-50 text-[var(--green-karmax)]",
+        icon: <CheckCircle2 className="w-6 h-6" />,
+      };
+  }
 }
 
 export default function MisCotizacionesPage() {
@@ -172,7 +213,7 @@ export default function MisCotizacionesPage() {
             <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-[var(--green-karmax)] flex items-center justify-center mx-auto mb-4">
               <FileText className="w-8 h-8" />
             </div>
-            <h2 className="text-lg font-bold text-slate-800 mb-2">Inicia sesión en tu cuenta</h2>
+            <h3 className="text-lg font-bold text-slate-800 mb-2">Inicia sesión en tu cuenta</h3>
             <p className="text-xs sm:text-sm text-slate-500 mb-6">
               Para visualizar tu historial y cotizaciones guardadas, debes iniciar sesión con tu cuenta de cliente.
             </p>
@@ -206,6 +247,7 @@ export default function MisCotizacionesPage() {
           <div className="space-y-4">
             {quotes.map((q) => {
               const isSaved = q.status === "saved";
+              const statusConfig = getQuoteStatusConfig(q.status);
               const itemsCount = q.items?.reduce((acc, it) => acc + it.quantity, 0) || 0;
 
               return (
@@ -214,11 +256,9 @@ export default function MisCotizacionesPage() {
                 >
                   <div className="flex items-start sm:items-center gap-4">
                     <div
-                      className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${
-                        isSaved ? "bg-amber-50 text-amber-600" : "bg-emerald-50 text-[var(--green-karmax)]"
-                      }`}
+                      className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 ${statusConfig.iconContainerClass}`}
                     >
-                      {isSaved ? <Clock className="w-6 h-6" /> : <CheckCircle2 className="w-6 h-6" />}
+                      {statusConfig.icon}
                     </div>
                     <div>
                       <div className="flex items-center gap-2.5 flex-wrap">
@@ -226,13 +266,9 @@ export default function MisCotizacionesPage() {
                           Cotización #{q.quoteNumber}
                         </span>
                         <span
-                          className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
-                            isSaved
-                              ? "bg-amber-100 text-amber-800"
-                              : "bg-emerald-100 text-emerald-800"
-                          }`}
+                          className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${statusConfig.badgeClass}`}
                         >
-                          {isSaved ? "Borrador guardado" : "Enviada a Karmax"}
+                          {statusConfig.label}
                         </span>
                       </div>
                       <p className="text-xs text-slate-400 mt-1">
@@ -287,11 +323,18 @@ export default function MisCotizacionesPage() {
               {/* Header */}
               <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
                 <div>
-                  <h3 className="font-semibold text-lg sm:text-xl text-[var(--dark-blue-karmax)]">
-                    Detalle de Cotización #{selectedQuote.quoteNumber}
-                  </h3>
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    <h3 className="font-semibold text-lg sm:text-xl text-[var(--dark-blue-karmax)]">
+                      Detalle de Cotización #{selectedQuote.quoteNumber}
+                    </h3>
+                    <span
+                      className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${getQuoteStatusConfig(selectedQuote.status).badgeClass}`}
+                    >
+                      {getQuoteStatusConfig(selectedQuote.status).label}
+                    </span>
+                  </div>
                   <p className="!text-[14px] text-[var(--text-karmax)] font-normal mt-0.5">
-                    {formatDate(selectedQuote.createdAt)} • {selectedQuote.status === "saved" ? "Borrador guardado" : "Enviada a Karmax"}
+                    {formatDate(selectedQuote.createdAt)}
                   </p>
                 </div>
                 <button
@@ -306,6 +349,17 @@ export default function MisCotizacionesPage() {
 
               {/* Body / Scrollable Content */}
               <div className="overflow-y-auto flex-1 pr-1">
+                {selectedQuote.status === "rejected" && (
+                  <div className="mb-6 p-4 bg-rose-50 border border-rose-200/80 rounded-2xl flex items-start sm:items-center gap-3 text-xs sm:text-sm text-rose-800">
+                    <XCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5 sm:mt-0" />
+                    <div>
+                      <p className="font-semibold">Esta cotización fue rechazada</p>
+                      <p className="text-xs text-rose-700/90 mt-0.5">
+                        El equipo de Karmax ha marcado esta solicitud como rechazada. Si tienes dudas o requieres una cotización con diferentes productos, por favor contáctanos o realiza una nueva solicitud.
+                      </p>
+                    </div>
+                  </div>
+                )}
                 {/* Table */}
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse text-xs sm:text-sm">

@@ -22,6 +22,7 @@ export interface QuoteEmailData {
   tax: number | string;
   total: number | string;
   items: EmailQuoteItem[];
+  discountPercentage?: number | string | null;
 }
 
 export function escapeHtml(str: unknown): string {
@@ -98,6 +99,10 @@ export async function generateQuoteExcelBuffer(data: QuoteEmailData): Promise<Bu
   worksheet.addRow(["Empresa:", data.companyName || "No especificada"]);
   worksheet.addRow(["Correo:", data.email]);
   worksheet.addRow(["Teléfono:", data.phone]);
+  const discountNum = Number(data.discountPercentage) || 0;
+  if (discountNum > 0) {
+    worksheet.addRow(["Descuento aplicado:", `${discountNum}% OFF`]);
+  }
   if (data.notes) {
     worksheet.addRow(["Notas:", data.notes]);
   }
@@ -164,6 +169,12 @@ export async function generateQuoteExcelBuffer(data: QuoteEmailData): Promise<Bu
   taxRow.getCell(5).font = { bold: true };
   taxRow.getCell(6).numFmt = '"$"#,##0.00';
   taxRow.getCell(6).font = { bold: true };
+
+  if (discountNum > 0) {
+    const discRow = worksheet.addRow(["", "", "", "", "Descuento Cliente:", `${discountNum}% OFF`]);
+    discRow.getCell(5).font = { bold: true, color: { argb: "FF00A859" } };
+    discRow.getCell(6).font = { bold: true, color: { argb: "FF00A859" } };
+  }
 
   const totalRow = worksheet.addRow(["", "", "", "", "Total Cotizado:", totalNum]);
   totalRow.getCell(5).font = { bold: true, color: { argb: "FF00A859" } };
@@ -234,6 +245,7 @@ export async function sendQuoteEmails(data: QuoteEmailData): Promise<{ clientSen
   const subtotalNum = Number(data.subtotal) || 0;
   const taxPercent = (subtotalNum > 0 && taxNum > 0) ? Math.round((taxNum / subtotalNum) * 100) : 0;
   const taxLabel = taxNum > 0 ? `I.V.A. (${taxPercent}%):` : "I.V.A. (Sin IVA):";
+  const discountNum = Number(data.discountPercentage) || 0;
 
   // 1. Email para el Cliente
   const clientHtml = `
@@ -257,6 +269,7 @@ export async function sendQuoteEmails(data: QuoteEmailData): Promise<{ clientSen
             <p style="margin: 4px 0;"><strong>Empresa:</strong> ${safeCompanyName}</p>
             <p style="margin: 4px 0;"><strong>Teléfono:</strong> ${safePhone}</p>
             <p style="margin: 4px 0;"><strong>Correo:</strong> ${safeEmail}</p>
+            ${discountNum > 0 ? `<p style="margin: 4px 0; color: #00A859;"><strong>Descuento de cliente aplicado:</strong> <span style="background-color: #dcfce7; color: #15803d; font-weight: bold; padding: 2px 8px; border-radius: 9999px; font-size: 12px;">${discountNum}% OFF</span></p>` : ""}
             ${safeNotes ? `<p style="margin: 4px 0;"><strong>Notas adicionales:</strong> ${safeNotes}</p>` : ""}
           </div>
 
@@ -278,6 +291,7 @@ export async function sendQuoteEmails(data: QuoteEmailData): Promise<{ clientSen
           </table>
 
           <div style="text-align: right; font-size: 14px; line-height: 1.6; border-top: 1px solid #e2e8f0; padding-top: 12px;">
+            ${discountNum > 0 ? `<p style="margin: 4px 0; color: #00A859; font-weight: 600;">Descuento de cliente: <strong>-${discountNum}% OFF</strong></p>` : ""}
             <p style="margin: 4px 0; color: #64748b;">Subtotal: <strong>${formatCurrency(data.subtotal)}</strong></p>
             <p style="margin: 4px 0; color: #64748b;">${taxLabel} <strong>${formatCurrency(data.tax)}</strong></p>
             <p style="margin: 6px 0; font-size: 18px; color: #00A859;">Total: <strong>${formatCurrency(data.total)}</strong></p>
@@ -310,6 +324,15 @@ export async function sendQuoteEmails(data: QuoteEmailData): Promise<{ clientSen
             <p style="margin: 2px 0;"><strong>Empresa:</strong> ${safeCompanyName}</p>
             <p style="margin: 2px 0;"><strong>Email:</strong> <a href="mailto:${safeEmail}">${safeEmail}</a></p>
             <p style="margin: 2px 0;"><strong>Teléfono:</strong> <a href="tel:${safePhone}">${safePhone}</a></p>
+            ${discountNum > 0 ? `
+              <p style="margin: 4px 0 2px 0; color: #15803d; font-weight: 500;">
+                <strong>Descuento de Cliente:</strong>
+                <span style="display: inline-block; background-color: #dcfce7; color: #15803d; font-weight: bold; padding: 2px 8px; border-radius: 9999px; font-size: 12px; margin-left: 4px; border: 1px solid #bbf7d0;">
+                  ${discountNum}% OFF
+                </span>
+                <span style="font-size: 12px; color: #64748b; margin-left: 4px;">(Precios unitarios ya reflejan este descuento)</span>
+              </p>
+            ` : ""}
             ${safeNotes ? `<p style="margin: 6px 0; padding-top: 6px; border-top: 1px dashed #cbd5e1;"><strong>Notas del cliente:</strong> ${safeNotes}</p>` : ""}
           </div>
 
@@ -331,6 +354,11 @@ export async function sendQuoteEmails(data: QuoteEmailData): Promise<{ clientSen
           </table>
 
           <div style="text-align: right; font-size: 14px; line-height: 1.6; border-top: 2px solid #e2e8f0; padding-top: 12px;">
+            ${discountNum > 0 ? `
+              <p style="margin: 4px 0; color: #15803d; font-weight: 600;">
+                Descuento de cliente aplicado: <span style="background-color: #dcfce7; color: #15803d; padding: 2px 6px; border-radius: 4px; border: 1px solid #bbf7d0;">-${discountNum}% OFF</span>
+              </p>
+            ` : ""}
             <p style="margin: 4px 0; color: #64748b;">Subtotal: <strong>${formatCurrency(data.subtotal)}</strong></p>
             <p style="margin: 4px 0; color: #64748b;">${taxLabel} <strong>${formatCurrency(data.tax)}</strong></p>
             <p style="margin: 6px 0; font-size: 18px; color: #00A859;">Total Cotizado: <strong>${formatCurrency(data.total)}</strong></p>

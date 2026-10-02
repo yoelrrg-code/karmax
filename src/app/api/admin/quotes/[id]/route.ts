@@ -36,7 +36,8 @@ export async function GET(
       .where(eq(quoteItems.quoteRequestId, quoteId));
 
     let userDetails = null;
-    if (quote.userId) {
+    const lookupUserId = quote.userId;
+    if (lookupUserId) {
       const [u] = await db
         .select({
           id: users.id,
@@ -44,10 +45,26 @@ export async function GET(
           email: users.email,
           phone: users.phone,
           companyName: users.companyName,
+          discountPercentage: users.discountPercentage,
           createdAt: users.createdAt,
         })
         .from(users)
-        .where(eq(users.id, quote.userId))
+        .where(eq(users.id, lookupUserId))
+        .limit(1);
+      userDetails = u || null;
+    } else if (quote.email) {
+      const [u] = await db
+        .select({
+          id: users.id,
+          name: users.name,
+          email: users.email,
+          phone: users.phone,
+          companyName: users.companyName,
+          discountPercentage: users.discountPercentage,
+          createdAt: users.createdAt,
+        })
+        .from(users)
+        .where(eq(users.email, quote.email))
         .limit(1);
       userDetails = u || null;
     }

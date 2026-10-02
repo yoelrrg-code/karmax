@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/auth/adminGuard";
-import { db, quoteRequests, quoteItems } from "@/lib/db";
+import { db, quoteRequests, quoteItems, users } from "@/lib/db";
 import { eq } from "drizzle-orm";
 import { generateQuoteExcelBuffer } from "@/lib/email/mailer";
 
@@ -36,6 +36,23 @@ export async function GET(
       .from(quoteItems)
       .where(eq(quoteItems.quoteRequestId, quoteId));
 
+    let userDiscountPercentage = 0;
+    if (quote.userId) {
+      const [u] = await db
+        .select({ discountPercentage: users.discountPercentage })
+        .from(users)
+        .where(eq(users.id, quote.userId))
+        .limit(1);
+      if (u) userDiscountPercentage = Number(u.discountPercentage || 0);
+    } else if (quote.email) {
+      const [u] = await db
+        .select({ discountPercentage: users.discountPercentage })
+        .from(users)
+        .where(eq(users.email, quote.email))
+        .limit(1);
+      if (u) userDiscountPercentage = Number(u.discountPercentage || 0);
+    }
+
     const finalQuoteNumber = quote.quoteNumber || `#${quote.id.toString().padStart(6, "0")}`;
 
     const excelBuffer = await generateQuoteExcelBuffer({
@@ -56,6 +73,7 @@ export async function GET(
         unitPrice: it.unitPrice || 0,
         totalPrice: it.totalPrice || (Number(it.unitPrice || 0) * it.quantity),
       })),
+      discountPercentage: userDiscountPercentage,
     });
 
     const cleanQuoteNumber = finalQuoteNumber.replace(/[^a-zA-Z0-9_-]/g, "_");

@@ -113,16 +113,7 @@ export const QuoteDrawer: React.FC = () => {
       const userDiscount = Number(currentUser?.discountPercentage || 0);
 
       const calculatedItems = currentItems.map((it) => {
-        let finalUnitPrice = it.unitPrice;
-        if (userDiscount > 0) {
-          if (it.regularPrice && it.regularPrice > it.unitPrice) {
-            // El item ya tiene el descuento aplicado
-            finalUnitPrice = it.unitPrice;
-          } else {
-            const baseRegular = it.regularPrice ?? it.unitPrice;
-            finalUnitPrice = Number((baseRegular * (1 - userDiscount / 100)).toFixed(2));
-          }
-        }
+        const finalUnitPrice = it.unitPrice;
         return {
           productId: it.productId,
           productName: it.name,
@@ -131,6 +122,7 @@ export const QuoteDrawer: React.FC = () => {
           imageUrl: it.imageUrl,
           quantity: it.quantity,
           unitPrice: finalUnitPrice,
+          regularPrice: it.regularPrice ?? null,
           totalPrice: Number((finalUnitPrice * it.quantity).toFixed(2)),
         };
       });

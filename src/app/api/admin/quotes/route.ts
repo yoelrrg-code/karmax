@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/auth/adminGuard";
-import { db, quoteRequests, quoteItems } from "@/lib/db";
+import { db, quoteRequests, quoteItems, users } from "@/lib/db";
 import { desc, eq, like, or, and, sql, inArray } from "drizzle-orm";
 import { escapeLikePattern } from "@/lib/security/sql";
 
@@ -70,10 +70,24 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Fetch user discounts for quotes
+    const userIds = rows.map((r) => r.userId).filter((id): id is number => typeof id === "number" && id > 0);
+    const userDiscountMap: Record<number, number> = {};
+    if (userIds.length > 0) {
+      const userRows = await db
+        .select({ id: users.id, discountPercentage: users.discountPercentage })
+        .from(users)
+        .where(inArray(users.id, userIds));
+      for (const u of userRows) {
+        userDiscountMap[u.id] = Number(u.discountPercentage || 0);
+      }
+    }
+
     const quotesWithItems = rows.map((q) => ({
       ...q,
       items: itemsMap[q.id] || [],
       itemsCount: (itemsMap[q.id] || []).reduce((acc, it) => acc + it.quantity, 0),
+      discountPercentage: q.userId ? (userDiscountMap[q.userId] || 0) : 0,
     }));
 
     return NextResponse.json({

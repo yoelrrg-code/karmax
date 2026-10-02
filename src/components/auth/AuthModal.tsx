@@ -180,16 +180,19 @@ export const AuthModal: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Teléfono / WhatsApp *
+                  Teléfono / WhatsApp * <span className="font-normal text-slate-400">(con código de país)</span>
                 </label>
                 <input
                   type="tel"
                   required
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="Ej. 81 1234 5678"
+                  placeholder="Ej. +52 81 1234 5678"
                   className="text-[var(--text-karmax)] w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-[var(--green-karmax)] focus:ring-2 focus:ring-[var(--green-karmax)]/20 outline-none text-sm transition-all"
                 />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Incluye el código de país (ej. +52 para México).
+                </p>
               </div>
             </>
           )}
