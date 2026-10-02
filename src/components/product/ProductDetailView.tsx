@@ -5,8 +5,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
+import { Maximize2 } from "lucide-react";
 import { CatalogHeroBar } from "@/components/catalog/CatalogHeroBar";
 import { ProductCard } from "@/components/catalog/ProductCard";
+import { ProductLightbox } from "./ProductLightbox";
 import { useQuote } from "@/context/QuoteContext";
 import { useAuth } from "@/context/AuthContext";
 import { computeProductPricing } from "@/lib/pricing/discounts";
@@ -25,6 +27,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
 }) => {
   const router = useRouter();
   const [searchInput, setSearchInput] = useState("");
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
   const isMounted = useSyncExternalStore(emptySubscribe, () => true, () => false);
   const { user } = useAuth();
@@ -384,7 +387,17 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
               initial={{ opacity: 0, scale: 0.95, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               transition={{ duration: 0.9, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full aspect-square relative bg-white rounded-2xl border border-[var(--green-karmax)] shadow-2xs p-8 flex items-center justify-center overflow-hidden"
+              onClick={() => setIsLightboxOpen(true)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setIsLightboxOpen(true);
+                }
+              }}
+              tabIndex={0}
+              role="button"
+              aria-label="Ampliar imagen del producto en pantalla completa"
+              className="w-full aspect-square relative bg-white rounded-2xl border border-[var(--green-karmax)] shadow-2xs p-8 flex items-center justify-center overflow-hidden cursor-zoom-in group focus:outline-none focus:ring-2 focus:ring-[var(--green-karmax)]"
             >
               {pricing.hasDiscount && (
                 <motion.span
@@ -402,6 +415,21 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                   {Number(user?.discountPercentage) > 0 ? `-${pricing.discountPercentage}% Descuento` : "Oferta"}
                 </motion.span>
               )}
+
+              {/* Botón flotante para ampliar imagen */}
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsLightboxOpen(true);
+                }}
+                className="absolute top-4 right-4 z-10 p-2 rounded-full bg-white/90 hover:bg-white text-slate-600 hover:text-[var(--green-karmax)] shadow-xs hover:shadow-md transition-all duration-200 border border-slate-200/80 sm:opacity-0 group-hover:opacity-100 cursor-pointer"
+                title="Ampliar imagen"
+                aria-label="Ampliar imagen"
+              >
+                <Maximize2 className="w-4 h-4" />
+              </button>
+
               {/* Transición suave entre fotos de la galería al hacer clic */}
               <AnimatePresence mode="wait">
                 <motion.div
@@ -418,7 +446,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
                     fill
                     priority
                     loading="eager"
-                    className="object-contain p-4"
+                    className="object-contain p-4 transition-transform duration-300 group-hover:scale-105"
                     sizes="(max-width: 1024px) 100vw, 40vw"
                   />
                 </motion.div>
@@ -852,6 +880,15 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
           </section>
         </div>
       )}
+      {/* Modal Lightbox para visualización ampliada de la galería */}
+      <ProductLightbox
+        isOpen={isLightboxOpen}
+        onClose={() => setIsLightboxOpen(false)}
+        images={gallery}
+        currentIndex={activeImageIndex}
+        onIndexChange={setActiveImageIndex}
+        productName={formattedTitle}
+      />
     </div>
   );
 };
