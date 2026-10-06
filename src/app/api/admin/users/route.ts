@@ -172,9 +172,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Parse discount
-    let parsedDiscount = "0.00";
-    if (discountPercentage !== undefined && discountPercentage !== null) {
+    // Parse discount (default 10% for new users unless specified)
+    let parsedDiscount = "10.00";
+    if (discountPercentage !== undefined && discountPercentage !== null && discountPercentage !== "") {
       const num = Number(discountPercentage);
       if (!isNaN(num) && num >= 0 && num <= 100) {
         parsedDiscount = num.toFixed(2);

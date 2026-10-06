@@ -104,6 +104,7 @@ export async function POST(request: Request) {
       companyName: companyName ? String(companyName).trim() : null,
       passwordHash,
       isActive: true,
+      discountPercentage: "10.00",
     });
 
     const newUserId = insertResult.insertId;
@@ -124,7 +125,7 @@ export async function POST(request: Request) {
         companyName: companyName ? String(companyName).trim() : null,
         roleId,
         roleName: clientRole?.name || "cliente",
-        discountPercentage: 0,
+        discountPercentage: 10,
       },
     });
   } catch (error) {

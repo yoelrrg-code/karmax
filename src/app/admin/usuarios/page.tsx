@@ -46,7 +46,7 @@ export default function AdminUsuariosPage() {
   const [formRoleId, setFormRoleId] = useState<number>(2);
   const [formPhone, setFormPhone] = useState("");
   const [formCompany, setFormCompany] = useState("");
-  const [formDiscount, setFormDiscount] = useState<string>("0");
+  const [formDiscount, setFormDiscount] = useState<string>("10");
   const [formIsActive, setFormIsActive] = useState<boolean>(true);
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -129,7 +129,7 @@ export default function AdminUsuariosPage() {
     setFormRoleId(2); // Default to "cliente"
     setFormPhone("");
     setFormCompany("");
-    setFormDiscount("0");
+    setFormDiscount("10");
     setFormIsActive(true);
     setShowPassword(false);
     setIsModalOpen(true);
@@ -824,7 +824,7 @@ export default function AdminUsuariosPage() {
                     min="0"
                     max="100"
                     step="0.01"
-                    placeholder="0"
+                    placeholder="10"
                     value={formDiscount}
                     onChange={(e) => setFormDiscount(e.target.value)}
                     className="w-full text-xs sm:text-sm pl-3.5 pr-8 py-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-[var(--green-karmax)] focus:bg-white text-slate-800 transition-colors"

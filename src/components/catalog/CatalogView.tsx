@@ -465,6 +465,10 @@ export const CatalogView: React.FC<CatalogViewProps> = ({
                   </motion.div>
                 </AnimatePresence>
 
+                <label className="text-[14px] font-normal text-center text-[var(--light-text-karmax)] mx-auto mt-10 block">
+                  Todos los precios incluyen IVA
+                </label>
+
                 {/* Paginación */}
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}

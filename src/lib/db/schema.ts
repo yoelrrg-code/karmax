@@ -183,7 +183,7 @@ export const users = mysqlTable(
     companyName: varchar("company_name", { length: 255 }),
     passwordHash: varchar("password_hash", { length: 255 }),
     isActive: boolean("is_active").default(true).notNull(),
-    discountPercentage: decimal("discount_percentage", { precision: 5, scale: 2 }).default("0.00").notNull(),
+    discountPercentage: decimal("discount_percentage", { precision: 5, scale: 2 }).default("10.00").notNull(),
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
   },

@@ -534,7 +534,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-              className="mb-5 flex items-baseline gap-3 flex-wrap"
+              className="mb-0 flex items-baseline gap-3 flex-wrap"
             >
               {showStrikethrough ? (
                 <>
@@ -572,6 +572,10 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
               )}
             </motion.div>
 
+            <label className="text-[14px] font-normal text-start text-[var(--light-text-karmax)] mt-0 mb-7 block">
+              Precio con IVA incluido
+            </label>
+
             {/* Atributos dinámicos seleccionables */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -580,7 +584,7 @@ export const ProductDetailView: React.FC<ProductDetailViewProps> = ({
             >
               {Object.entries(availableAttributes).map(([attrName, values]) => (
                 <div key={attrName} className="mb-5">
-                  <label className="block text-[16px] md:text-[18px] font-semibold text-[var(--text-karmax)] mb-1">
+                  <label className="block text-[16px] md:text-[18px] font-semibold text-[var(--light-text-karmax)] mb-1">
                     {attrName}
                   </label>
                   <div className="flex flex-wrap gap-2 mb-3">

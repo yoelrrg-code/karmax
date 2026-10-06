@@ -231,7 +231,7 @@ export default function MisCotizacionesPage() {
             <div className="w-16 h-16 rounded-2xl bg-slate-50 text-slate-400 flex items-center justify-center mx-auto mb-4">
               <FileText className="w-8 h-8" />
             </div>
-            <h2 className="text-lg font-bold text-slate-800 mb-2">Aún no tienes cotizaciones</h2>
+            <h3 className="text-sm font-bold text-slate-800 mb-2">Aún no tienes cotizaciones</h3>
             <p className="text-xs sm:text-sm text-slate-500 mb-6">
               Agrega productos desde nuestro catálogo y cotiza fácilmente para ver el historial aquí.
             </p>
