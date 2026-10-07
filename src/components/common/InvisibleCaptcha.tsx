@@ -30,6 +30,7 @@ declare global {
         }
       ) => string;
       reset: (widgetId: string) => void;
+      remove?: (widgetId: string) => void;
     };
   }
 }
@@ -71,11 +72,14 @@ export const InvisibleCaptcha = forwardRef<InvisibleCaptchaRef, InvisibleCaptcha
               widgetIdRef.current = window.turnstile.render(turnstileContainerRef.current, {
                 sitekey: siteKey,
                 appearance: "interaction-only",
-                size: "invisible",
                 callback: (token: string) => {
                   setTurnstileToken(token);
                 },
                 "expired-callback": () => {
+                  setTurnstileToken("");
+                },
+                "error-callback": () => {
+                  console.warn("Turnstile challenge encountered an error or domain mismatch.");
                   setTurnstileToken("");
                 },
               });
@@ -97,6 +101,17 @@ export const InvisibleCaptcha = forwardRef<InvisibleCaptchaRef, InvisibleCaptcha
           initTurnstile();
         }
       }
+
+      return () => {
+        if (widgetIdRef.current && window.turnstile) {
+          try {
+            window.turnstile.remove?.(widgetIdRef.current);
+          } catch {
+            // ignore cleanup errors
+          }
+          widgetIdRef.current = null;
+        }
+      };
     }, [siteKey, fetchToken]);
 
     useImperativeHandle(ref, () => ({
@@ -107,37 +122,49 @@ export const InvisibleCaptcha = forwardRef<InvisibleCaptchaRef, InvisibleCaptcha
       }),
       refresh: async () => {
         await fetchToken();
+        setTurnstileToken("");
         if (widgetIdRef.current && window.turnstile) {
-          window.turnstile.reset(widgetIdRef.current);
+          try {
+            window.turnstile.reset(widgetIdRef.current);
+          } catch {
+            // ignore reset errors
+          }
         }
       },
     }));
 
     return (
-      <div aria-hidden="true" style={{ display: "none" }}>
+      <>
         {/* Honeypot trap: los bots rellenan los campos ocultos automáticamente */}
-        <input
-          type="text"
-          name="website_hp"
-          value={honeypot}
-          onChange={(e) => setHoneypot(e.target.value)}
-          tabIndex={-1}
-          autoComplete="off"
-          style={{
-            opacity: 0,
-            position: "absolute",
-            top: 0,
-            left: 0,
-            height: 0,
-            width: 0,
-            zIndex: -1,
-            pointerEvents: "none",
-          }}
-        />
+        <div aria-hidden="true" style={{ display: "none" }}>
+          <input
+            type="text"
+            name="website_hp"
+            value={honeypot}
+            onChange={(e) => setHoneypot(e.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
+            style={{
+              opacity: 0,
+              position: "absolute",
+              top: 0,
+              left: 0,
+              height: 0,
+              width: 0,
+              zIndex: -1,
+              pointerEvents: "none",
+            }}
+          />
+        </div>
 
-        {/* Contenedor para Turnstile Invisible */}
-        {siteKey && <div ref={turnstileContainerRef} />}
-      </div>
+        {/* Contenedor para Turnstile (no debe tener display: none para poder ejecutar su iframe) */}
+        {siteKey && (
+          <div
+            ref={turnstileContainerRef}
+            className="cf-turnstile-container flex justify-center my-1"
+          />
+        )}
+      </>
     );
   }
 );

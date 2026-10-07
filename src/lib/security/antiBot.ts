@@ -54,14 +54,15 @@ export async function verifyAntiBot(params: AntiBotVerificationParams): Promise<
   }
 
   // 2. Si Cloudflare Turnstile está configurado con secret key en el servidor
-  if (TURNSTILE_SECRET_KEY) {
+  const activeSecretKey = process.env.TURNSTILE_SECRET_KEY || TURNSTILE_SECRET_KEY;
+  if (activeSecretKey) {
     if (!turnstileToken) {
       return { valid: false, reason: "Verificación de seguridad Turnstile requerida." };
     }
 
     try {
       const formData = new URLSearchParams();
-      formData.append("secret", TURNSTILE_SECRET_KEY);
+      formData.append("secret", activeSecretKey);
       formData.append("response", turnstileToken);
       if (clientIp) formData.append("remoteip", clientIp);
 
@@ -74,6 +75,7 @@ export async function verifyAntiBot(params: AntiBotVerificationParams): Promise<
       if (cfData.success) {
         return { valid: true };
       }
+      console.warn("Turnstile validation rejected by Cloudflare:", cfData["error-codes"] || cfData);
       return { valid: false, reason: "Verificación de seguridad Turnstile inválida." };
     } catch (err) {
       console.error("Error validando Cloudflare Turnstile:", err);
