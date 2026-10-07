@@ -450,18 +450,23 @@ export const QuoteProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return items.reduce((sum, it) => sum + it.quantity, 0);
   }, [items]);
 
-  const subtotal = useMemo(() => {
-    return items.reduce((sum, it) => sum + it.unitPrice * it.quantity, 0);
+  // Total = Suma de (Precio IVA incluido × Cantidad)
+  const total = useMemo(() => {
+    const rawTotal = items.reduce((sum, it) => sum + it.unitPrice * it.quantity, 0);
+    return Number(rawTotal.toFixed(2));
   }, [items]);
 
-  const tax = useMemo(() => {
-    if (!taxSettings.enabled || taxSettings.rate <= 0) return 0;
-    return subtotal * (taxSettings.rate / 100);
-  }, [subtotal, taxSettings]);
+  // Subtotal sin IVA = Total / 1.16
+  const subtotal = useMemo(() => {
+    if (total <= 0) return 0;
+    return Number((total / 1.16).toFixed(2));
+  }, [total]);
 
-  const total = useMemo(() => {
-    return subtotal + tax;
-  }, [subtotal, tax]);
+  // IVA incluido (16%) = Total - Subtotal sin IVA (desglose informativo)
+  const tax = useMemo(() => {
+    if (!taxSettings.enabled || taxSettings.rate <= 0 || total <= 0) return 0;
+    return Number((total - subtotal).toFixed(2));
+  }, [total, subtotal, taxSettings]);
 
   useEffect(() => {
     let ignore = false;

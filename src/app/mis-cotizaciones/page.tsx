@@ -368,7 +368,7 @@ export default function MisCotizacionesPage() {
                         <th className="pb-2 min-w-[180px] font-semibold text-[12px]">Producto</th>
                         <th className="pb-2 text-center min-w-[90px] font-semibold text-[12px]">Presentación</th>
                         <th className="pb-2 text-center min-w-[90px] font-semibold text-[12px]">Cantidad</th>
-                        <th className="pb-2 text-right min-w-[120px] font-semibold text-[12px]">Precio Unitario</th>
+                        <th className="pb-2 text-right min-w-[140px] font-semibold text-[12px]">Precio IVA incluido</th>
                         <th className="pb-2 text-right min-w-[80px] font-semibold text-[12px]">Total</th>
                       </tr>
                     </thead>
@@ -445,16 +445,16 @@ export default function MisCotizacionesPage() {
                     <div className="hidden md:block md:col-span-7" />
                   )}
 
-                  {/* Subtotal, IVA 16%, Total */}
+                  {/* Subtotal sin IVA, IVA incluido 16%, Total */}
                   <div className="md:col-span-5 flex flex-col justify-between space-y-2 text-xs sm:text-sm">
                     <div className="flex items-center justify-between text-[var(--text-karmax)]">
-                      <span className="font-semibold">Subtotal</span>
+                      <span className="font-semibold">Subtotal sin IVA</span>
                       <span className="font-medium">{formatCurrency(selectedQuote.subtotal)}</span>
                     </div>
                     <div className="flex items-center justify-between text-[var(--text-karmax)] pt-2.5 border-t border-[#D6DADD]">
                       <span className="font-semibold">
                         {Number(selectedQuote.tax) > 0
-                          ? `IVA ${Number(selectedQuote.subtotal) > 0 ? Math.round((Number(selectedQuote.tax) / Number(selectedQuote.subtotal)) * 100) : 16}%`
+                          ? "IVA incluido (16%)"
                           : "IVA (Sin IVA)"}
                       </span>
                       <span className="font-medium">{formatCurrency(selectedQuote.tax)}</span>

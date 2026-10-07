@@ -139,7 +139,7 @@ export async function generateQuoteExcelBuffer(data: QuoteEmailData): Promise<Bu
     "Producto",
     "Presentación",
     "Cantidad",
-    "Precio Unitario (MXN)",
+    "Precio IVA incluido (MXN)",
     "Total (MXN)",
   ]);
 
@@ -185,12 +185,12 @@ export async function generateQuoteExcelBuffer(data: QuoteEmailData): Promise<Bu
   const taxNum = typeof data.tax === "number" ? data.tax : parseFloat(String(data.tax)) || 0;
   const totalNum = typeof data.total === "number" ? data.total : parseFloat(String(data.total)) || 0;
 
-  const subtotalRow = worksheet.addRow(["", "", "", "", "Subtotal:", subtotalNum]);
+  const subtotalRow = worksheet.addRow(["", "", "", "", "Subtotal sin IVA:", subtotalNum]);
   subtotalRow.getCell(5).font = { bold: true };
   subtotalRow.getCell(6).numFmt = '"$"#,##0.00';
   subtotalRow.getCell(6).font = { bold: true };
 
-  const taxRow = worksheet.addRow(["", "", "", "", "I.V.A.:", taxNum]);
+  const taxRow = worksheet.addRow(["", "", "", "", "IVA incluido (16%):", taxNum]);
   taxRow.getCell(5).font = { bold: true };
   taxRow.getCell(6).numFmt = '"$"#,##0.00';
   taxRow.getCell(6).font = { bold: true };
@@ -268,8 +268,7 @@ export async function sendQuoteEmails(data: QuoteEmailData): Promise<{ clientSen
 
   const taxNum = Number(data.tax) || 0;
   const subtotalNum = Number(data.subtotal) || 0;
-  const taxPercent = (subtotalNum > 0 && taxNum > 0) ? Math.round((taxNum / subtotalNum) * 100) : 0;
-  const taxLabel = taxNum > 0 ? `I.V.A. (${taxPercent}%):` : "I.V.A. (Sin IVA):";
+  const taxLabel = taxNum > 0 ? "IVA incluido (16%):" : "IVA (Sin IVA):";
   const discountNum = Number(data.discountPercentage) || 0;
 
   // 1. Email para el Cliente
@@ -306,7 +305,7 @@ export async function sendQuoteEmails(data: QuoteEmailData): Promise<{ clientSen
                 <th style="padding: 8px; text-align: left;">Producto</th>
                 <th style="padding: 8px; text-align: center;">Pres.</th>
                 <th style="padding: 8px; text-align: center;">Cant.</th>
-                <th style="padding: 8px; text-align: right;">Unitario</th>
+                <th style="padding: 8px; text-align: right;">Precio IVA incluido</th>
                 <th style="padding: 8px; text-align: right;">Total</th>
               </tr>
             </thead>
@@ -317,8 +316,8 @@ export async function sendQuoteEmails(data: QuoteEmailData): Promise<{ clientSen
 
           <div style="text-align: right; font-size: 14px; line-height: 1.6; border-top: 1px solid #e2e8f0; padding-top: 12px;">
             ${discountNum > 0 ? `<p style="margin: 4px 0; color: #00A859; font-weight: 600;">Descuento de cliente: <strong>-${discountNum}% OFF</strong></p>` : ""}
-            <p style="margin: 4px 0; color: #64748b;">Subtotal: <strong>${formatCurrency(data.subtotal)}</strong></p>
-            <p style="margin: 4px 0; color: #64748b;">${taxLabel} <strong>${formatCurrency(data.tax)}</strong></p>
+            <p style="margin: 4px 0; color: #64748b;">Subtotal sin IVA: <strong>${formatCurrency(data.subtotal)}</strong></p>
+            <p style="margin: 4px 0; color: #64748b;">IVA incluido (16%): <strong>${formatCurrency(data.tax)}</strong></p>
             <p style="margin: 6px 0; font-size: 18px; color: #00A859;">Total: <strong>${formatCurrency(data.total)}</strong></p>
           </div>
 
@@ -369,7 +368,7 @@ export async function sendQuoteEmails(data: QuoteEmailData): Promise<{ clientSen
                 <th style="padding: 8px; text-align: left;">Producto</th>
                 <th style="padding: 8px; text-align: center;">Presentación</th>
                 <th style="padding: 8px; text-align: center;">Cant.</th>
-                <th style="padding: 8px; text-align: right;">Unitario</th>
+                <th style="padding: 8px; text-align: right;">Precio IVA incluido</th>
                 <th style="padding: 8px; text-align: right;">Total</th>
               </tr>
             </thead>
@@ -384,8 +383,8 @@ export async function sendQuoteEmails(data: QuoteEmailData): Promise<{ clientSen
                 Descuento de cliente aplicado: <span style="background-color: #dcfce7; color: #15803d; padding: 2px 6px; border-radius: 4px; border: 1px solid #bbf7d0;">-${discountNum}% OFF</span>
               </p>
             ` : ""}
-            <p style="margin: 4px 0; color: #64748b;">Subtotal: <strong>${formatCurrency(data.subtotal)}</strong></p>
-            <p style="margin: 4px 0; color: #64748b;">${taxLabel} <strong>${formatCurrency(data.tax)}</strong></p>
+            <p style="margin: 4px 0; color: #64748b;">Subtotal sin IVA: <strong>${formatCurrency(data.subtotal)}</strong></p>
+            <p style="margin: 4px 0; color: #64748b;">IVA incluido (16%): <strong>${formatCurrency(data.tax)}</strong></p>
             <p style="margin: 6px 0; font-size: 18px; color: #00A859;">Total Cotizado: <strong>${formatCurrency(data.total)}</strong></p>
           </div>
 

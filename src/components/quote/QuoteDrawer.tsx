@@ -127,11 +127,11 @@ export const QuoteDrawer: React.FC = () => {
         };
       });
 
-      const calculatedSubtotal = Number(
+      const calculatedTotal = Number(
         calculatedItems.reduce((acc, it) => acc + it.totalPrice, 0).toFixed(2)
       );
-      const calculatedTax = Number((calculatedSubtotal * 0.16).toFixed(2));
-      const calculatedTotal = Number((calculatedSubtotal + calculatedTax).toFixed(2));
+      const calculatedSubtotal = Number((calculatedTotal / 1.16).toFixed(2));
+      const calculatedTax = Number((calculatedTotal - calculatedSubtotal).toFixed(2));
 
       const verification = captchaRef.current?.getVerificationData();
 
@@ -279,7 +279,7 @@ export const QuoteDrawer: React.FC = () => {
                       <th className="pb-2 min-w-[240px] font-semibold text-[10px] md:text-[12px]" colSpan={2}>Producto</th>
                       <th className="pb-2 text-center min-w-[90px] font-semibold text-[10px] md:text-[12px]">Presentación</th>
                       <th className="pb-2 text-center min-w-[90px] font-semibold text-[10px] md:text-[12px]">Cantidad</th>
-                      <th className="pb-2 text-right min-w-[80px] font-semibold text-[10px] md:text-[12px]">Precio</th>
+                      <th className="pb-2 text-right min-w-[110px] font-semibold text-[10px] md:text-[12px]">Precio IVA incluido</th>
                       <th className="pb-2 text-right min-w-[80px] font-semibold text-[10px] md:text-[12px]">Total</th>
                     </tr>
                   </thead>
@@ -393,16 +393,16 @@ export const QuoteDrawer: React.FC = () => {
                   />
                 </div>
 
-                {/* Subtotal, IVA 16%, Total */}
+                {/* Subtotal sin IVA, IVA incluido 16%, Total */}
                 <div className="md:col-span-5 flex flex-col justify-between space-y-2 text-xs sm:text-sm order-1 md:order-2 mb-4 md:mb-0">
                   <div className="flex items-center justify-between text-[var(--text-karmax)]">
-                    <span className="font-semibold">Subtotal</span>
+                    <span className="font-semibold">Subtotal sin IVA</span>
                     <span className="font-medium">{formatCurrency(subtotal)}</span>
                   </div>
                   <div className="flex items-center justify-between text-[var(--text-karmax)] pt-2.5 border-t border-[#D6DADD]">
                     <span className="font-semibold">
                       {taxSettings?.enabled && taxSettings.rate > 0
-                        ? `IVA ${taxSettings.rate}%`
+                        ? `IVA incluido (${taxSettings.rate}%)`
                         : "IVA (Sin IVA)"}
                     </span>
                     <span className="font-medium">{formatCurrency(tax)}</span>

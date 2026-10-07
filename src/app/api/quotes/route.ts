@@ -273,13 +273,17 @@ export async function POST(request: Request) {
       );
     }
 
-    // Recalcular subtotales e impuestos del lado del servidor de forma confiable
-    const computedSubtotal = Number(
+    // Recalcular totales e impuestos del lado del servidor de forma confiable (Precios con IVA incluido)
+    const computedTotal = Number(
       sanitizedItems.reduce((acc, it) => acc + it.totalPrice, 0).toFixed(2)
     );
-    const taxRate = taxSettings?.enabled ? (Number(taxSettings.rate) || 16) / 100 : 0;
-    const computedTax = Number((computedSubtotal * taxRate).toFixed(2));
-    const computedTotal = Number((computedSubtotal + computedTax).toFixed(2));
+    const isTaxEnabled = Boolean(taxSettings?.enabled && (Number(taxSettings.rate) || 16) > 0);
+    const computedSubtotal = isTaxEnabled && computedTotal > 0
+      ? Number((computedTotal / 1.16).toFixed(2))
+      : computedTotal;
+    const computedTax = isTaxEnabled && computedTotal > 0
+      ? Number((computedTotal - computedSubtotal).toFixed(2))
+      : 0;
 
     // Validar acción 'save': solo usuarios autenticados pueden guardar borradores
     if (action === "save" && !userId) {

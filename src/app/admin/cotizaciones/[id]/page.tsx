@@ -387,12 +387,12 @@ export default function AdminQuoteDetailPage() {
             </h3>
 
             <div className="space-y-2.5 mt-4 text-xs">
-              {discountPercentage > 0 ? (
+              {discountPercentage > 0 && (
                 <>
                   <div className="flex items-center justify-between text-slate-500">
-                    <span>Subtotal regular (sin desc.)</span>
+                    <span>Total regular (sin desc.)</span>
                     <span className="font-medium text-slate-700 line-through">
-                      ${(Number(quote.subtotal || 0) / (1 - discountPercentage / 100)).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      ${(Number(quote.total || 0) / (1 - discountPercentage / 100)).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-emerald-700 font-medium">
@@ -401,28 +401,21 @@ export default function AdminQuoteDetailPage() {
                       <span>Descuento de cliente ({discountPercentage}%)</span>
                     </span>
                     <span className="font-bold">
-                      -${((Number(quote.subtotal || 0) / (1 - discountPercentage / 100)) - Number(quote.subtotal || 0)).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-slate-700 pt-1.5 border-t border-slate-100">
-                    <span className="font-semibold">Subtotal con descuento</span>
-                    <span className="font-bold text-slate-900">
-                      ${Number(quote.subtotal || 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                      -${((Number(quote.total || 0) / (1 - discountPercentage / 100)) - Number(quote.total || 0)).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                   </div>
                 </>
-              ) : (
-                <div className="flex items-center justify-between text-slate-600">
-                  <span>Subtotal estimado</span>
-                  <span className="font-semibold text-slate-900">
-                    ${Number(quote.subtotal || 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
-                  </span>
-                </div>
               )}
+              <div className="flex items-center justify-between text-slate-600">
+                <span>Subtotal sin IVA</span>
+                <span className="font-semibold text-slate-900">
+                  ${Number(quote.subtotal || 0).toLocaleString("es-MX", { minimumFractionDigits: 2 })}
+                </span>
+              </div>
               <div className="flex items-center justify-between text-slate-600">
                 <span>
                   {Number(quote.tax || 0) > 0
-                    ? `IVA estimado (${Number(quote.subtotal || 0) > 0 ? Math.round((Number(quote.tax || 0) / Number(quote.subtotal || 0)) * 100) : 16}%)`
+                    ? "IVA incluido (16%)"
                     : "IVA (Sin IVA)"}
                 </span>
                 <span className="font-semibold text-slate-900">
@@ -471,7 +464,7 @@ export default function AdminQuoteDetailPage() {
                 <th className="px-5 py-3">Presentación / Aroma</th>
                 <th className="px-5 py-3">SKU de Variación</th>
                 <th className="px-5 py-3 text-center">Cantidad</th>
-                <th className="px-5 py-3 text-right">Precio Unit.</th>
+                <th className="px-5 py-3 text-right">Precio IVA incluido</th>
                 <th className="px-5 py-3 text-right">Importe Total</th>
               </tr>
             </thead>
