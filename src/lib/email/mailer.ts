@@ -44,22 +44,47 @@ function formatCurrency(val: number | string): string {
   }).format(num);
 }
 
+function getFromAddress(): string {
+  if (process.env.SMTP_FROM) {
+    return process.env.SMTP_FROM.trim();
+  }
+  const user = process.env.SMTP_USER || process.env.GMAIL_USER || "ventas@karmax.mx";
+  return `"Karmax México" <${user.trim()}>`;
+}
+
 function getTransporter() {
-  const user = process.env.GMAIL_USER;
-  const pass = process.env.GMAIL_APP_PASSWORD;
+  const host = process.env.SMTP_HOST;
+  const port = Number(process.env.SMTP_PORT) || 465;
+  const secure = process.env.SMTP_SECURE ? process.env.SMTP_SECURE === "true" : port === 465;
+  const user = process.env.SMTP_USER || process.env.GMAIL_USER;
+  const pass = process.env.SMTP_PASSWORD || process.env.GMAIL_APP_PASSWORD;
 
   if (!user || !pass) {
     console.warn(
-      "[Mailer] Advertencia: GMAIL_USER o GMAIL_APP_PASSWORD no están configurados en .env.local. El correo no se enviará."
+      "[Mailer] Advertencia: Credenciales SMTP (SMTP_USER/SMTP_PASSWORD o GMAIL_USER/GMAIL_APP_PASSWORD) no configuradas en el entorno. El correo no se enviará."
     );
     return null;
   }
 
+  // Si se definió host SMTP específico (por ejemplo Hostinger: smtp.hostinger.com)
+  if (host) {
+    return nodemailer.createTransport({
+      host: host.trim(),
+      port,
+      secure,
+      auth: {
+        user: user.trim(),
+        pass: pass.trim(),
+      },
+    });
+  }
+
+  // Fallback a servicio Gmail tradicional si no hay SMTP_HOST
   return nodemailer.createTransport({
     service: "gmail",
     auth: {
       user: user.trim(),
-      pass: pass.trim().replace(/\s+/g, ""), // Elimina espacios si copiaron "xxxx xxxx xxxx xxxx"
+      pass: pass.trim().replace(/\s+/g, ""),
     },
   });
 }
@@ -231,7 +256,7 @@ export async function sendQuoteEmails(data: QuoteEmailData): Promise<{ clientSen
   }
 
   const karmaxAdminEmail = await getKarmaxNotificationEmail();
-  const fromAddress = `"Karmax México" <${process.env.GMAIL_USER}>`;
+  const fromAddress = getFromAddress();
   const itemsHtml = buildItemsHtml(data.items);
 
   const safeQuoteNumber = escapeHtml(data.quoteNumber);
@@ -442,7 +467,7 @@ export async function sendContactNotificationEmail(
   }
 
   const karmaxAdminEmail = await getKarmaxNotificationEmail();
-  const fromAddress = `"Karmax México" <${process.env.GMAIL_USER}>`;
+  const fromAddress = getFromAddress();
   const safeFullName = escapeHtml(data.fullName);
   const safeCompany = escapeHtml(data.company);
   const safeEmail = escapeHtml(data.email);
