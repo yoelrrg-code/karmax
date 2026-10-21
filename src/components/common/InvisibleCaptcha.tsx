@@ -11,8 +11,13 @@ export interface InvisibleCaptchaRef {
   refresh: () => Promise<void>;
 }
 
-interface InvisibleCaptchaProps {
+export interface TurnstileCaptchaProps {
   onReady?: (ready: boolean) => void;
+  appearance?: "always" | "execute" | "interaction-only";
+  size?: "normal" | "compact" | "flexible";
+  theme?: "light" | "dark" | "auto";
+  className?: string;
+  onVerify?: (token: string) => void;
 }
 
 declare global {
@@ -26,7 +31,9 @@ declare global {
           "error-callback"?: () => void;
           "expired-callback"?: () => void;
           appearance?: "always" | "execute" | "interaction-only";
-          size?: "normal" | "compact" | "invisible";
+          size?: "normal" | "compact" | "flexible" | "invisible";
+          theme?: "light" | "dark" | "auto";
+          language?: string;
         }
       ) => string;
       reset: (widgetId: string) => void;
@@ -35,8 +42,18 @@ declare global {
   }
 }
 
-export const InvisibleCaptcha = forwardRef<InvisibleCaptchaRef, InvisibleCaptchaProps>(
-  ({ onReady }, ref) => {
+export const CloudflareTurnstile = forwardRef<InvisibleCaptchaRef, TurnstileCaptchaProps>(
+  (
+    {
+      onReady,
+      appearance = "always",
+      size = "normal",
+      theme = "light",
+      className = "",
+      onVerify,
+    },
+    ref
+  ) => {
     const [antiBotToken, setAntiBotToken] = useState<string>("");
     const [honeypot, setHoneypot] = useState<string>("");
     const [turnstileToken, setTurnstileToken] = useState<string>("");
@@ -71,16 +88,22 @@ export const InvisibleCaptcha = forwardRef<InvisibleCaptchaRef, InvisibleCaptcha
             try {
               widgetIdRef.current = window.turnstile.render(turnstileContainerRef.current, {
                 sitekey: siteKey,
-                appearance: "interaction-only",
+                appearance,
+                size,
+                theme,
+                language: "es",
                 callback: (token: string) => {
                   setTurnstileToken(token);
+                  onVerify?.(token);
                 },
                 "expired-callback": () => {
                   setTurnstileToken("");
+                  onVerify?.("");
                 },
                 "error-callback": () => {
                   console.warn("Turnstile challenge encountered an error or domain mismatch.");
                   setTurnstileToken("");
+                  onVerify?.("");
                 },
               });
             } catch (e) {
@@ -112,7 +135,7 @@ export const InvisibleCaptcha = forwardRef<InvisibleCaptchaRef, InvisibleCaptcha
           widgetIdRef.current = null;
         }
       };
-    }, [siteKey, fetchToken]);
+    }, [siteKey, appearance, size, theme, onVerify, fetchToken]);
 
     useImperativeHandle(ref, () => ({
       getVerificationData: () => ({
@@ -157,16 +180,19 @@ export const InvisibleCaptcha = forwardRef<InvisibleCaptchaRef, InvisibleCaptcha
           />
         </div>
 
-        {/* Contenedor para Turnstile (no debe tener display: none para poder ejecutar su iframe) */}
-        {siteKey && (
+        {/* Contenedor visible para Cloudflare Turnstile */}
+        {siteKey ? (
           <div
             ref={turnstileContainerRef}
-            className="cf-turnstile-container flex justify-center my-1"
+            className={`cf-turnstile-container flex justify-start my-3 min-h-[65px] ${className}`}
           />
-        )}
+        ) : null}
       </>
     );
   }
 );
 
-InvisibleCaptcha.displayName = "InvisibleCaptcha";
+CloudflareTurnstile.displayName = "CloudflareTurnstile";
+
+// Alias para compatibilidad con código existente
+export const InvisibleCaptcha = CloudflareTurnstile;

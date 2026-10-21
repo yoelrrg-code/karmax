@@ -11,7 +11,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { WhatsappIcon } from "@/components/icons";
-import { InvisibleCaptcha, InvisibleCaptchaRef } from "@/components/common/InvisibleCaptcha";
+import { CloudflareTurnstile, InvisibleCaptchaRef } from "@/components/common/InvisibleCaptcha";
 import type { ContactPageData } from "@/types";
 import type { FooterProps } from "@/components/layout/Footer";
 
@@ -276,8 +276,10 @@ export const ContactSection: React.FC<ContactSectionProps> = ({
                   />
                 </div>
 
-                {/* CAPTCHA invisible & Honeypot */}
-                <InvisibleCaptcha ref={captchaRef} />
+                {/* Cloudflare Turnstile CAPTCHA & Honeypot */}
+                <div className="py-2">
+                  <CloudflareTurnstile ref={captchaRef} size="normal" theme="light" />
+                </div>
 
                 {/* Mensaje de error si falla el envío */}
                 {errorMessage && (

@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useQuote } from "@/context/QuoteContext";
 import { useAuth } from "@/context/AuthContext";
 import { Trash2, X } from "lucide-react";
-import { InvisibleCaptcha, type InvisibleCaptchaRef } from "@/components/common/InvisibleCaptcha";
+import { CloudflareTurnstile, type InvisibleCaptchaRef } from "@/components/common/InvisibleCaptcha";
 
 const emptySubscribe = () => () => {};
 
@@ -156,6 +156,7 @@ export const QuoteDrawer: React.FC = () => {
       const data = await res.json();
 
       if (!res.ok) {
+        captchaRef.current?.refresh();
         alert(data.error || "Hubo un error al procesar la cotización.");
         return;
       }
@@ -179,6 +180,7 @@ export const QuoteDrawer: React.FC = () => {
       }
     } catch (e) {
       console.error("Error saving quote:", e);
+      captchaRef.current?.refresh();
       alert("Error de conexión al procesar la cotización.");
     } finally {
       setIsSubmitting(false);
@@ -208,8 +210,6 @@ export const QuoteDrawer: React.FC = () => {
             isDrawerOpen ? "translate-x-0" : "translate-x-full"
           }`}
         >
-          {/* Invisible Captcha & Anti-Bot Defense */}
-          <InvisibleCaptcha ref={captchaRef} />
 
           {/* 1. Header */}
           <div className="px-4 md:px-6 py-5 border-b border-slate-100 flex items-center justify-between">
@@ -418,7 +418,12 @@ export const QuoteDrawer: React.FC = () => {
 
           {/* 4. Action Buttons & Disclaimer Footer */}
           {items.length > 0 && (
-            <div className="max-w-3xl mx-auto p-6 space-y-4">
+            <div className="max-w-3xl mx-auto p-6 pt-0">
+              {/* Cloudflare Turnstile CAPTCHA */}
+              <div className="flex justify-center pb-1">
+                <CloudflareTurnstile ref={captchaRef} size="normal" theme="light" />
+              </div>
+
               <div className="flex flex-col sm:flex-row items-center gap-3 mb-10">
                 <button
                   type="button"

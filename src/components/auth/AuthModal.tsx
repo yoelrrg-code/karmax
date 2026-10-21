@@ -3,7 +3,7 @@
 import React, { useState, useRef } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { X } from "lucide-react";
-import { InvisibleCaptcha, type InvisibleCaptchaRef } from "@/components/common/InvisibleCaptcha";
+import { CloudflareTurnstile, type InvisibleCaptchaRef } from "@/components/common/InvisibleCaptcha";
 
 export const AuthModal: React.FC = () => {
   const { isAuthModalOpen, closeAuthModal, login, register } = useAuth();
@@ -148,7 +148,6 @@ export const AuthModal: React.FC = () => {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-3.5">
-          <InvisibleCaptcha ref={captchaRef} />
           {activeTab === "register" && (
             <>
               <div>
@@ -240,6 +239,10 @@ export const AuthModal: React.FC = () => {
               />
             </div>
           )}
+
+          <div className="flex justify-center pt-2">
+            <CloudflareTurnstile ref={captchaRef} size="normal" theme="light" />
+          </div>
 
           <button
             type="submit"
