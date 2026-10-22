@@ -269,8 +269,7 @@ export interface PriceSyncSettings {
   lastSyncReport?: PriceSyncReport | null;
 }
 
-export const DEFAULT_SHEET_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vR-URR428Bn9U3PvAzOkCwwD__GGhwB3HBINmfNSyKM-VE9RO9FWw7NPQ7kXNJjnQ/pub?gid=986321110&single=true&output=csv";
+export const DEFAULT_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR-URR428Bn9U3PvAzOkCwwD__GGhwB3HBINmfNSyKM-VE9RO9FWw7NPQ7kXNJjnQ/pub?gid=405871111&single=true&output=csv";
 
 
 

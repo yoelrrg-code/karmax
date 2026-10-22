@@ -26,6 +26,8 @@ import type {
   TaxSettings,
   PriceSyncSettings,
 } from "@/types";
+import { DEFAULT_SHEET_URL } from "@/types";
+export { DEFAULT_SHEET_URL };
 import { asc, desc, eq, and, or, like, inArray, sql } from "drizzle-orm";
 import { escapeLikePattern } from "@/lib/security/sql";
 
@@ -706,8 +708,6 @@ export async function getTaxSettings(): Promise<TaxSettings> {
   }
 }
 
-export const DEFAULT_SHEET_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vR-URR428Bn9U3PvAzOkCwwD__GGhwB3HBINmfNSyKM-VE9RO9FWw7NPQ7kXNJjnQ/pub?gid=986321110&single=true&output=csv";
 
 /**
  * Obtiene la configuración de sincronización de precios desde Google Sheets ('price_sync_settings').
