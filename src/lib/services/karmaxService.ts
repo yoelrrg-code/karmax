@@ -10,6 +10,7 @@ import {
   productDocuments,
   productImages,
   siteSettings,
+  priceSyncLogs,
 } from "@/lib/db";
 import { CATEGORIES_DATA, INDUSTRIES_DATA } from "@/lib/data/mockData";
 import type {
@@ -25,6 +26,7 @@ import type {
   SeoSettings,
   TaxSettings,
   PriceSyncSettings,
+  PriceSyncLogItem,
 } from "@/types";
 import { DEFAULT_SHEET_URL } from "@/types";
 export { DEFAULT_SHEET_URL };
@@ -778,4 +780,64 @@ export async function savePriceSyncSettings(
   }
 
   return updated;
+}
+
+/**
+ * Obtiene los registros de auditoría de sincronización de precios.
+ */
+export async function getPriceSyncLogs({
+  limit = 20,
+  offset = 0,
+}: {
+  limit?: number;
+  offset?: number;
+} = {}): Promise<{ logs: PriceSyncLogItem[]; total: number }> {
+  try {
+    const [countResult] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(priceSyncLogs);
+    const total = Number(countResult?.count || 0);
+
+    const rows = await db
+      .select()
+      .from(priceSyncLogs)
+      .orderBy(desc(priceSyncLogs.executedAt))
+      .limit(limit)
+      .offset(offset);
+
+    const logs: PriceSyncLogItem[] = rows.map((r) => ({
+      id: r.id,
+      status: r.status as "success" | "error" | "partial",
+      triggerType: (r.triggerType as "manual" | "cron") || "cron",
+      sheetUrl: r.sheetUrl,
+      totalRows: r.totalRows,
+      updatedProducts: r.updatedProducts,
+      updatedAttributes: r.updatedAttributes,
+      updatedVariants: r.updatedVariants,
+      notFoundCount: r.notFoundCount,
+      durationMs: r.durationMs,
+      message: r.message,
+      errorDetails: r.errorDetails,
+      details: r.details,
+      executedAt: r.executedAt instanceof Date ? r.executedAt.toISOString() : String(r.executedAt),
+    }));
+
+    return { logs, total };
+  } catch (error) {
+    console.error("Error al obtener price_sync_logs:", error);
+    return { logs: [], total: 0 };
+  }
+}
+
+/**
+ * Limpia el historial de registros de sincronización de precios.
+ */
+export async function clearPriceSyncLogs(): Promise<boolean> {
+  try {
+    await db.delete(priceSyncLogs);
+    return true;
+  } catch (error) {
+    console.error("Error al limpiar price_sync_logs:", error);
+    return false;
+  }
 }

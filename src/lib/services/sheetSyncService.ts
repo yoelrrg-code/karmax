@@ -1,11 +1,17 @@
-import { db, products, productAttributes, productVariants } from "@/lib/db";
+import {
+  db,
+  products,
+  productAttributes,
+  productVariants,
+  priceSyncLogs,
+} from "@/lib/db";
 import { eq } from "drizzle-orm";
 import {
   getPriceSyncSettings,
   savePriceSyncSettings,
   DEFAULT_SHEET_URL,
 } from "./karmaxService";
-import type { PriceSyncReport } from "@/types";
+import type { PriceSyncReport, PriceSyncUpdatedSkuItem } from "@/types";
 
 /**
  * Parsea una línea de CSV respetando valores entre comillas dobles.
@@ -98,12 +104,14 @@ export function getMexicoCityTime(): {
 export interface SyncPricesOptions {
   customUrl?: string;
   force?: boolean;
+  triggerType?: "manual" | "cron";
 }
 
 export interface SyncPricesResult {
   success: boolean;
   message: string;
   report?: PriceSyncReport;
+  logId?: number;
   error?: string;
 }
 
@@ -189,6 +197,8 @@ export async function syncPricesFromSheet(
     let headerIndex = -1;
     let skuCol = -1;
     let priceCol = -1;
+    let nameCol = -1;
+    let presentationCol = -1;
 
     for (let i = 0; i < Math.min(lines.length, 15); i++) {
       const cols = parseCsvLine(lines[i]);
@@ -202,6 +212,10 @@ export async function syncPricesFromSheet(
         headerIndex = i;
         skuCol = sIdx;
         priceCol = pIdx;
+        nameCol = cols.findIndex((c) => c.toLowerCase().includes("nombre"));
+        presentationCol = cols.findIndex((c) =>
+          c.toLowerCase().includes("presentación") || c.toLowerCase().includes("presentacion")
+        );
         break;
       }
     }
@@ -218,6 +232,7 @@ export async function syncPricesFromSheet(
         .select({
           id: products.id,
           sku: products.sku,
+          name: products.name,
           regularPrice: products.regularPrice,
         })
         .from(products),
@@ -241,10 +256,12 @@ export async function syncPricesFromSheet(
 
     // Mapeos indexados por SKU en mayúsculas
     const productBySku = new Map<string, typeof existingProducts[0]>();
+    const productById = new Map<number, string>();
     for (const p of existingProducts) {
       if (p.sku?.trim()) {
         productBySku.set(p.sku.trim().toUpperCase(), p);
       }
+      productById.set(p.id, p.name);
     }
 
     const attributeBySku = new Map<string, typeof existingAttributes[0]>();
@@ -264,6 +281,7 @@ export async function syncPricesFromSheet(
     // 4. Procesar filas del CSV y recopilar actualizaciones para batch execution
     let totalRows = 0;
     const notFoundSkus: string[] = [];
+    const updatedSkusList: PriceSyncUpdatedSkuItem[] = [];
     const pendingProductUpdates: { id: number; price: string }[] = [];
     const pendingAttrUpdates: { id: number; price: string }[] = [];
     const pendingVariantUpdates: { id: number; price: string }[] = [];
@@ -279,14 +297,24 @@ export async function syncPricesFromSheet(
 
       const upperSku = rawSku.toUpperCase();
       let matchedAny = false;
+      const csvProductName = nameCol !== -1 ? cols[nameCol]?.trim() : undefined;
+      const csvPresentation = presentationCol !== -1 ? cols[presentationCol]?.trim() : undefined;
 
       // Actualizar en productos principales si coincide el SKU
       const matchedProd = productBySku.get(upperSku);
       if (matchedProd) {
         matchedAny = true;
         const formattedPrice = price.toFixed(2);
-        if (matchedProd.regularPrice !== formattedPrice) {
+        const oldPrice = matchedProd.regularPrice;
+        if (oldPrice !== formattedPrice) {
           pendingProductUpdates.push({ id: matchedProd.id, price: formattedPrice });
+          updatedSkusList.push({
+            sku: rawSku,
+            name: matchedProd.name || csvProductName,
+            target: "product",
+            oldPrice,
+            newPrice: formattedPrice,
+          });
           matchedProd.regularPrice = formattedPrice;
         }
       }
@@ -296,8 +324,18 @@ export async function syncPricesFromSheet(
       if (matchedAttr) {
         matchedAny = true;
         const formattedPrice = price.toFixed(2);
-        if (matchedAttr.attrPrice !== formattedPrice) {
+        const oldPrice = matchedAttr.attrPrice;
+        if (oldPrice !== formattedPrice) {
           pendingAttrUpdates.push({ id: matchedAttr.id, price: formattedPrice });
+          const prodName = productById.get(matchedAttr.productId) || csvProductName;
+          const fullName = [prodName, csvPresentation].filter(Boolean).join(" - ");
+          updatedSkusList.push({
+            sku: rawSku,
+            name: fullName || undefined,
+            target: "attribute",
+            oldPrice,
+            newPrice: formattedPrice,
+          });
           matchedAttr.attrPrice = formattedPrice;
         }
       }
@@ -307,8 +345,17 @@ export async function syncPricesFromSheet(
       if (matchedVariant) {
         matchedAny = true;
         const formattedPrice = price.toFixed(2);
-        if (matchedVariant.price !== formattedPrice) {
+        const oldPrice = matchedVariant.price;
+        if (oldPrice !== formattedPrice) {
           pendingVariantUpdates.push({ id: matchedVariant.id, price: formattedPrice });
+          const prodName = productById.get(matchedVariant.productId) || csvProductName;
+          updatedSkusList.push({
+            sku: rawSku,
+            name: prodName || undefined,
+            target: "variant",
+            oldPrice,
+            newPrice: formattedPrice,
+          });
           matchedVariant.price = formattedPrice;
         }
       }
@@ -368,10 +415,38 @@ export async function syncPricesFromSheet(
       lastSyncReport: report,
     });
 
+    // Guardar registro de auditoría en price_sync_logs
+    let logId: number | undefined;
+    try {
+      const [insertResult] = await db.insert(priceSyncLogs).values({
+        status: "success",
+        triggerType: options.triggerType || "cron",
+        sheetUrl: targetUrl,
+        totalRows,
+        updatedProducts,
+        updatedAttributes,
+        updatedVariants,
+        notFoundCount: notFoundSkus.length,
+        durationMs,
+        message: report.message,
+        errorDetails: null,
+        details: {
+          updatedSkus: updatedSkusList,
+          notFoundSkus,
+          totalUpdated: updatedProducts + updatedAttributes + updatedVariants,
+        },
+        executedAt: new Date(),
+      });
+      logId = Number(insertResult.insertId);
+    } catch (logErr) {
+      console.error("No se pudo registrar log de sincronización exitosa en price_sync_logs:", logErr);
+    }
+
     return {
       success: true,
       message: report.message || "Sincronización completada exitosamente.",
       report,
+      logId,
     };
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : "Error desconocido al sincronizar precios.";
@@ -390,10 +465,33 @@ export async function syncPricesFromSheet(
       },
     });
 
+    let logId: number | undefined;
+    try {
+      const [insertResult] = await db.insert(priceSyncLogs).values({
+        status: "error",
+        triggerType: options.triggerType || "cron",
+        sheetUrl: options.customUrl || null,
+        totalRows: 0,
+        updatedProducts: 0,
+        updatedAttributes: 0,
+        updatedVariants: 0,
+        notFoundCount: 0,
+        durationMs: Date.now() - startTime,
+        message: errorMsg,
+        errorDetails: error instanceof Error ? error.stack || error.message : String(error),
+        details: null,
+        executedAt: new Date(),
+      });
+      logId = Number(insertResult.insertId);
+    } catch (logErr) {
+      console.error("No se pudo registrar log de error de sincronización en price_sync_logs:", logErr);
+    }
+
     return {
       success: false,
       message: errorMsg,
       error: errorMsg,
+      logId,
     };
   } finally {
     isSyncInProgress = false;

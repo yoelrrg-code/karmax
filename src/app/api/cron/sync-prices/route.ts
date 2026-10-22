@@ -102,6 +102,7 @@ async function handleSync(request: NextRequest) {
     const result = await syncPricesFromSheet({
       force,
       customUrl,
+      triggerType: "cron",
     });
 
     return NextResponse.json({

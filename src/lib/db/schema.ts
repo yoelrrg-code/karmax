@@ -12,6 +12,7 @@ import {
   index,
 } from "drizzle-orm/mysql-core";
 import { relations } from "drizzle-orm";
+import type { PriceSyncLogDetails } from "@/types";
 
 export const categories = mysqlTable("categories", {
   id: serial("id").primaryKey(),
@@ -371,6 +372,31 @@ export const contactMessages = mysqlTable(
   ]
 );
 
+export const priceSyncLogs = mysqlTable(
+  "price_sync_logs",
+  {
+    id: serial("id").primaryKey(),
+    status: varchar("status", { length: 50 }).notNull(), // 'success', 'error', 'partial'
+    triggerType: varchar("trigger_type", { length: 50 }).default("cron").notNull(), // 'manual', 'cron'
+    sheetUrl: text("sheet_url"),
+    totalRows: int("total_rows").default(0).notNull(),
+    updatedProducts: int("updated_products").default(0).notNull(),
+    updatedAttributes: int("updated_attributes").default(0).notNull(),
+    updatedVariants: int("updated_variants").default(0).notNull(),
+    notFoundCount: int("not_found_count").default(0).notNull(),
+    durationMs: int("duration_ms").default(0).notNull(),
+    message: text("message"),
+    errorDetails: text("error_details"),
+    details: json("details").$type<PriceSyncLogDetails>(),
+    executedAt: timestamp("executed_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("price_sync_logs_status_idx").on(table.status),
+    index("price_sync_logs_trigger_type_idx").on(table.triggerType),
+    index("price_sync_logs_executed_at_idx").on(table.executedAt),
+  ]
+);
+
 export type Category = typeof categories.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type ProductImage = typeof productImages.$inferSelect;
@@ -386,4 +412,5 @@ export type QuoteRequest = typeof quoteRequests.$inferSelect;
 export type QuoteItem = typeof quoteItems.$inferSelect;
 export type SiteSetting = typeof siteSettings.$inferSelect;
 export type ContactMessage = typeof contactMessages.$inferSelect;
+export type PriceSyncLog = typeof priceSyncLogs.$inferSelect;
 

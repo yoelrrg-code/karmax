@@ -177,6 +177,7 @@ export async function POST(request: NextRequest) {
       const syncResult = await syncPricesFromSheet({
         force: true,
         customUrl: priceSyncSettings?.sheetUrl,
+        triggerType: "manual",
       });
 
       const refreshedSync = await getPriceSyncSettings();

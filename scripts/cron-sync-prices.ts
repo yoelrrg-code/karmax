@@ -33,7 +33,7 @@ async function main() {
   }
 
   console.log("[KARMAX Price Sync] Iniciando descarga y actualización de precios desde Google Sheets...");
-  const result = await syncPricesFromSheet({ force: isForce });
+  const result = await syncPricesFromSheet({ force: isForce, triggerType: "cron" });
 
   if (result.success) {
     console.log(`[KARMAX Price Sync] ✅ ÉXITO: ${result.message}`);

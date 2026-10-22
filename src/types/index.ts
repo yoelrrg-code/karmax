@@ -271,6 +271,33 @@ export interface PriceSyncSettings {
 
 export const DEFAULT_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR-URR428Bn9U3PvAzOkCwwD__GGhwB3HBINmfNSyKM-VE9RO9FWw7NPQ7kXNJjnQ/pub?gid=405871111&single=true&output=csv";
 
+export interface PriceSyncUpdatedSkuItem {
+  sku: string;
+  name?: string;
+  target: "product" | "attribute" | "variant";
+  oldPrice?: string | null;
+  newPrice: string;
+}
 
+export interface PriceSyncLogDetails {
+  updatedSkus?: PriceSyncUpdatedSkuItem[];
+  notFoundSkus?: string[];
+  totalUpdated?: number;
+}
 
-
+export interface PriceSyncLogItem {
+  id: number;
+  status: "success" | "error" | "partial";
+  triggerType: "manual" | "cron";
+  sheetUrl?: string | null;
+  totalRows: number;
+  updatedProducts: number;
+  updatedAttributes: number;
+  updatedVariants: number;
+  notFoundCount: number;
+  durationMs: number;
+  message?: string | null;
+  errorDetails?: string | null;
+  details?: PriceSyncLogDetails | null;
+  executedAt: string;
+}
