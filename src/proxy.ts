@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const ALLOWED_ORIGINS = [
-  process.env.NEXT_PUBLIC_SITE_URL || "https://karmax.mx",
+  (process.env.NEXT_PUBLIC_SITE_URL || "https://karmax.mx").replace(/\/$/, ""),
   "https://karmax.mx",
-  "https://karmax-beta.vercel.app/",
+  "https://karmax-beta.vercel.app",
   "http://localhost:3000",
   "http://127.0.0.1:3000",
 ];
@@ -16,16 +16,13 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Determine allowed origin
-  let allowOrigin = "*";
-  if (origin) {
-    if (ALLOWED_ORIGINS.includes(origin) || process.env.NODE_ENV !== "production") {
-      allowOrigin = origin;
-    }
-  }
+  // Verificar si el origen está en la lista blanca
+  const cleanOrigin = origin ? origin.replace(/\/$/, "") : null;
+  const isOriginAllowed = cleanOrigin
+    ? ALLOWED_ORIGINS.includes(cleanOrigin) || process.env.NODE_ENV !== "production"
+    : false;
 
   const corsHeaders: Record<string, string> = {
-    "Access-Control-Allow-Origin": allowOrigin,
     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS, HEAD",
     "Access-Control-Allow-Headers":
       "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization, X-Anti-Bot-Token",
@@ -33,11 +30,15 @@ export function proxy(request: NextRequest) {
     Vary: "Origin",
   };
 
-  if (allowOrigin !== "*") {
+  if (isOriginAllowed && cleanOrigin) {
+    corsHeaders["Access-Control-Allow-Origin"] = cleanOrigin;
     corsHeaders["Access-Control-Allow-Credentials"] = "true";
+  } else if (!origin) {
+    // Peticiones same-origin directas sin Origin header
+    corsHeaders["Access-Control-Allow-Origin"] = process.env.NEXT_PUBLIC_SITE_URL || "https://karmax.mx";
   }
 
-  // Handle preflight OPTIONS request
+  // Preflight OPTIONS
   if (request.method === "OPTIONS") {
     return new NextResponse(null, {
       status: 204,
@@ -45,7 +46,6 @@ export function proxy(request: NextRequest) {
     });
   }
 
-  // Process standard request and attach CORS headers
   const response = NextResponse.next();
   Object.entries(corsHeaders).forEach(([key, value]) => {
     response.headers.set(key, value);

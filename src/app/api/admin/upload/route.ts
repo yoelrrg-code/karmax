@@ -43,6 +43,46 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     let buffer = Buffer.from(bytes);
 
+    // Verificación estricta de Magic Bytes binarios (evita spoofing de extensión/MIME)
+    const isValidMagicBytes = (buf: Buffer, mime: string): boolean => {
+      if (buf.length < 12) return false;
+      if (mime === "image/jpeg") {
+        return buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff;
+      }
+      if (mime === "image/png") {
+        return (
+          buf[0] === 0x89 &&
+          buf[1] === 0x50 &&
+          buf[2] === 0x4e &&
+          buf[3] === 0x47 &&
+          buf[4] === 0x0d &&
+          buf[5] === 0x0a &&
+          buf[6] === 0x1a &&
+          buf[7] === 0x0a
+        );
+      }
+      if (mime === "image/webp") {
+        const isRiff = buf.toString("ascii", 0, 4) === "RIFF";
+        const isWebp = buf.toString("ascii", 8, 12) === "WEBP";
+        return isRiff && isWebp;
+      }
+      if (mime === "application/pdf") {
+        return buf.toString("ascii", 0, 5) === "%PDF-";
+      }
+      if (mime === "image/svg+xml") {
+        const snippet = buf.slice(0, 1024).toString("utf-8").toLowerCase().trim();
+        return snippet.includes("<svg") || snippet.includes("<?xml");
+      }
+      return false;
+    };
+
+    if (!isValidMagicBytes(buffer, file.type)) {
+      return NextResponse.json(
+        { error: "El contenido real del archivo no coincide con el formato declarado." },
+        { status: 400 }
+      );
+    }
+
     // Sanitización activa para archivos SVG contra XSS almacenado y XXE
     if (file.type === "image/svg+xml") {
       let svgText = buffer.toString("utf-8");
@@ -62,8 +102,13 @@ export async function POST(request: NextRequest) {
       if (
         /<script/i.test(svgText) ||
         /javascript:/i.test(svgText) ||
+        /vbscript:/i.test(svgText) ||
         /data:text\/html/i.test(svgText) ||
-        /<iframe/i.test(svgText)
+        /<iframe/i.test(svgText) ||
+        /<embed/i.test(svgText) ||
+        /<object/i.test(svgText) ||
+        /<animate/i.test(svgText) ||
+        /url\s*\(\s*["']?\s*javascript:/i.test(svgText)
       ) {
         return NextResponse.json(
           { error: "El archivo SVG contiene elementos no permitidos por seguridad." },

@@ -69,12 +69,12 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      // 2. CORS para endpoints de API
+      // 2. CORS para endpoints de API (Middleware gestiona CORS dinámico)
       {
         source: "/api/:path*",
         headers: [
           { key: "Access-Control-Allow-Credentials", value: "true" },
-          { key: "Access-Control-Allow-Origin", value: process.env.NEXT_PUBLIC_SITE_URL || "*" },
+          { key: "Access-Control-Allow-Origin", value: process.env.NEXT_PUBLIC_SITE_URL || "https://karmax.mx" },
           { key: "Access-Control-Allow-Methods", value: "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
           {
             key: "Access-Control-Allow-Headers",

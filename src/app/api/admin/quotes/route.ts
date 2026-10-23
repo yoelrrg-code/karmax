@@ -3,6 +3,7 @@ import { requireAdminApi } from "@/lib/auth/adminGuard";
 import { db, quoteRequests, quoteItems, users } from "@/lib/db";
 import { desc, eq, like, or, and, sql, inArray } from "drizzle-orm";
 import { escapeLikePattern } from "@/lib/security/sql";
+import { recordAuditLog } from "@/lib/services/auditService";
 
 export const dynamic = "force-dynamic";
 
@@ -123,6 +124,18 @@ export async function PATCH(request: NextRequest) {
       .update(quoteRequests)
       .set(updateData)
       .where(eq(quoteRequests.id, Number(id)));
+
+    await recordAuditLog({
+      userId: auth.user?.id,
+      userName: auth.user?.name || "Admin",
+      userEmail: auth.user?.email || "admin@karmax.mx",
+      action: "ACTUALIZAR",
+      module: "Cotizaciones",
+      targetId: id,
+      targetName: `Cotización #${id}`,
+      details: updateData,
+      request,
+    });
 
     return NextResponse.json({ success: true, message: "Cotización actualizada con éxito" });
   } catch (error) {

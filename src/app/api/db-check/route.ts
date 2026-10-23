@@ -8,10 +8,10 @@ export async function GET() {
   const auth = await requireAdminApi();
   if (auth.response) return auth.response;
 
+  let connection;
   try {
-    const connection = await pool.getConnection();
+    connection = await pool.getConnection();
     const [rows] = await connection.query("SELECT 1 as is_connected, NOW() as current_time");
-    connection.release();
 
     return NextResponse.json({
       status: "success",
@@ -29,5 +29,9 @@ export async function GET() {
       },
       { status: 500 }
     );
+  } finally {
+    if (connection) {
+      connection.release();
+    }
   }
 }

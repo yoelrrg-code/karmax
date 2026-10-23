@@ -11,6 +11,7 @@ import {
 } from "@/lib/services/karmaxService";
 import { syncPricesFromSheet } from "@/lib/services/sheetSyncService";
 import type { SeoSettings, TaxSettings, PriceSyncSettings } from "@/types";
+import { recordAuditLog } from "@/lib/services/auditService";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -181,6 +182,18 @@ export async function POST(request: NextRequest) {
       });
 
       const refreshedSync = await getPriceSyncSettings();
+
+      await recordAuditLog({
+        userId: auth.user?.id,
+        userName: auth.user?.name || "Admin",
+        userEmail: auth.user?.email || "admin@karmax.mx",
+        action: "SINCRONIZAR",
+        module: "Ajustes",
+        targetName: "Sincronización Manual de Precios",
+        details: { force: true, success: syncResult.success },
+        request,
+      });
+
       return NextResponse.json({
         success: syncResult.success,
         message: syncResult.message,
@@ -194,6 +207,22 @@ export async function POST(request: NextRequest) {
       getTaxSettings(),
       getPriceSyncSettings(),
     ]);
+
+    await recordAuditLog({
+      userId: auth.user?.id,
+      userName: auth.user?.name || "Admin",
+      userEmail: auth.user?.email || "admin@karmax.mx",
+      action: "ACTUALIZAR",
+      module: "Ajustes",
+      targetName: "Configuración General / SEO / IVA",
+      details: {
+        hasNotificationEmail: !!notificationEmail,
+        hasSeo: !!seoSettings,
+        hasTax: !!taxSettings,
+        hasPriceSync: !!priceSyncSettings,
+      },
+      request,
+    });
 
     return NextResponse.json({
       success: true,

@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "skills": {
+    "code-review": {
+      "version": "1.0.0",
+      "installedAt": "2026-10-23T11:08:50.630Z",
+      "platform": "gemini",
+      "contentHash": "a36edc8e90bf772b3577c3819abc824edca4e5e434b843c23cce91836e91d00c"
+    },
+    "skill-finder": {
+      "version": "2.0.0",
+      "installedAt": "2026-10-23T11:12:12.110Z",
+      "platform": "gemini"
+    },
+    "refactor": {
+      "version": "1.0.0",
+      "installedAt": "2026-10-23T11:12:54.138Z",
+      "platform": "gemini",
+      "contentHash": "718bfd8d8a6b18d4894e23e98f1924d8cf3a09d3e67ca37bd7be0ba6c11847cf"
+    }
+  }
+}

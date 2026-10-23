@@ -301,3 +301,26 @@ export interface PriceSyncLogItem {
   details?: PriceSyncLogDetails | null;
   executedAt: string;
 }
+
+export interface AuditLogItem {
+  id: number;
+  userId?: number | null;
+  userName: string;
+  userEmail: string;
+  action: "CREAR" | "ACTUALIZAR" | "ELIMINAR" | "LOGIN" | "SINCRONIZAR" | string;
+  module: "Productos" | "Categorías" | "Industrias" | "Ajustes" | "Usuarios" | "Cotizaciones" | "Secciones" | string;
+  targetId?: string | null;
+  targetName?: string | null;
+  details?: Record<string, unknown> | null;
+  ipAddress?: string | null;
+  createdAt: string;
+}
+
+export interface AuditLogResponse {
+  logs: AuditLogItem[];
+  total: number;
+  page: number;
+  totalPages: number;
+  limit: number;
+}
+

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/auth/adminGuard";
 import { db, categories, products } from "@/lib/db";
 import { eq, sql } from "drizzle-orm";
+import { recordAuditLog } from "@/lib/services/auditService";
 
 export const dynamic = "force-dynamic";
 
@@ -64,6 +65,18 @@ export async function PUT(
       })
       .where(eq(categories.id, catId));
 
+    await recordAuditLog({
+      userId: auth.user?.id,
+      userName: auth.user?.name || "Admin",
+      userEmail: auth.user?.email || "admin@karmax.mx",
+      action: "ACTUALIZAR",
+      module: "Categorías",
+      targetId: catId,
+      targetName: name.trim(),
+      details: { slug: finalSlug, featured, isActive, orderIndex },
+      request,
+    });
+
     return NextResponse.json({ success: true, message: "Categoría actualizada con éxito" });
   } catch (error) {
     console.error("Error in PUT /api/admin/categories/[id]:", error);
@@ -106,6 +119,17 @@ export async function DELETE(
     }
 
     await db.delete(categories).where(eq(categories.id, catId));
+
+    await recordAuditLog({
+      userId: auth.user?.id,
+      userName: auth.user?.name || "Admin",
+      userEmail: auth.user?.email || "admin@karmax.mx",
+      action: "ELIMINAR",
+      module: "Categorías",
+      targetId: catId,
+      request,
+    });
+
     return NextResponse.json({ success: true, message: "Categoría eliminada con éxito" });
   } catch (error) {
     console.error("Error in DELETE /api/admin/categories/[id]:", error);

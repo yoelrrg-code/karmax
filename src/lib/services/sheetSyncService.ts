@@ -146,8 +146,16 @@ export async function syncPricesFromSheet(
 
     const targetUrl = (options.customUrl || settings.sheetUrl || DEFAULT_SHEET_URL).trim();
 
-    if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
-      const errorMsg = "La URL de Google Sheets no tiene un formato web válido (debe iniciar con https://).";
+    let parsedUrl: URL;
+    try {
+      parsedUrl = new URL(targetUrl);
+    } catch {
+      const errorMsg = "La URL proporcionada no es una URL válida.";
+      return { success: false, message: errorMsg, error: errorMsg };
+    }
+
+    if (parsedUrl.protocol !== "https:" || parsedUrl.hostname.toLowerCase() !== "docs.google.com") {
+      const errorMsg = "Acceso denegado (SSRF): Solo se permiten hojas de cálculo alojadas en https://docs.google.com.";
       await savePriceSyncSettings({
         lastSyncAt: new Date().toISOString(),
         lastSyncStatus: "error",
@@ -365,32 +373,59 @@ export async function syncPricesFromSheet(
       }
     }
 
-    // Ejecutar todas las actualizaciones dentro de una sola transacción de BD
-    if (
-      pendingProductUpdates.length > 0 ||
-      pendingAttrUpdates.length > 0 ||
-      pendingVariantUpdates.length > 0
-    ) {
-      await db.transaction(async (tx) => {
-        for (const p of pendingProductUpdates) {
-          await tx
-            .update(products)
-            .set({ regularPrice: p.price })
-            .where(eq(products.id, p.id));
-        }
-        for (const a of pendingAttrUpdates) {
-          await tx
-            .update(productAttributes)
-            .set({ attrPrice: a.price })
-            .where(eq(productAttributes.id, a.id));
-        }
-        for (const v of pendingVariantUpdates) {
-          await tx
-            .update(productVariants)
-            .set({ price: v.price })
-            .where(eq(productVariants.id, v.id));
-        }
-      });
+    // Ejecutar actualizaciones en micro-lotes (chunks) para no saturar el pool ni bloquear tablas
+    const BATCH_SIZE = 50;
+    const chunkArray = <T>(arr: T[], size: number): T[][] => {
+      const chunks: T[][] = [];
+      for (let i = 0; i < arr.length; i += size) {
+        chunks.push(arr.slice(i, i + size));
+      }
+      return chunks;
+    };
+
+    if (pendingProductUpdates.length > 0) {
+      for (const chunk of chunkArray(pendingProductUpdates, BATCH_SIZE)) {
+        await db.transaction(async (tx) => {
+          await Promise.all(
+            chunk.map((p) =>
+              tx
+                .update(products)
+                .set({ regularPrice: p.price })
+                .where(eq(products.id, p.id))
+            )
+          );
+        });
+      }
+    }
+
+    if (pendingAttrUpdates.length > 0) {
+      for (const chunk of chunkArray(pendingAttrUpdates, BATCH_SIZE)) {
+        await db.transaction(async (tx) => {
+          await Promise.all(
+            chunk.map((a) =>
+              tx
+                .update(productAttributes)
+                .set({ attrPrice: a.price })
+                .where(eq(productAttributes.id, a.id))
+            )
+          );
+        });
+      }
+    }
+
+    if (pendingVariantUpdates.length > 0) {
+      for (const chunk of chunkArray(pendingVariantUpdates, BATCH_SIZE)) {
+        await db.transaction(async (tx) => {
+          await Promise.all(
+            chunk.map((v) =>
+              tx
+                .update(productVariants)
+                .set({ price: v.price })
+                .where(eq(productVariants.id, v.id))
+            )
+          );
+        });
+      }
     }
 
     const updatedProducts = pendingProductUpdates.length;

@@ -397,6 +397,29 @@ export const priceSyncLogs = mysqlTable(
   ]
 );
 
+export const auditLogs = mysqlTable(
+  "audit_logs",
+  {
+    id: serial("id").primaryKey(),
+    userId: bigint("user_id", { mode: "number", unsigned: true }),
+    userName: varchar("user_name", { length: 255 }).notNull(),
+    userEmail: varchar("user_email", { length: 255 }).notNull(),
+    action: varchar("action", { length: 50 }).notNull(),
+    module: varchar("module", { length: 100 }).notNull(),
+    targetId: varchar("target_id", { length: 100 }),
+    targetName: varchar("target_name", { length: 255 }),
+    details: json("details").$type<Record<string, unknown>>(),
+    ipAddress: varchar("ip_address", { length: 100 }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    index("audit_logs_user_id_idx").on(table.userId),
+    index("audit_logs_action_idx").on(table.action),
+    index("audit_logs_module_idx").on(table.module),
+    index("audit_logs_created_at_idx").on(table.createdAt),
+  ]
+);
+
 export type Category = typeof categories.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type ProductImage = typeof productImages.$inferSelect;
@@ -413,4 +436,6 @@ export type QuoteItem = typeof quoteItems.$inferSelect;
 export type SiteSetting = typeof siteSettings.$inferSelect;
 export type ContactMessage = typeof contactMessages.$inferSelect;
 export type PriceSyncLog = typeof priceSyncLogs.$inferSelect;
+export type AuditLog = typeof auditLogs.$inferSelect;
+
 

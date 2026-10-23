@@ -13,6 +13,7 @@ import {
 } from "@/lib/db";
 import { desc, eq, like, or, and, sql, inArray } from "drizzle-orm";
 import { escapeLikePattern } from "@/lib/security/sql";
+import { recordAuditLog } from "@/lib/services/auditService";
 
 export const dynamic = "force-dynamic";
 
@@ -210,115 +211,148 @@ export async function POST(request: NextRequest) {
       finalSlug = `${finalSlug}-${Date.now()}`;
     }
 
-    // Insert base product
-    const [insertResult] = await db.insert(products).values({
-      name: name.trim(),
-      slug: finalSlug,
-      sku: sku?.trim() || null,
-      brand: brand?.trim() || null,
-      unit: unit?.trim() || "Pieza",
-      categoryId: Number(categoryId),
-      regularPrice: regularPrice ? String(regularPrice) : null,
-      salePrice: salePrice && Number(salePrice) > 0 ? String(salePrice) : null,
-      stockStatus,
-      isFeatured: Boolean(isFeatured),
-      isActive: Boolean(isActive),
-      shortDescription: shortDescription || null,
-      description: description || null,
-      deliveryInfo: deliveryInfo || null,
-      metaTitle: metaTitle?.trim() || null,
-      metaDescription: metaDescription?.trim() || null,
-      metaKeywords: metaKeywords?.trim() || null,
-      imageUrl:
-        Array.isArray(images) && images.length > 0
-          ? (images as Array<{ isPrimary?: boolean; url: string }>).find((img) => Boolean(img.isPrimary))?.url || images[0]?.url || imageUrl || "/images/products/placeholder.jpg"
-          : imageUrl || "/images/products/placeholder.jpg",
+    // Ejecución atómica en Transacción para evitar productos huérfanos o relaciones corruptas
+    let productId: number = 0;
+    await db.transaction(async (tx) => {
+      // Insert base product
+      const [insertResult] = await tx.insert(products).values({
+        name: name.trim(),
+        slug: finalSlug,
+        sku: sku?.trim() || null,
+        brand: brand?.trim() || null,
+        unit: unit?.trim() || "Pieza",
+        categoryId: Number(categoryId),
+        regularPrice: regularPrice ? String(regularPrice) : null,
+        salePrice: salePrice && Number(salePrice) > 0 ? String(salePrice) : null,
+        stockStatus,
+        isFeatured: Boolean(isFeatured),
+        isActive: Boolean(isActive),
+        shortDescription: shortDescription || null,
+        description: description || null,
+        deliveryInfo: deliveryInfo || null,
+        metaTitle: metaTitle?.trim() || null,
+        metaDescription: metaDescription?.trim() || null,
+        metaKeywords: metaKeywords?.trim() || null,
+        imageUrl:
+          Array.isArray(images) && images.length > 0
+            ? (images as Array<{ isPrimary?: boolean; url: string }>).find((img) => Boolean(img.isPrimary))?.url || images[0]?.url || imageUrl || "/images/products/placeholder.jpg"
+            : imageUrl || "/images/products/placeholder.jpg",
+      });
+
+      productId = Number(insertResult.insertId);
+
+      // Sync categories (Bulk Insert)
+      const allCatIds = Array.from(new Set([Number(categoryId), ...categoryIds.map(Number)])).filter(Boolean);
+      if (allCatIds.length > 0) {
+        await tx.insert(productCategories).values(
+          allCatIds.map((cId) => ({
+            productId,
+            categoryId: cId,
+          }))
+        );
+      }
+
+      // Sync industries (Bulk Insert)
+      if (Array.isArray(industryIds) && industryIds.length > 0) {
+        const validIndIds = industryIds.map(Number).filter(Boolean);
+        if (validIndIds.length > 0) {
+          await tx.insert(productIndustries).values(
+            validIndIds.map((indId) => ({
+              productId,
+              industryId: indId,
+            }))
+          );
+        }
+      }
+
+      // Sync images (Bulk Insert)
+      if (Array.isArray(images) && images.length > 0) {
+        const explicitPrimaryIndex = (images as Array<{ isPrimary?: boolean }>).findIndex((img) => Boolean(img.isPrimary));
+        const targetPrimaryIndex = explicitPrimaryIndex >= 0 ? explicitPrimaryIndex : 0;
+
+        await tx.insert(productImages).values(
+          images.map((img, i) => ({
+            productId,
+            url: img.url,
+            alt: img.alt || name,
+            title: img.title || name,
+            isPrimary: i === targetPrimaryIndex,
+            orderIndex: i,
+          }))
+        );
+      }
+
+      // Sync attributes (Bulk Insert)
+      if (Array.isArray(attributes) && attributes.length > 0) {
+        await tx.insert(productAttributes).values(
+          attributes.map((attr, i) => ({
+            productId,
+            name: attr.name?.trim() || "Presentaciones",
+            value: attr.value?.trim() || "",
+            sku: attr.sku?.trim() || null,
+            attrPrice: attr.attrPrice ? String(attr.attrPrice) : null,
+            orderIndex: i,
+          }))
+        );
+      }
+
+      // Sync variants (Bulk Insert con parsing seguro)
+      if (Array.isArray(variants) && variants.length > 0) {
+        const validVariants = variants.filter((v) => v && v.sku?.trim());
+        if (validVariants.length > 0) {
+          await tx.insert(productVariants).values(
+            validVariants.map((v, i) => {
+              let parsedAttrs = {};
+              if (typeof v.attributes === "string") {
+                try {
+                  parsedAttrs = JSON.parse(v.attributes);
+                } catch {
+                  parsedAttrs = {};
+                }
+              } else if (v.attributes && typeof v.attributes === "object") {
+                parsedAttrs = v.attributes;
+              }
+
+              return {
+                productId,
+                sku: v.sku.trim(),
+                price: v.price ? String(v.price) : null,
+                stockStatus: v.stockStatus || "instock",
+                attributes: parsedAttrs,
+                orderIndex: i,
+              };
+            })
+          );
+        }
+      }
+
+      // Sync documents (Bulk Insert)
+      if (Array.isArray(documents) && documents.length > 0) {
+        await tx.insert(productDocuments).values(
+          documents.map((doc, i) => ({
+            productId,
+            title: doc.title || "Ficha Técnica",
+            fileUrl: doc.fileUrl,
+            fileType: doc.fileType || "pdf",
+            fileSize: doc.fileSize || "PDF",
+            orderIndex: i,
+          }))
+        );
+      }
     });
 
-    const productId = Number(insertResult.insertId);
-
-    // Sync categories (product_categories)
-    const allCatIds = Array.from(new Set([Number(categoryId), ...categoryIds.map(Number)])).filter(Boolean);
-    for (const cId of allCatIds) {
-      await db.insert(productCategories).values({
-        productId,
-        categoryId: cId,
-      });
-    }
-
-    // Sync industries (product_industries)
-    if (Array.isArray(industryIds) && industryIds.length > 0) {
-      for (const indId of industryIds.map(Number).filter(Boolean)) {
-        await db.insert(productIndustries).values({
-          productId,
-          industryId: indId,
-        });
-      }
-    }
-
-    // Sync images (product_images)
-    if (Array.isArray(images) && images.length > 0) {
-      const explicitPrimaryIndex = (images as Array<{ isPrimary?: boolean }>).findIndex((img) => Boolean(img.isPrimary));
-      const targetPrimaryIndex = explicitPrimaryIndex >= 0 ? explicitPrimaryIndex : 0;
-
-      for (let i = 0; i < images.length; i++) {
-        const img = images[i];
-        await db.insert(productImages).values({
-          productId,
-          url: img.url,
-          alt: img.alt || name,
-          title: img.title || name,
-          isPrimary: i === targetPrimaryIndex,
-          orderIndex: i,
-        });
-      }
-    }
-
-    // Sync attributes (product_attributes)
-    if (Array.isArray(attributes) && attributes.length > 0) {
-      for (let i = 0; i < attributes.length; i++) {
-        const attr = attributes[i];
-        await db.insert(productAttributes).values({
-          productId,
-          name: attr.name?.trim() || "Presentaciones",
-          value: attr.value?.trim() || "",
-          sku: attr.sku?.trim() || null,
-          attrPrice: attr.attrPrice ? String(attr.attrPrice) : null,
-          orderIndex: i,
-        });
-      }
-    }
-
-    // Sync variants (product_variants)
-    if (Array.isArray(variants) && variants.length > 0) {
-      for (let i = 0; i < variants.length; i++) {
-        const v = variants[i];
-        if (!v.sku?.trim()) continue;
-        await db.insert(productVariants).values({
-          productId,
-          sku: v.sku.trim(),
-          price: v.price ? String(v.price) : null,
-          stockStatus: v.stockStatus || "instock",
-          attributes: typeof v.attributes === "string" ? JSON.parse(v.attributes) : (v.attributes || {}),
-          orderIndex: i,
-        });
-      }
-    }
-
-    // Sync documents (product_documents)
-    if (Array.isArray(documents) && documents.length > 0) {
-      for (let i = 0; i < documents.length; i++) {
-        const doc = documents[i];
-        await db.insert(productDocuments).values({
-          productId,
-          title: doc.title || "Ficha Técnica",
-          fileUrl: doc.fileUrl,
-          fileType: doc.fileType || "pdf",
-          fileSize: doc.fileSize || "PDF",
-          orderIndex: i,
-        });
-      }
-    }
+    // Registrar en auditoría
+    await recordAuditLog({
+      userId: auth.user?.id,
+      userName: auth.user?.name || "Admin",
+      userEmail: auth.user?.email || "admin@karmax.mx",
+      action: "CREAR",
+      module: "Productos",
+      targetId: productId,
+      targetName: name.trim(),
+      details: { sku, categoryId, regularPrice, isFeatured, isActive },
+      request,
+    });
 
     return NextResponse.json({
       success: true,

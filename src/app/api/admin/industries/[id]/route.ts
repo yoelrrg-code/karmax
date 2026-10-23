@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/auth/adminGuard";
 import { db, industries, productIndustries } from "@/lib/db";
 import { eq, sql } from "drizzle-orm";
+import { recordAuditLog } from "@/lib/services/auditService";
 
 export const dynamic = "force-dynamic";
 
@@ -54,6 +55,18 @@ export async function PUT(
       })
       .where(eq(industries.id, indId));
 
+    await recordAuditLog({
+      userId: auth.user?.id,
+      userName: auth.user?.name || "Admin",
+      userEmail: auth.user?.email || "admin@karmax.mx",
+      action: "ACTUALIZAR",
+      module: "Industrias",
+      targetId: indId,
+      targetName: name.trim(),
+      details: { slug: finalSlug, iconName, isActive, orderIndex },
+      request,
+    });
+
     return NextResponse.json({ success: true, message: "Industria actualizada con éxito" });
   } catch (error) {
     console.error("Error in PUT /api/admin/industries/[id]:", error);
@@ -95,6 +108,17 @@ export async function DELETE(
     }
 
     await db.delete(industries).where(eq(industries.id, indId));
+
+    await recordAuditLog({
+      userId: auth.user?.id,
+      userName: auth.user?.name || "Admin",
+      userEmail: auth.user?.email || "admin@karmax.mx",
+      action: "ELIMINAR",
+      module: "Industrias",
+      targetId: indId,
+      request,
+    });
+
     return NextResponse.json({ success: true, message: "Industria eliminada con éxito" });
   } catch (error) {
     console.error("Error in DELETE /api/admin/industries/[id]:", error);

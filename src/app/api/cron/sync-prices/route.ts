@@ -72,6 +72,23 @@ async function handleSync(request: NextRequest) {
     const force = url.searchParams.get("force") === "true";
     const customUrl = url.searchParams.get("sheetUrl") || undefined;
 
+    if (customUrl) {
+      try {
+        const parsed = new URL(customUrl);
+        if (parsed.protocol !== "https:" || parsed.hostname.toLowerCase() !== "docs.google.com") {
+          return NextResponse.json(
+            { error: "URL inválida: Solo se permiten URLs alojadas en https://docs.google.com" },
+            { status: 400 }
+          );
+        }
+      } catch {
+        return NextResponse.json(
+          { error: "Formato de URL inválido en el parámetro sheetUrl" },
+          { status: 400 }
+        );
+      }
+    }
+
     const mexicoTime = getMexicoCityTime();
     const settings = await getPriceSyncSettings();
 

@@ -12,6 +12,7 @@ import {
   quoteItems,
 } from "@/lib/db";
 import { eq, asc } from "drizzle-orm";
+import { recordAuditLog } from "@/lib/services/auditService";
 
 export const dynamic = "force-dynamic";
 
@@ -148,122 +149,154 @@ export async function PUT(
 
     const finalSlug = customSlug?.trim() ? slugify(customSlug.trim()) : slugify(name.trim());
 
-    // 1. Update base product
-    await db
-      .update(products)
-      .set({
-        name: name.trim(),
-        slug: finalSlug,
-        sku: sku?.trim() || null,
-        brand: brand !== undefined ? (brand?.trim() || null) : undefined,
-        unit: unit?.trim() || "Pieza",
-        categoryId: categoryId ? Number(categoryId) : undefined,
-        regularPrice: regularPrice !== undefined ? (regularPrice ? String(regularPrice) : null) : undefined,
-        salePrice: salePrice !== undefined ? (salePrice && Number(salePrice) > 0 ? String(salePrice) : null) : undefined,
-        stockStatus: stockStatus || "instock",
-        isFeatured: Boolean(isFeatured),
-        isActive: Boolean(isActive),
-        shortDescription: shortDescription || null,
-        description: description || null,
-        deliveryInfo: deliveryInfo || null,
-        metaTitle: metaTitle !== undefined ? (metaTitle?.trim() || null) : undefined,
-        metaDescription: metaDescription !== undefined ? (metaDescription?.trim() || null) : undefined,
-        metaKeywords: metaKeywords !== undefined ? (metaKeywords?.trim() || null) : undefined,
-        imageUrl:
-          Array.isArray(images) && images.length > 0
-            ? (images as Array<{ isPrimary?: boolean; url: string }>).find((img) => Boolean(img.isPrimary))?.url || images[0]?.url || imageUrl || "/images/products/placeholder.jpg"
-            : imageUrl || "/images/products/placeholder.jpg",
-      })
-      .where(eq(products.id, productId));
+    // 1. Ejecución atómica en Transacción para evitar pérdida de datos y estados inconsistentes
+    await db.transaction(async (tx) => {
+      // 1. Update base product
+      await tx
+        .update(products)
+        .set({
+          name: name.trim(),
+          slug: finalSlug,
+          sku: sku?.trim() || null,
+          brand: brand !== undefined ? (brand?.trim() || null) : undefined,
+          unit: unit?.trim() || "Pieza",
+          categoryId: categoryId ? Number(categoryId) : undefined,
+          regularPrice: regularPrice !== undefined ? (regularPrice ? String(regularPrice) : null) : undefined,
+          salePrice: salePrice !== undefined ? (salePrice && Number(salePrice) > 0 ? String(salePrice) : null) : undefined,
+          stockStatus: stockStatus || "instock",
+          isFeatured: Boolean(isFeatured),
+          isActive: Boolean(isActive),
+          shortDescription: shortDescription || null,
+          description: description || null,
+          deliveryInfo: deliveryInfo || null,
+          metaTitle: metaTitle !== undefined ? (metaTitle?.trim() || null) : undefined,
+          metaDescription: metaDescription !== undefined ? (metaDescription?.trim() || null) : undefined,
+          metaKeywords: metaKeywords !== undefined ? (metaKeywords?.trim() || null) : undefined,
+          imageUrl:
+            Array.isArray(images) && images.length > 0
+              ? (images as Array<{ isPrimary?: boolean; url: string }>).find((img) => Boolean(img.isPrimary))?.url || images[0]?.url || imageUrl || "/images/products/placeholder.jpg"
+              : imageUrl || "/images/products/placeholder.jpg",
+        })
+        .where(eq(products.id, productId));
 
-    // 2. Sync product_categories
-    await db.delete(productCategories).where(eq(productCategories.productId, productId));
-    const allCatIds = Array.from(new Set([Number(categoryId), ...categoryIds.map(Number)])).filter(Boolean);
-    for (const cId of allCatIds) {
-      await db.insert(productCategories).values({
-        productId,
-        categoryId: cId,
-      });
-    }
-
-    // 3. Sync product_industries
-    await db.delete(productIndustries).where(eq(productIndustries.productId, productId));
-    if (Array.isArray(industryIds) && industryIds.length > 0) {
-      for (const indId of industryIds.map(Number).filter(Boolean)) {
-        await db.insert(productIndustries).values({
-          productId,
-          industryId: indId,
-        });
+      // 2. Sync product_categories (Bulk Insert)
+      await tx.delete(productCategories).where(eq(productCategories.productId, productId));
+      const allCatIds = Array.from(new Set([Number(categoryId), ...categoryIds.map(Number)])).filter(Boolean);
+      if (allCatIds.length > 0) {
+        await tx.insert(productCategories).values(
+          allCatIds.map((cId) => ({
+            productId,
+            categoryId: cId,
+          }))
+        );
       }
-    }
 
-    // 4. Sync product_images
-    await db.delete(productImages).where(eq(productImages.productId, productId));
-    if (Array.isArray(images) && images.length > 0) {
-      const explicitPrimaryIndex = (images as Array<{ isPrimary?: boolean }>).findIndex((img) => Boolean(img.isPrimary));
-      const targetPrimaryIndex = explicitPrimaryIndex >= 0 ? explicitPrimaryIndex : 0;
-
-      for (let i = 0; i < images.length; i++) {
-        const img = images[i];
-        await db.insert(productImages).values({
-          productId,
-          url: img.url,
-          alt: img.alt || name,
-          title: img.title || name,
-          isPrimary: i === targetPrimaryIndex,
-          orderIndex: i,
-        });
+      // 3. Sync product_industries (Bulk Insert)
+      await tx.delete(productIndustries).where(eq(productIndustries.productId, productId));
+      if (Array.isArray(industryIds) && industryIds.length > 0) {
+        const validIndIds = industryIds.map(Number).filter(Boolean);
+        if (validIndIds.length > 0) {
+          await tx.insert(productIndustries).values(
+            validIndIds.map((indId) => ({
+              productId,
+              industryId: indId,
+            }))
+          );
+        }
       }
-    }
 
-    // 5. Sync product_attributes
-    await db.delete(productAttributes).where(eq(productAttributes.productId, productId));
-    if (Array.isArray(attributes) && attributes.length > 0) {
-      for (let i = 0; i < attributes.length; i++) {
-        const attr = attributes[i];
-        await db.insert(productAttributes).values({
-          productId,
-          name: attr.name?.trim() || "Presentaciones",
-          value: attr.value?.trim() || "",
-          sku: attr.sku?.trim() || null,
-          attrPrice: attr.attrPrice ? String(attr.attrPrice) : null,
-          orderIndex: i,
-        });
-      }
-    }
+      // 4. Sync product_images (Bulk Insert)
+      await tx.delete(productImages).where(eq(productImages.productId, productId));
+      if (Array.isArray(images) && images.length > 0) {
+        const explicitPrimaryIndex = (images as Array<{ isPrimary?: boolean }>).findIndex((img) => Boolean(img.isPrimary));
+        const targetPrimaryIndex = explicitPrimaryIndex >= 0 ? explicitPrimaryIndex : 0;
 
-    // 5b. Sync product_variants
-    if (Array.isArray(variants)) {
-      await db.delete(productVariants).where(eq(productVariants.productId, productId));
-      for (let i = 0; i < variants.length; i++) {
-        const v = variants[i];
-        if (!v.sku?.trim()) continue;
-        await db.insert(productVariants).values({
-          productId,
-          sku: v.sku.trim(),
-          price: v.price ? String(v.price) : null,
-          stockStatus: v.stockStatus || "instock",
-          attributes: typeof v.attributes === "string" ? JSON.parse(v.attributes) : (v.attributes || {}),
-          orderIndex: i,
-        });
+        await tx.insert(productImages).values(
+          images.map((img, i) => ({
+            productId,
+            url: img.url,
+            alt: img.alt || name,
+            title: img.title || name,
+            isPrimary: i === targetPrimaryIndex,
+            orderIndex: i,
+          }))
+        );
       }
-    }
 
-    // 6. Sync product_documents
-    await db.delete(productDocuments).where(eq(productDocuments.productId, productId));
-    if (Array.isArray(documents) && documents.length > 0) {
-      for (let i = 0; i < documents.length; i++) {
-        const doc = documents[i];
-        await db.insert(productDocuments).values({
-          productId,
-          title: doc.title || "Ficha Técnica",
-          fileUrl: doc.fileUrl,
-          fileType: doc.fileType || "pdf",
-          fileSize: doc.fileSize || "PDF",
-          orderIndex: i,
-        });
+      // 5. Sync product_attributes (Bulk Insert)
+      await tx.delete(productAttributes).where(eq(productAttributes.productId, productId));
+      if (Array.isArray(attributes) && attributes.length > 0) {
+        await tx.insert(productAttributes).values(
+          attributes.map((attr, i) => ({
+            productId,
+            name: attr.name?.trim() || "Presentaciones",
+            value: attr.value?.trim() || "",
+            sku: attr.sku?.trim() || null,
+            attrPrice: attr.attrPrice ? String(attr.attrPrice) : null,
+            orderIndex: i,
+          }))
+        );
       }
-    }
+
+      // 5b. Sync product_variants (Bulk Insert con parsing seguro de JSON)
+      if (Array.isArray(variants)) {
+        await tx.delete(productVariants).where(eq(productVariants.productId, productId));
+        const validVariants = variants.filter((v) => v && v.sku?.trim());
+        if (validVariants.length > 0) {
+          await tx.insert(productVariants).values(
+            validVariants.map((v, i) => {
+              let parsedAttrs = {};
+              if (typeof v.attributes === "string") {
+                try {
+                  parsedAttrs = JSON.parse(v.attributes);
+                } catch {
+                  parsedAttrs = {};
+                }
+              } else if (v.attributes && typeof v.attributes === "object") {
+                parsedAttrs = v.attributes;
+              }
+
+              return {
+                productId,
+                sku: v.sku.trim(),
+                price: v.price ? String(v.price) : null,
+                stockStatus: v.stockStatus || "instock",
+                attributes: parsedAttrs,
+                orderIndex: i,
+              };
+            })
+          );
+        }
+      }
+
+      // 6. Sync product_documents (Bulk Insert)
+      await tx.delete(productDocuments).where(eq(productDocuments.productId, productId));
+      if (Array.isArray(documents) && documents.length > 0) {
+        await tx.insert(productDocuments).values(
+          documents.map((doc, i) => ({
+            productId,
+            title: doc.title || "Ficha Técnica",
+            fileUrl: doc.fileUrl,
+            fileType: doc.fileType || "pdf",
+            fileSize: doc.fileSize || "PDF",
+            orderIndex: i,
+          }))
+        );
+      }
+    });
+
+    // Auditoría de actualización de producto
+    await recordAuditLog({
+      userId: auth.user?.id,
+      userName: auth.user?.name || "Admin",
+      userEmail: auth.user?.email || "admin@karmax.mx",
+      action: "ACTUALIZAR",
+      module: "Productos",
+      targetId: productId,
+      targetName: name?.trim() || `Producto #${productId}`,
+      details: { categoryId, regularPrice, salePrice, stockStatus, isFeatured, isActive },
+      request,
+    });
 
     return NextResponse.json({
       success: true,
@@ -318,14 +351,27 @@ export async function DELETE(
       );
     }
 
-    // 2. Eliminación completa de relaciones y producto
-    await db.delete(productCategories).where(eq(productCategories.productId, productId));
-    await db.delete(productIndustries).where(eq(productIndustries.productId, productId));
-    await db.delete(productImages).where(eq(productImages.productId, productId));
-    await db.delete(productAttributes).where(eq(productAttributes.productId, productId));
-    await db.delete(productVariants).where(eq(productVariants.productId, productId));
-    await db.delete(productDocuments).where(eq(productDocuments.productId, productId));
-    await db.delete(products).where(eq(products.id, productId));
+    // 2. Eliminación atómica en Transacción de relaciones y producto
+    await db.transaction(async (tx) => {
+      await tx.delete(productCategories).where(eq(productCategories.productId, productId));
+      await tx.delete(productIndustries).where(eq(productIndustries.productId, productId));
+      await tx.delete(productImages).where(eq(productImages.productId, productId));
+      await tx.delete(productAttributes).where(eq(productAttributes.productId, productId));
+      await tx.delete(productVariants).where(eq(productVariants.productId, productId));
+      await tx.delete(productDocuments).where(eq(productDocuments.productId, productId));
+      await tx.delete(products).where(eq(products.id, productId));
+    });
+
+    // Auditoría de eliminación de producto
+    await recordAuditLog({
+      userId: auth.user?.id,
+      userName: auth.user?.name || "Admin",
+      userEmail: auth.user?.email || "admin@karmax.mx",
+      action: "ELIMINAR",
+      module: "Productos",
+      targetId: productId,
+      request,
+    });
 
     return NextResponse.json({ success: true, message: "Producto eliminado permanentemente" });
   } catch (error) {
@@ -373,6 +419,18 @@ export async function PATCH(
       .update(products)
       .set(updateData)
       .where(eq(products.id, productId));
+
+    // Auditoría de actualización rápida (PATCH)
+    await recordAuditLog({
+      userId: auth.user?.id,
+      userName: auth.user?.name || "Admin",
+      userEmail: auth.user?.email || "admin@karmax.mx",
+      action: "ACTUALIZAR",
+      module: "Productos",
+      targetId: productId,
+      details: updateData,
+      request,
+    });
 
     return NextResponse.json({
       success: true,

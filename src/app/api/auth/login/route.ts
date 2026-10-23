@@ -10,20 +10,26 @@ export async function POST(request: Request) {
   try {
     const clientIp = getClientIp(request);
 
-    // 1. Rate Limiting: máximo 5 intentos fallidos por cada 15 minutos por IP
-    const rateCheck = checkRateLimit(clientIp, "auth_login", {
-      limit: 7,
-      windowMs: 15 * 60 * 1000,
-    });
+    const body = await request.json().catch(() => ({}));
+    const { email, password, antiBotToken, honeypot, turnstileToken } = body;
+
+    // 1. Rate Limiting: máximo 7 intentos por cada 15 minutos por IP o por cuenta
+    const cleanEmail = email ? String(email).trim().toLowerCase() : undefined;
+    const rateCheck = checkRateLimit(
+      clientIp,
+      "auth_login",
+      {
+        limit: 7,
+        windowMs: 15 * 60 * 1000,
+      },
+      cleanEmail
+    );
     if (!rateCheck.allowed) {
       return NextResponse.json(
         { error: `Demasiados intentos fallidos. Por seguridad, espera ${rateCheck.resetInSec} segundos.` },
         { status: 429 }
       );
     }
-
-    const body = await request.json();
-    const { email, password, antiBotToken, honeypot, turnstileToken } = body;
 
     // 2. Anti-Bot / Captcha Invisible
     const botCheck = await verifyAntiBot({
@@ -53,7 +59,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const cleanEmail = String(email).trim().toLowerCase();
+    const finalEmail = String(email).trim().toLowerCase();
 
     // Find user with role
     const [userRecord] = await db
@@ -71,7 +77,7 @@ export async function POST(request: Request) {
       })
       .from(users)
       .leftJoin(roles, eq(users.roleId, roles.id))
-      .where(eq(users.email, cleanEmail))
+      .where(eq(users.email, finalEmail))
       .limit(1);
 
     if (!userRecord) {

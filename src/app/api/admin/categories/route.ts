@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/auth/adminGuard";
 import { db, categories, products } from "@/lib/db";
 import { asc, eq, sql } from "drizzle-orm";
+import { recordAuditLog } from "@/lib/services/auditService";
 
 export const dynamic = "force-dynamic";
 
@@ -108,9 +109,23 @@ export async function POST(request: NextRequest) {
       isActive: Boolean(isActive),
     });
 
+    const categoryId = Number(res.insertId);
+
+    await recordAuditLog({
+      userId: auth.user?.id,
+      userName: auth.user?.name || "Admin",
+      userEmail: auth.user?.email || "admin@karmax.mx",
+      action: "CREAR",
+      module: "Categorías",
+      targetId: categoryId,
+      targetName: name.trim(),
+      details: { slug: finalSlug, featured, isActive },
+      request,
+    });
+
     return NextResponse.json({
       success: true,
-      categoryId: Number(res.insertId),
+      categoryId,
       message: "Categoría creada con éxito",
     });
   } catch (error) {

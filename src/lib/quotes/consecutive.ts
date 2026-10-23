@@ -40,6 +40,8 @@ export async function getNextQuoteNumber(
     return String(nextSeq).padStart(7, "0");
   } catch (error) {
     console.error("Error computing next quote number:", error);
-    return "0000001";
+    throw new Error(
+      `No se pudo generar el consecutivo de la cotización: ${error instanceof Error ? error.message : "Error de base de datos"}`
+    );
   }
 }

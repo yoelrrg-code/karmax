@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/auth/adminGuard";
 import { db, industries, productIndustries } from "@/lib/db";
 import { asc, eq, sql } from "drizzle-orm";
+import { recordAuditLog } from "@/lib/services/auditService";
 
 export const dynamic = "force-dynamic";
 
@@ -107,9 +108,23 @@ export async function POST(request: NextRequest) {
       isActive: Boolean(isActive),
     });
 
+    const industryId = Number(res.insertId);
+
+    await recordAuditLog({
+      userId: auth.user?.id,
+      userName: auth.user?.name || "Admin",
+      userEmail: auth.user?.email || "admin@karmax.mx",
+      action: "CREAR",
+      module: "Industrias",
+      targetId: industryId,
+      targetName: name.trim(),
+      details: { slug: finalSlug, iconName, isActive },
+      request,
+    });
+
     return NextResponse.json({
       success: true,
-      industryId: Number(res.insertId),
+      industryId,
       message: "Industria creada con éxito",
     });
   } catch (error) {

@@ -14,6 +14,7 @@ import {
   Factory,
   Layers,
   Settings,
+  ShieldCheck,
   ExternalLink,
   X,
 } from "lucide-react";
@@ -69,6 +70,11 @@ const NAV_ITEMS = [
     label: "Secciones del Sitio",
     href: "/admin/secciones",
     icon: Layers,
+  },
+  {
+    label: "Auditoría",
+    href: "/admin/auditoria",
+    icon: ShieldCheck,
   },
   {
     label: "Ajustes Generales",

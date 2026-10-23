@@ -3,6 +3,7 @@ import { db, users, roles, quoteRequests } from "@/lib/db";
 import { requireAdminApi } from "@/lib/auth/adminGuard";
 import { hashPassword } from "@/lib/auth/password";
 import { eq, sql } from "drizzle-orm";
+import { recordAuditLog } from "@/lib/services/auditService";
 
 export const dynamic = "force-dynamic";
 
@@ -231,6 +232,18 @@ export async function PUT(
 
     await db.update(users).set(updateData).where(eq(users.id, userId));
 
+    await recordAuditLog({
+      userId: guard.user?.id,
+      userName: guard.user?.name || "Admin",
+      userEmail: guard.user?.email || "admin@karmax.mx",
+      action: "ACTUALIZAR",
+      module: "Usuarios",
+      targetId: userId,
+      targetName: updateData.name || existingUser.email,
+      details: { roleId, isActive, discountPercentage },
+      request,
+    });
+
     return NextResponse.json({
       success: true,
       message: "Usuario actualizado exitosamente",
@@ -286,6 +299,17 @@ export async function DELETE(
 
     // Delete user
     await db.delete(users).where(eq(users.id, userId));
+
+    await recordAuditLog({
+      userId: guard.user?.id,
+      userName: guard.user?.name || "Admin",
+      userEmail: guard.user?.email || "admin@karmax.mx",
+      action: "ELIMINAR",
+      module: "Usuarios",
+      targetId: userId,
+      targetName: targetUser.name,
+      request: _request,
+    });
 
     return NextResponse.json({
       success: true,

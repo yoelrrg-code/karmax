@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAdminApi } from "@/lib/auth/adminGuard";
 import { db, siteSettings } from "@/lib/db";
 import { eq } from "drizzle-orm";
+import { recordAuditLog } from "@/lib/services/auditService";
 
 export const dynamic = "force-dynamic";
 
@@ -80,6 +81,18 @@ export async function POST(request: NextRequest) {
         value: valueStr,
       });
     }
+
+    await recordAuditLog({
+      userId: auth.user?.id,
+      userName: auth.user?.name || "Admin",
+      userEmail: auth.user?.email || "admin@karmax.mx",
+      action: existing ? "ACTUALIZAR" : "CREAR",
+      module: "Secciones",
+      targetId: key,
+      targetName: label || key,
+      details: { section: section || "general", key },
+      request,
+    });
 
     return NextResponse.json({ success: true, message: `Sección "${key}" guardada correctamente` });
   } catch (error) {
