@@ -1,7 +1,8 @@
 import React from "react";
 import Link from "next/link";
-import { db, quoteRequests, products, categories, industries } from "@/lib/db";
-import { desc, eq, sql } from "drizzle-orm";
+import Image from "next/image";
+import { db, quoteRequests, products, categories, industries, pageViews } from "@/lib/db";
+import { desc, eq, sql, like, not, inArray } from "drizzle-orm";
 import {
   FileText,
   Package,
@@ -11,12 +12,30 @@ import {
   Clock,
   CheckCircle2,
   ArrowRight,
+  Eye,
+  Globe,
+  TrendingUp,
+  Layers,
+  ExternalLink,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
+function getPageLabel(path: string): string {
+  if (path === "/") return "Inicio (Portada)";
+  if (path === "/productos") return "Catálogo General";
+  if (path === "/contacto") return "Contacto";
+  if (path === "/quienes-somos") return "Quiénes Somos";
+  if (path === "/mis-cotizaciones") return "Mis Cotizaciones";
+  if (path.startsWith("/category/")) {
+    const slug = path.replace("/category/", "");
+    return `Categoría: ${slug}`;
+  }
+  return path;
+}
+
 export default async function AdminDashboardPage() {
-  // 1. Fetch real counts
+  // 1. Fetch real counts & analytics
   const [
     totalQuotesRes,
     pendingQuotesRes,
@@ -24,6 +43,9 @@ export default async function AdminDashboardPage() {
     totalCategoriesRes,
     totalIndustriesRes,
     recentQuotes,
+    totalVisitsRes,
+    topProductsRes,
+    nonProductPages,
   ] = await Promise.all([
     db.select({ count: sql<number>`count(*)` }).from(quoteRequests),
     db
@@ -47,6 +69,25 @@ export default async function AdminDashboardPage() {
       .from(quoteRequests)
       .orderBy(desc(quoteRequests.id))
       .limit(6),
+    db.select({ total: sql<number>`COALESCE(SUM(views), 0)` }).from(pageViews),
+    db
+      .select({
+        path: pageViews.path,
+        views: pageViews.views,
+      })
+      .from(pageViews)
+      .where(like(pageViews.path, "/productos/%"))
+      .orderBy(desc(pageViews.views))
+      .limit(10),
+    db
+      .select({
+        path: pageViews.path,
+        views: pageViews.views,
+      })
+      .from(pageViews)
+      .where(not(like(pageViews.path, "/productos/%")))
+      .orderBy(desc(pageViews.views))
+      .limit(15),
   ]);
 
   const totalQuotes = Number(totalQuotesRes[0]?.count || 0);
@@ -54,6 +95,40 @@ export default async function AdminDashboardPage() {
   const totalProducts = Number(totalProductsRes[0]?.count || 0);
   const totalCategories = Number(totalCategoriesRes[0]?.count || 0);
   const totalIndustries = Number(totalIndustriesRes[0]?.count || 0);
+  const totalVisits = Number(totalVisitsRes[0]?.total || 0);
+
+  // Match top products with their names and images
+  const productSlugs = topProductsRes
+    .map((p) => p.path.replace(/^\/productos\//, ""))
+    .filter(Boolean);
+
+  const matchedProducts = productSlugs.length > 0
+    ? await db
+        .select({
+          id: products.id,
+          name: products.name,
+          slug: products.slug,
+          sku: products.sku,
+          imageUrl: products.imageUrl,
+          brand: products.brand,
+        })
+        .from(products)
+        .where(inArray(products.slug, productSlugs))
+    : [];
+
+  const productBySlug = Object.fromEntries(
+    matchedProducts.map((p) => [p.slug, p])
+  );
+
+  const top10Products = topProductsRes.map((p) => {
+    const slug = p.path.replace(/^\/productos\//, "");
+    return {
+      path: p.path,
+      views: p.views,
+      slug,
+      product: productBySlug[slug] || null,
+    };
+  });
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -115,7 +190,7 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
         {/* Card 1: Cotizaciones Pendientes */}
         <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-2xs">
           <div className="flex items-center justify-between">
@@ -184,6 +259,24 @@ export default async function AdminDashboardPage() {
             <p className="text-3xl font-semibold text-slate-900">{totalIndustries}</p>
             <p className="text-xs text-slate-400 mt-1">
               Segmentos comerciales activos
+            </p>
+          </div>
+        </div>
+
+        {/* Card 5: Total Visitas del Sitio */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Total Visitas
+            </span>
+            <div className="w-9 h-9 rounded-xl bg-cyan-50 text-[var(--dark-blue-karmax)] flex items-center justify-center">
+              <Eye className="w-5 h-5 text-[var(--blue-karmax)]" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <p className="text-3xl font-semibold text-slate-900">{totalVisits.toLocaleString("es-MX")}</p>
+            <p className="text-xs text-slate-400 mt-1">
+              Páginas y productos vistos
             </p>
           </div>
         </div>
@@ -257,6 +350,185 @@ export default async function AdminDashboardPage() {
               )}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Analytics: Top Products & Non-Product Pages */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Top 10 Productos Más Visitados */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden flex flex-col">
+          <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-[var(--green-karmax)] flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900">
+                  Top 10 Productos Más Vistos
+                </h3>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                Los productos que generan mayor tráfico e interés en el catálogo
+              </p>
+            </div>
+            <Link
+              href="/admin/productos"
+              className="text-xs font-semibold text-[var(--dark-blue-karmax)] hover:underline flex items-center gap-1"
+            >
+              Ver catálogo <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          <div className="overflow-x-auto flex-1">
+            <table className="w-full text-left text-sm text-slate-600">
+              <thead className="bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100">
+                <tr>
+                  <th className="px-5 py-3 w-12 text-center">#</th>
+                  <th className="px-5 py-3">Producto</th>
+                  <th className="px-5 py-3 text-right">Visitas</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {top10Products.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="px-6 py-8 text-center text-slate-400 text-xs">
+                      Aún no hay visitas registradas a productos.
+                    </td>
+                  </tr>
+                ) : (
+                  top10Products.map((item, index) => {
+                    const prod = item.product;
+                    const rank = index + 1;
+                    return (
+                      <tr key={item.path} className="hover:bg-slate-50/70 transition-colors">
+                        <td className="px-5 py-3 text-center">
+                          <span
+                            className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
+                              rank === 1
+                                ? "bg-amber-100 text-amber-800"
+                                : rank === 2
+                                ? "bg-slate-200 text-slate-800"
+                                : rank === 3
+                                ? "bg-amber-50 text-amber-900"
+                                : "bg-slate-100 text-slate-600"
+                            }`}
+                          >
+                            {rank}
+                          </span>
+                        </td>
+                        <td className="px-5 py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 relative bg-slate-100 rounded-lg overflow-hidden border border-slate-200 shrink-0 flex items-center justify-center p-0.5">
+                              {prod?.imageUrl ? (
+                                <Image
+                                  src={prod.imageUrl}
+                                  alt={prod.name}
+                                  fill
+                                  className="object-contain"
+                                  sizes="36px"
+                                />
+                              ) : (
+                                <Layers className="w-4 h-4 text-slate-300" />
+                              )}
+                            </div>
+                            <div className="min-w-0">
+                              {prod?.id ? (
+                                <Link
+                                  href={`/admin/productos/${prod.id}`}
+                                  className="font-semibold text-slate-900 text-xs hover:text-[var(--blue-karmax)] line-clamp-1"
+                                >
+                                  {prod.name}
+                                </Link>
+                              ) : (
+                                <p className="font-semibold text-slate-900 text-xs line-clamp-1">
+                                  {item.slug}
+                                </p>
+                              )}
+                              <p className="text-[11px] text-slate-400 font-mono">
+                                {prod?.sku ? `SKU: ${prod.sku}` : item.path}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-5 py-3 text-right">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-100">
+                            <Eye className="w-3.5 h-3.5 text-emerald-600" />
+                            {item.views.toLocaleString("es-MX")}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Visitas a Páginas que no son productos */}
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden flex flex-col">
+          <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 text-[var(--blue-karmax)] flex items-center justify-center">
+                  <Globe className="w-4 h-4" />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-900">
+                  Visitas por Página (Institucionales)
+                </h3>
+              </div>
+              <p className="text-xs text-slate-500 mt-1">
+                Páginas institucionales, categorías y secciones del sitio
+              </p>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto flex-1">
+            <table className="w-full text-left text-sm text-slate-600">
+              <thead className="bg-slate-50 text-xs font-semibold text-slate-500 uppercase tracking-wider border-b border-slate-100">
+                <tr>
+                  <th className="px-5 py-3">Página / Sección</th>
+                  <th className="px-5 py-3">Ruta (URL)</th>
+                  <th className="px-5 py-3 text-right">Visitas</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {nonProductPages.length === 0 ? (
+                  <tr>
+                    <td colSpan={3} className="px-6 py-8 text-center text-slate-400 text-xs">
+                      Aún no hay visitas registradas a páginas institucionales.
+                    </td>
+                  </tr>
+                ) : (
+                  nonProductPages.map((page) => (
+                    <tr key={page.path} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="px-5 py-3">
+                        <span className="font-semibold text-slate-900 text-xs">
+                          {getPageLabel(page.path)}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3">
+                        <Link
+                          href={page.path}
+                          target="_blank"
+                          className="inline-flex items-center gap-1 text-xs font-mono text-slate-500 hover:text-[var(--blue-karmax)] hover:underline"
+                        >
+                          {page.path}
+                          <ExternalLink className="w-3 h-3 text-slate-400" />
+                        </Link>
+                      </td>
+                      <td className="px-5 py-3 text-right">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100">
+                          <Eye className="w-3.5 h-3.5 text-blue-600" />
+                          {page.views.toLocaleString("es-MX")}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 

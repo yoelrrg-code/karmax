@@ -12,6 +12,7 @@ import {
   Layers,
   ExternalLink,
   Eraser,
+  Eye,
 } from "lucide-react";
 import { sileo } from "sileo";
 
@@ -29,6 +30,7 @@ interface ProductRow {
   categoryId: number;
   categoryName: string | null;
   variationCount: number;
+  views?: number;
 }
 
 interface CategoryOption {
@@ -271,6 +273,7 @@ export default function AdminProductsPage() {
                 <th className="px-5 py-3.5">Categoría</th>
                 <th className="px-5 py-3.5">Precio Base</th>
                 <th className="px-5 py-3.5 text-center">Variaciones</th>
+                <th className="px-5 py-3.5 text-center">Visitas</th>
                 <th className="px-5 py-3.5 text-center">Estado</th>
                 <th className="px-5 py-3.5 text-right">Acciones</th>
               </tr>
@@ -278,13 +281,13 @@ export default function AdminProductsPage() {
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-slate-400">
+                  <td colSpan={8} className="px-6 py-12 text-center text-slate-400">
                     Cargando productos...
                   </td>
                 </tr>
               ) : products.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-slate-400">
+                  <td colSpan={8} className="px-6 py-12 text-center text-slate-400">
                     No se encontraron productos con los filtros seleccionados.
                   </td>
                 </tr>
@@ -346,6 +349,12 @@ export default function AdminProductsPage() {
                           }`}
                         >
                           {prod.variationCount > 0 ? `${prod.variationCount} vars` : "Base"}
+                        </span>
+                      </td>
+                      <td className="px-5 py-3.5 text-center">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100">
+                          <Eye className="w-3 h-3 text-blue-500" />
+                          {Number(prod.views || 0).toLocaleString("es-MX")}
                         </span>
                       </td>
                       <td className="px-5 py-3.5 text-center">

@@ -420,6 +420,16 @@ export const auditLogs = mysqlTable(
   ]
 );
 
+export const pageViews = mysqlTable(
+  "page_views",
+  {
+    path: varchar("path", { length: 255 }).primaryKey(),
+    views: int("views").default(1).notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => [index("page_views_views_idx").on(table.views)]
+);
+
 export type Category = typeof categories.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type ProductImage = typeof productImages.$inferSelect;
@@ -437,5 +447,6 @@ export type SiteSetting = typeof siteSettings.$inferSelect;
 export type ContactMessage = typeof contactMessages.$inferSelect;
 export type PriceSyncLog = typeof priceSyncLogs.$inferSelect;
 export type AuditLog = typeof auditLogs.$inferSelect;
+export type PageView = typeof pageViews.$inferSelect;
 
 

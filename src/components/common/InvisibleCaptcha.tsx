@@ -100,8 +100,8 @@ export const CloudflareTurnstile = forwardRef<InvisibleCaptchaRef, TurnstileCapt
                   setTurnstileToken("");
                   onVerify?.("");
                 },
-                "error-callback": () => {
-                  console.warn("Turnstile challenge encountered an error or domain mismatch.");
+                "error-callback": (errorCode?: string) => {
+                  console.warn("Turnstile challenge encountered an error. Code:", errorCode);
                   setTurnstileToken("");
                   onVerify?.("");
                 },
@@ -118,11 +118,27 @@ export const CloudflareTurnstile = forwardRef<InvisibleCaptchaRef, TurnstileCapt
           script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
           script.async = true;
           script.defer = true;
-          script.onload = initTurnstile;
+          script.addEventListener("load", initTurnstile);
           document.head.appendChild(script);
         } else if (window.turnstile) {
           initTurnstile();
+        } else {
+          script.addEventListener("load", initTurnstile);
         }
+
+        return () => {
+          if (script) {
+            script.removeEventListener("load", initTurnstile);
+          }
+          if (widgetIdRef.current && window.turnstile) {
+            try {
+              window.turnstile.remove?.(widgetIdRef.current);
+            } catch {
+              // ignore cleanup errors
+            }
+            widgetIdRef.current = null;
+          }
+        };
       }
 
       return () => {

@@ -206,13 +206,13 @@ export const QuoteDrawer: React.FC = () => {
 
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-0 sm:pl-16 pointer-events-none">
         <div
-          className={`w-screen max-w-4xl bg-white shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out pointer-events-auto ${
+          className={`w-screen max-w-4xl bg-white shadow-2xl flex flex-col h-full overflow-y-auto transform transition-transform duration-300 ease-in-out pointer-events-auto ${
             isDrawerOpen ? "translate-x-0" : "translate-x-full"
           }`}
         >
 
           {/* 1. Header */}
-          <div className="px-4 md:px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+          <div className="sticky top-0 z-20 bg-white px-4 md:px-6 py-5 border-b border-slate-100 flex items-center justify-between shrink-0">
             <div>
               <h3
                 suppressHydrationWarning
@@ -263,7 +263,7 @@ export const QuoteDrawer: React.FC = () => {
           )}
 
           {/* 2. Items Content / Table */}
-          <div className="flex flex-col overflow-y-auto px-4 md:px-6 py-4 mb-0 md:mb-8">
+          <div className="flex flex-col px-4 md:px-6 py-4 mb-0 md:mb-8">
             {items.length === 0 ? (
               <div className="h-64 flex flex-col items-center justify-center text-center text-slate-400">
                 <p className="text-base font-medium">Tu cotizador está vacío.</p>
@@ -418,7 +418,7 @@ export const QuoteDrawer: React.FC = () => {
 
           {/* 4. Action Buttons & Disclaimer Footer */}
           {items.length > 0 && (
-            <div className="max-w-3xl mx-auto p-6 pt-0">
+            <div className="max-w-3xl mx-auto p-6 pt-0 w-full shrink-0">
               {/* Cloudflare Turnstile CAPTCHA */}
               <div className="flex justify-center pb-1">
                 <CloudflareTurnstile ref={captchaRef} size="normal" theme="light" />

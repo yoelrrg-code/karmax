@@ -10,6 +10,7 @@ import {
   productAttributes,
   productVariants,
   productDocuments,
+  pageViews,
 } from "@/lib/db";
 import { desc, eq, like, or, and, sql, inArray } from "drizzle-orm";
 import { escapeLikePattern } from "@/lib/security/sql";
@@ -106,12 +107,14 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .offset(offset);
 
-    // Variation counts for returned products (prioritizing product_variants)
+    // Variation and views counts for returned products
     const productIds = rows.map((r) => r.id);
+    const productPaths = rows.map((r) => `/productos/${r.slug}`);
     const varCountMap: Record<number, number> = {};
+    const viewsMap: Record<string, number> = {};
 
     if (productIds.length > 0) {
-      const [variantCounts, attrCounts] = await Promise.all([
+      const [variantCounts, attrCounts, viewsCounts] = await Promise.all([
         db
           .select({
             productId: productVariants.productId,
@@ -128,6 +131,13 @@ export async function GET(request: NextRequest) {
           .from(productAttributes)
           .where(inArray(productAttributes.productId, productIds))
           .groupBy(productAttributes.productId),
+        db
+          .select({
+            path: pageViews.path,
+            views: pageViews.views,
+          })
+          .from(pageViews)
+          .where(inArray(pageViews.path, productPaths)),
       ]);
 
       for (const a of attrCounts) {
@@ -138,11 +148,15 @@ export async function GET(request: NextRequest) {
           varCountMap[v.productId] = Number(v.count);
         }
       }
+      for (const pv of viewsCounts) {
+        viewsMap[pv.path] = Number(pv.views);
+      }
     }
 
     const productsWithStats = rows.map((r) => ({
       ...r,
       variationCount: varCountMap[r.id] || 0,
+      views: viewsMap[`/productos/${r.slug}`] || 0,
     }));
 
     return NextResponse.json({

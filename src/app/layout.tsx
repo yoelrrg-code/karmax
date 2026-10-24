@@ -6,6 +6,7 @@ import { Providers } from "@/context/Providers";
 import { QuoteDrawer } from "@/components/quote/QuoteDrawer";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { PageLoader } from "@/components/common/PageLoader";
+import { VisitTracker } from "@/components/common/VisitTracker";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -69,6 +70,9 @@ export default function RootLayout({
         <Providers>
           <Suspense fallback={null}>
             <PageLoader />
+          </Suspense>
+          <Suspense fallback={null}>
+            <VisitTracker />
           </Suspense>
           {children}
           <QuoteDrawer />
